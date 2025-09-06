@@ -36,7 +36,7 @@ export interface Patient {
   cancerType: string;
   stage: string;
   name?: string;
-  weightKg?: number;           // optional to satisfy ListItem typing
+  weightKg?: number;           
 }
 
 export default function ParticipantAssessmentSplit() {
@@ -50,7 +50,7 @@ export default function ParticipantAssessmentSplit() {
 
   // pagination states
   const [page, setPage] = useState(1);
-  const perPage = 8;
+  const perPage = 10;
 
 
   useFocusEffect(
@@ -90,7 +90,7 @@ export default function ParticipantAssessmentSplit() {
         }
 
         else {
-          requestBody.SearchString = trimmedSearch;
+          requestBody.CancerDiagnosis = trimmedSearch;
         }
       }
 
