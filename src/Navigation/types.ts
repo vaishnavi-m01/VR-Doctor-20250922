@@ -1,0 +1,33 @@
+export type RootStackParamList = {
+  Splash: undefined;
+  Login: undefined;
+  Home: undefined;
+  Participants: undefined;
+  Reports: undefined;
+  Profile: undefined;
+  PreVR: { patientId: number,age:number,studyId:number };
+  PostVRAssessment: { patientId: number,age:number,studyId:number };
+  PreAndPostVR: { patientId: number,age:number,studyId:number };
+  DistressThermometerScreen: { patientId: number,age:number,studyId:number };
+  EdmontonFactGScreen: { patientId: number,age:number,studyId:number };
+  AdverseEventForm: { patientId: number,age:number,studyId:number };
+  StudyObservation: { patientId: number,age:number,studyId:number };
+  PatientDashboard: { patientId: number,age:number,studyId:number };
+  ExitInterview: { patientId: number,age:number,studyId:number };
+  DoctorDashboard: undefined;
+  SessionSetupScreen: {patientId:number,age:number,studyId:number};
+  ParticipantInfo: { patientId: number,age:number,studyId:number };
+  SessionControlScreen: undefined;
+  SessionCompletedScreen: undefined;
+  SocioDemographic: { patientId?: number,age?:number,studyId?:number };
+  PatientScreening: { patientId: number,age:number,studyId:number };
+  Screening: { patientId: number,age:number };
+  FactG: { patientId: number,age:number };
+  DistressThermometerList:{ patientId: number,age:number,studyId:number };
+  StudyObservation_List:{patientId:number,age:number,studyId:number};
+  FactGAssessmentHistory: {patientId:number,age:number,studyId:number};
+  VRPrePostList: {patientId:number,age:number,studyId:number};
+  AdverseEventReportsHistory: {patientId:number,age:number,studyId:number};
+  StudyGroupAssignment: { patientId: number,age:number,studyId:number };
+};
+ 

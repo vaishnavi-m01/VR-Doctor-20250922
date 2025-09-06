@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "OjaskaVRDoctor",
+    "slug": "vr-qol-nativewind",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "bundler": "metro",
+      "userInterfaceStyle": "automatic"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7c0dc194-cf75-4d8d-9e66-45dbe23d4c85"
+      }
+    },
+    "android": {
+      "package": "com.ojaska.vrqolnativewind",
+      "supportsTablet": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.ojaska.vrqolnativewind",
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "infoPlist": {
+        "UIRequiresFullScreen": true,
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      }
+    },
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/ZenKakuGothicAntique-Regular.ttf",
+            "./assets/fonts/ZenKakuGothicAntique-Bold.ttf",
+            "./assets/fonts/ZenKakuGothicAntique-Medium.ttf",
+            "./assets/fonts/ZenKakuGothicAntique-Light.ttf"
+          ]
+        }
+      ]
+    ]
+  }
+}
