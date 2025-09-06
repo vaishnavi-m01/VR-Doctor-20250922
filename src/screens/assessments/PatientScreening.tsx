@@ -40,9 +40,9 @@ export default function PatientScreening() {
   const [notes, setNotes] = useState('');
 
   const [clinicalChecklist, setClinicalChecklist] = useState<ClinicalChecklist[]>([]);
-  console.log("clinicalCheckList",clinicalChecklist)
+  console.log("clinicalCheckList", clinicalChecklist)
   const [conds, setConds] = useState<string[]>([]);
-  console.log("condss",conds)
+  console.log("condss", conds)
   // validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -105,7 +105,7 @@ export default function PatientScreening() {
           StudyId: studyId ?? '',
         });
         const s = (screeningRes.data as any).ResponseData?.[0];
-        console.log("PatientScreening",s)
+        console.log("PatientScreening", s)
         if (s) {
           setDt(Number(s.DistressTherometerScore) || 0);
           setImplants(s.AnyElectranicImplantsLikeFacemaker || '');
@@ -171,6 +171,7 @@ export default function PatientScreening() {
         type: 'success',
         text1: 'Success',
         text2: 'Patient screening saved successfully!',
+        onHide: () => navigation.goBack(),
         position: 'top',
         topOffset: 50,
       });

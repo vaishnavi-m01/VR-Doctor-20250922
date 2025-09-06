@@ -5,9 +5,7 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,10 +22,14 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { apiService } from 'src/services';
 import Pagination from '../../components/Pagination';
+import { Image } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+
 
 export interface Patient {
-  id: number;                  // using ParticipantId as id
+  id: number;                 
   ParticipantId: number;
+  studyId:number;
   age: number;
   status: string;
   gender: string;

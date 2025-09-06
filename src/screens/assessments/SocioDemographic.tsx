@@ -25,7 +25,7 @@ interface ParticipantDetails {
   NumberOfChildren?: number;
   FaithContributeToWellBeing?: string;
   PracticeAnyReligion?: string;
-  ReligionSpecify?: string;
+  ReligionType?: string;
   EducationLevel?: string;
   EmploymentStatus?: string;
   KnowledgeIn?: string;
@@ -120,7 +120,7 @@ export default function SocioDemographic() {
   const [technologyExperience, setTechnologyExperience] = useState("");
 
   const [participantSignature, setParticipantSignature] = useState("");
-  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split("T")[0];
   const [consentDate, setConsentDate] = useState<string>(today);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -194,7 +194,8 @@ export default function SocioDemographic() {
             setNumberOfChildren(String(data.NumberOfChildren ?? ""));
             setFaithWellbeing(data.FaithContributeToWellBeing ?? "");
             setPracticeReligion(data.PracticeAnyReligion ?? "");
-            setReligionSpecify(data.ReligionSpecify ?? "");
+            setReligionSpecify(data.ReligionType ?? "");
+
             setEducationLevel(data.EducationLevel ?? "");
             setEmploymentStatus(data.EmploymentStatus ?? "");
             setKnowledgeIn(data.KnowledgeIn ?? "");
@@ -282,6 +283,7 @@ export default function SocioDemographic() {
         KnowledgeIn: KnowledgeIn,
         FaithContributeToWellBeing: faithWellbeing,
         PracticeAnyReligion: practiceReligion,
+        ReligionType: religionSpecify,
 
         EducationLevel: educationLevel,
         EmploymentStatus: employmentStatus,
@@ -378,16 +380,24 @@ export default function SocioDemographic() {
           <View className="mt-6">
             <Field
               label="1. Age"
-              placeholder="_______ years"
+              placeholder="__ years"
               value={ages}
-              onChangeText={(val) => {
-                setAge(val);
-                setErrors((prev) => ({ ...prev, age: "" }));
-              }}
               keyboardType="numeric"
+              maxLength={3}
+              onChangeText={(val) => {
+                const numericVal = val.replace(/[^0-9]/g, "");
+                if (numericVal.length <= 3) {
+                  setAge(numericVal);
+                  setErrors((prev) => ({ ...prev, age: "" }));
+                }
+              }}
             />
-            {errors.ages && <Text className="text-red-500 text-sm mt-2">{errors.ages}</Text>}
+
+            {errors.ages && (
+              <Text className="text-red-500 text-sm mt-2">{errors.ages}</Text>
+            )}
           </View>
+
 
           <View className="mt-6">
             <Text className="text-base font-medium text-[#2c4a43] mb-4">2. Gender</Text>
