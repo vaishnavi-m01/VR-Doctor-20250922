@@ -31,7 +31,7 @@ export default function PreAndPostVR() {
   const route = useRoute<RouteProp<RootStackParamList, 'PreAndPostVR'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
 
-  const [sessionNo, setSessionNo] = useState("SessionNo-1"); // you might want to derive or select sessionNo dynamically
+  const [sessionNo, setSessionNo] = useState("SessionNo-1"); 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -51,7 +51,6 @@ export default function PreAndPostVR() {
         const questionsRes = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData");
         const fetchedQuestions = questionsRes.data.ResponseData;
 
-        // Fetch existing responses for this participant, study, session
         const responsesRes = await apiService.post<{ ResponseData: Question[] }>("/GetParticipantPrePostVRSessions", {
           ParticipantId: participantIdInput,
           StudyId: studyId ? `CS-${studyId.toString().padStart(4, '0')}` : "CS-0001",
@@ -60,11 +59,8 @@ export default function PreAndPostVR() {
 
         const responseData = responsesRes.data.ResponseData || [];
 
-        // Merge existing responses into questions to keep consistent data shape
-        // Set questions to those from questions API (which include question metadata)
         setQuestions(fetchedQuestions);
 
-        // Build answers and notes from responseData where responses exist (ScaleValue or Notes)
         const initialAnswers: Record<string, string> = {};
         const initialNotes: Record<string, string> = {};
         responseData.forEach(q => {
@@ -288,16 +284,17 @@ export default function PreAndPostVR() {
                 <Text className="text-red-500 text-xs mt-1">{errors[q.PPVRQMID]}</Text>
               )}
 
-              {answers[q.PPVRQMID] === 'Yes' && q.QuestionName !== 'Do you feel good?' && (
+              {answers[q.PPVRQMID] && (
                 <View className="mt-3">
                   <Field
-                    label="Notes (optional)"
-                    placeholder="Add details…"
+                    label="Additional Notes (Optional)"
+                    placeholder="Please provide details…"
                     value={notes[q.PPVRQMID] || ''}
                     onChangeText={(text) => handleNote(q.PPVRQMID, text)}
                   />
                 </View>
               )}
+ 
             </View>
           ))}
         </FormCard>
@@ -330,26 +327,17 @@ export default function PreAndPostVR() {
               )}
 
               {/* Conditional extra inputs */}
-              {q.QuestionName === 'Do you experience any discomfort?' && answers[q.PPVRQMID] === 'Yes' && (
-                <View className="mt-3">
-                  <Field
-                    label="Please describe"
-                    placeholder="Dizziness, nausea, etc."
-                    value={notes[q.PPVRQMID] || ''}
-                    onChangeText={(text) => handleNote(q.PPVRQMID, text)}
-                  />
-                </View>
-              )}
-              {answers[q.PPVRQMID] === 'No' && q.QuestionName !== 'Do you experience any discomfort?' && (
-                <View className="mt-3">
-                  <Field
-                    label="Please specify"
-                    placeholder="e.g., audio low, visuals blurry…"
-                    value={notes[q.PPVRQMID] || ''}
-                    onChangeText={(text) => handleNote(q.PPVRQMID, text)}
-                  />
-                </View>
-              )}
+              {answers[q.PPVRQMID] && (
+                  <View className="mt-3">
+                    <Field
+                      label="Additional Notes (Optional)"
+                      placeholder="Please provide details…"
+                      value={notes[q.PPVRQMID] || ''}
+                      onChangeText={(text) => handleNote(q.PPVRQMID, text)}
+                    />
+                  </View>
+                )}
+
             </View>
           ))}
         </FormCard>
@@ -361,7 +349,7 @@ export default function PreAndPostVR() {
           Mood Δ: {delta > 0 ? '+1' : delta < 0 ? '-1' : '0'}
         </Text>
         {flag && <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">⚠︎ Review symptoms</Text>}
-        <Btn variant="light" onPress={() => { /* Add a validate function if needed */ }}>Validate</Btn>
+        <Btn variant="light">Validate</Btn>
         <Btn onPress={handleSave} disabled={submitting}>
           {submitting ? 'Saving…' : 'Save'}
         </Btn>

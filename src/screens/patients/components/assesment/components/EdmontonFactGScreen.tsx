@@ -374,6 +374,7 @@ export default function EdmontonFactGScreen() {
             text2: "FACT-G responses saved successfully!",
             position: "top",
             topOffset: 50,
+            onHide: () => navigation.goBack(),  
           });
         } else {
           Toast.show({
