@@ -20,7 +20,7 @@ export function DropdownField({
   placeholder,
 }: DropdownFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
-  
+
   const selectedOption = options.find(option => option.value === value);
   const displayText = selectedOption ? selectedOption.label : (placeholder || "Select an option");
 
@@ -49,19 +49,19 @@ export function DropdownField({
 
       {/* Modal Dropdown */}
       {isVisible && (
-        <View className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#dce9e4] rounded-2xl shadow-lg max-h-60">
+         <View className="mt-1 bg-white border border-[#dce9e4] rounded-2xl shadow-lg max-h-60">
+
+
           <ScrollView showsVerticalScrollIndicator={false}>
             {options.map((option) => (
               <TouchableOpacity
                 key={option.value}
                 onPress={() => handleSelect(option)}
-                className={`p-4 border-b border-gray-100 ${
-                  value === option.value ? 'bg-blue-50' : ''
-                }`}
+                className={`p-4 border-b border-gray-100 ${value === option.value ? 'bg-blue-50' : ''
+                  }`}
               >
-                <Text className={`text-base ${
-                  value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
-                }`}>
+                <Text className={`text-base ${value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
+                  }`}>
                   {option.label}
                 </Text>
               </TouchableOpacity>

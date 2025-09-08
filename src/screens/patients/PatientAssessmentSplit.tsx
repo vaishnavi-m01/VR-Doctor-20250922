@@ -27,16 +27,16 @@ import Pagination from '../../components/Pagination';
 
 
 export interface Patient {
-  id: number;                 
+  id: number;
   ParticipantId: number;
-  studyId:number;
+  studyId: number;
   age: number;
   status: string;
   gender: string;
   cancerType: string;
   stage: string;
   name?: string;
-  weightKg?: number;           
+  weightKg?: number;
 }
 
 export default function ParticipantAssessmentSplit() {
@@ -113,11 +113,11 @@ export default function ParticipantAssessmentSplit() {
         console.log(`📥 Loading participants data`);
         const fetchedParticipants = await fetchParticipants();
         hasLoadedDataRef.current = true;
-        
+
         // After loading data, restore selection
         const savedParticipantId = await loadSelectedParticipant();
         const savedTab = await loadSelectedTab();
-        
+
         console.log(`🔄 Restoring selection: ${savedParticipantId}`);
         if (savedParticipantId !== null && fetchedParticipants.length > 0) {
           // Check if saved participant exists in fetched data
@@ -137,37 +137,49 @@ export default function ParticipantAssessmentSplit() {
         setTab(savedTab);
       }
     };
-    
+
     loadData();
   }, []);
 
   // Restore selection when screen comes into focus (but don't reload data)
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const restoreSelection = async () => {
+  //       if (hasLoadedDataRef.current && participants.length > 0) {
+  //         const savedParticipantId = await loadSelectedParticipant();
+  //         const savedTab = await loadSelectedTab();
+
+  //         console.log(`♻️ Restoring selection on focus: ${savedParticipantId}`);
+  //         if (savedParticipantId !== null) {
+  //           // Check if saved participant still exists in current data
+  //           const participantExists = participants.some(p => p.ParticipantId === savedParticipantId);
+  //           if (participantExists) {
+  //             setSelId(savedParticipantId);
+  //           } else {
+  //             // If saved participant no longer exists, select first one
+  //             setSelId(participants[0].ParticipantId);
+  //             await saveSelectedParticipant(participants[0].ParticipantId);
+  //           }
+  //         }
+  //         setTab(savedTab);
+  //       }
+  //     };
+
+  //     restoreSelection();
+  //   }, [participants])
+  // );
+
   useFocusEffect(
     useCallback(() => {
-      const restoreSelection = async () => {
-        if (hasLoadedDataRef.current && participants.length > 0) {
-          const savedParticipantId = await loadSelectedParticipant();
-          const savedTab = await loadSelectedTab();
-          
-          console.log(`♻️ Restoring selection on focus: ${savedParticipantId}`);
-          if (savedParticipantId !== null) {
-            // Check if saved participant still exists in current data
-            const participantExists = participants.some(p => p.ParticipantId === savedParticipantId);
-            if (participantExists) {
-              setSelId(savedParticipantId);
-            } else {
-              // If saved participant no longer exists, select first one
-              setSelId(participants[0].ParticipantId);
-              await saveSelectedParticipant(participants[0].ParticipantId);
-            }
-          }
-          setTab(savedTab);
-        }
+      const restoreTab = async () => {
+        const savedTab = await loadSelectedTab();
+        setTab(savedTab);
+        
       };
-      
-      restoreSelection();
-    }, [participants])
+      restoreTab();
+    }, [])
   );
+
 
 
   // Save selected participant when it changes
@@ -183,8 +195,13 @@ export default function ParticipantAssessmentSplit() {
     saveSelectedTab(tab);
   }, [tab]);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchParticipants();
+    }, [])
+  );
 
-   const fetchParticipants = async (search: string = "") => {
+  const fetchParticipants = async (search: string = "") => {
     try {
       setLoading(true);
 
@@ -261,18 +278,18 @@ export default function ParticipantAssessmentSplit() {
   const renderTabContent = () => {
     const patientId = sel?.ParticipantId || 0;
     const studyId = sel?.studyId || 0
-    console.log("StudyId",studyId)
+    console.log("StudyId", studyId)
     const age = sel?.age ?? 0;
 
     switch (tab) {
       case 'dash':
-        return <Dashboard patientId={patientId} age={age} studyId={studyId}/>;
+        return <Dashboard patientId={patientId} age={age} studyId={studyId} />;
       case 'info':
-        return <ParticipantInfo patientId={patientId} age={age} studyId={studyId}/>;
+        return <ParticipantInfo patientId={patientId} age={age} studyId={studyId} />;
       case 'orie':
-        return <OrientationTab patientId={patientId} age={age} studyId={studyId}/>;
+        return <OrientationTab patientId={patientId} age={age} studyId={studyId} />;
       case 'assessment':
-        return <AssessmentTab patientId={patientId} age={age} studyId={studyId}/>;
+        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} />;
       case ' VR':
         return <VRTab patientId={patientId} age={age} studyId={studyId} />;
       case 'notification':
@@ -304,7 +321,7 @@ export default function ParticipantAssessmentSplit() {
             <View className="flex-row items-center space-x-2 mt-3">
               {/* Search Bar */}
               <View className="flex-row items-center bg-white border border-[#e6eeeb] rounded-2xl px-4 py-3 flex-1">
-                 <TextInput
+                <TextInput
                   placeholder="Search by Patient ID,Age,Cancer Type"
                   value={searchText}
                   onChangeText={setSearchText}
@@ -335,7 +352,7 @@ export default function ParticipantAssessmentSplit() {
                 navigation.navigate('SocioDemographic', {
                   // patientId: Date.now(),
                   // age:age
-                  
+
                 })
               }
               className="mt-3 bg-[#0ea06c] rounded-xl py-3 px-4 items-center"
@@ -380,7 +397,7 @@ export default function ParticipantAssessmentSplit() {
               />
 
             </View>
-          )} 
+          )}
 
         </View>
 
