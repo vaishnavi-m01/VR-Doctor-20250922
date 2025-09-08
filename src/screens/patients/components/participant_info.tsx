@@ -15,13 +15,11 @@ export default function ParticipantInfo({ patientId = 1, age = 0, studyId = 1 }:
 
   return (
     <ScrollView className="flex-1 p-4">
-
-
-       <AssessItem
-        icon="📋"
-        title="Informed Consent (Form IA)"
-        // subtitle="Personal Information, education, and contact information"
-        onPress={() => navigation.navigate("InformedConsent")}
+        <AssessItem
+        icon="📝"
+        title="Informed Consent Form"
+        subtitle="Study details, participant information, acknowledgements, and signatures"
+        onPress={() => navigation.navigate("InformedConsent", { patientId,age,studyId })}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
 

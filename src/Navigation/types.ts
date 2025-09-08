@@ -29,6 +29,6 @@ export type RootStackParamList = {
   VRPrePostList: {patientId:number,age:number,studyId:number};
   AdverseEventReportsHistory: {patientId:number,age:number,studyId:number};
   StudyGroupAssignment: { patientId: number,age:number,studyId:number };
-  InformedConsent:undefined
+  InformedConsent: { patientId: number,age:number,studyId:number };
 };
  
