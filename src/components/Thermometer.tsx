@@ -34,8 +34,8 @@ export default function Thermometer({ value, onChange, min = 0, max = 10 }: Prop
     <View
       className="flex-row items-center bg-white rounded-3xl"
       style={{
-         paddingLeft: 0,
-         paddingRight: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
         paddingTop: containerPadding / 2,
         paddingBottom: containerPadding * 2.5,
       }}

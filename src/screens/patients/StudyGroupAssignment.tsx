@@ -294,46 +294,44 @@ export default function StudyGroupAssignment() {
 
       <ScrollView className="flex-1 px-6 pb-6">
         {/* Unassigned */}
-       {/* Unassigned */}
-<View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
-  <View className="flex-row items-center justify-between mb-3">
-    <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
-    <Text className="text-sm text-gray-600">({participants.length})</Text>
-  </View>
-  <ScrollView style={{ maxHeight: 300 }}>
-    {participants.length === 0 ? (
-      <View className="bg-gray-50 rounded-xl p-6 items-center">
-        <Text className="text-gray-500 text-center">No participants found</Text>
-      </View>
-    ) : (
-      participants.map((p) => (
-        <Row
-          key={p.ParticipantId}
-          p={p}
-          selectable
-          selected={selectedIds.includes(p.ParticipantId)}
-          onPress={() => toggleSelect(p.ParticipantId)}
-        />
-      ))
-    )}
-  </ScrollView>
+        <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
+            <Text className="text-sm text-gray-600">({participants.length})</Text>
+          </View>
+          <ScrollView style={{ maxHeight: 300 }}>
+            {participants.length === 0 ? (
+              <View className="bg-gray-50 rounded-xl p-6 items-center">
+                <Text className="text-gray-500 text-center">No participants found</Text>
+              </View>
+            ) : (
+              participants.map((p) => (
+                <Row
+                  key={p.ParticipantId}
+                  p={p}
+                  selectable
+                  selected={selectedIds.includes(p.ParticipantId)}
+                  onPress={() => toggleSelect(p.ParticipantId)}
+                />
+              ))
+            )}
+          </ScrollView>
 
-  {/* Assign Button inside Unassigned container */}
-  <View className="items-end mt-4">
-    <Pressable
-      onPress={handleAssign}
-      disabled={selectedIds.length === 0}
-      className={`py-3 px-6 rounded-xl ${
-        selectedIds.length > 0 ? 'bg-[#0ea06c]' : 'bg-[#b7e6d4]'
-      }`}
-    >
-      <Text className="text-white text-center font-bold">
-        Assign Group ({selectedIds.length} selected)
-      </Text>
-    </Pressable>
-  </View>
-</View>
-
+          {/* Assign Button inside Unassigned container */}
+          <View className="items-end mt-4">
+            <Pressable
+              onPress={handleAssign}
+              disabled={selectedIds.length === 0}
+              className={`py-3 px-6 rounded-xl ${
+                selectedIds.length > 0 ? 'bg-[#0ea06c]' : 'bg-[#b7e6d4]'
+              }`}
+            >
+              <Text className="text-white text-center font-bold">
+                Assign Group ({selectedIds.length} selected)
+              </Text>
+            </Pressable>
+          </View>
+        </View>
 
         {/* Control Group */}
         <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
