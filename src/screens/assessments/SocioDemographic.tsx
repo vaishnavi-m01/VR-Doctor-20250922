@@ -153,10 +153,31 @@ export default function SocioDemographic() {
   }, []);
 
   useEffect(() => {
+    // Fallback cancer types in case API fails
+    const fallbackCancerTypes = [
+      { label: "Breast Cancer", value: "Breast Cancer" },
+      { label: "Lung Cancer", value: "Lung Cancer" },
+      { label: "Prostate Cancer", value: "Prostate Cancer" },
+      { label: "Colorectal Cancer", value: "Colorectal Cancer" },
+      { label: "Skin Cancer", value: "Skin Cancer" },
+      { label: "Bladder Cancer", value: "Bladder Cancer" },
+      { label: "Kidney Cancer", value: "Kidney Cancer" },
+      { label: "Liver Cancer", value: "Liver Cancer" },
+      { label: "Pancreatic Cancer", value: "Pancreatic Cancer" },
+      { label: "Ovarian Cancer", value: "Ovarian Cancer" },
+      { label: "Cervical Cancer", value: "Cervical Cancer" },
+      { label: "Uterine Cancer", value: "Uterine Cancer" },
+      { label: "Thyroid Cancer", value: "Thyroid Cancer" },
+      { label: "Brain Cancer", value: "Brain Cancer" },
+      { label: "Leukemia", value: "Leukemia" },
+      { label: "Lymphoma", value: "Lymphoma" },
+      { label: "Other", value: "Other" }
+    ];
+
     apiService
       .post<{ ResponseData: CancerTypes[] }>("/GetCancerTypesData")
       .then((res) => {
-        if (res.data?.ResponseData) {
+        if (res.data?.ResponseData && res.data.ResponseData.length > 0) {
           setCancerTypes(res.data.ResponseData);
 
           const formatted = res.data.ResponseData.map((item) => ({
@@ -164,9 +185,16 @@ export default function SocioDemographic() {
             value: item.CancerType,
           }));
           setCancerTypeOptions(formatted);
+        } else {
+          // Use fallback if API returns empty data
+          setCancerTypeOptions(fallbackCancerTypes);
         }
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error("Failed to load cancer types from API:", err);
+        // Use fallback if API fails
+        setCancerTypeOptions(fallbackCancerTypes);
+      });
   }, []);
 
 
@@ -356,23 +384,21 @@ export default function SocioDemographic() {
 
   return (
     <>
-      {isEditMode && (
-        <View className="px-6 pt-6 pb-4">
-          <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
-            <Text className="text-lg font-bold text-green-600">
-              Participant ID: {patientId}
-            </Text>
+      <View className="px-6 pt-6 pb-4">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+          <Text className="text-lg font-bold text-green-600">
+            Participant ID: {patientId}
+          </Text>
 
-            <Text className="text-base font-semibold text-green-600">
-              Study ID: {studyId || 'N/A'}
-            </Text>
+          <Text className="text-base font-semibold text-green-600">
+            Study ID: {studyId || 'N/A'}
+          </Text>
 
-            <Text className="text-base font-semibold text-gray-700">
-              Age: {age || "Not specified"}
-            </Text>
-          </View>
+          <Text className="text-base font-semibold text-gray-700">
+            Age: {age || "Not specified"}
+          </Text>
         </View>
-      )}
+      </View>
 
       <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
 
@@ -590,81 +616,85 @@ export default function SocioDemographic() {
             </View>
           </View>
 
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">5. Does faith contribute to well-being?</Text>
-            <View className="flex-row gap-3">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setFaithWellbeing('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'Yes'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${faithWellbeing === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
+          <View className="flex-row gap-4 mt-6">
+            {/* Question 5 */}
+            <View className="flex-1">
+              <Text className="text-base font-medium text-[#2c4a43] mb-4">5. Does faith contribute to well-being?</Text>
+              <View className="flex-row gap-3">
+                {/* Yes Button */}
+                <Pressable
+                  onPress={() => setFaithWellbeing('Yes')}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'Yes'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
+                >
+                  <Text className={`font-medium text-base ${faithWellbeing === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
+                    Yes
+                  </Text>
+                </Pressable>
 
-              {/* No Button */}
-              <Pressable
-                onPress={() => setFaithWellbeing('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'No'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${faithWellbeing === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">6. Do you practice any religion?</Text>
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={() => setPracticeReligion('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'Yes'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${practiceReligion === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setPracticeReligion('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'No'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${practiceReligion === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Conditional Religion Specify Field */}
-            {practiceReligion === 'Yes' && (
-              <View className="mt-4">
-                <Field
-                  label="Please specify (Optional)"
-                  placeholder="__________________"
-                  value={religionSpecify}
-                  onChangeText={setReligionSpecify}
-                />
+                {/* No Button */}
+                <Pressable
+                  onPress={() => setFaithWellbeing('No')}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'No'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
+                >
+                  <Text className={`font-medium text-base ${faithWellbeing === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
+                    No
+                  </Text>
+                </Pressable>
               </View>
-            )}
+            </View>
+
+            {/* Question 6 */}
+            <View className="flex-1">
+              <Text className="text-base font-medium text-[#2c4a43] mb-4">6. Do you practice any religion?</Text>
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => setPracticeReligion('Yes')}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'Yes'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
+                >
+                  <Text className={`font-medium text-base ${practiceReligion === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
+                    Yes
+                  </Text>
+                </Pressable>
+
+                {/* No Button */}
+                <Pressable
+                  onPress={() => setPracticeReligion('No')}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'No'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
+                >
+                  <Text className={`font-medium text-base ${practiceReligion === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
+                    No
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Conditional Religion Specify Field */}
+              {practiceReligion === 'Yes' && (
+                <View className="mt-4">
+                  <Field
+                    label="Please specify (Optional)"
+                    placeholder="__________________"
+                    value={religionSpecify}
+                    onChangeText={setReligionSpecify}
+                  />
+                </View>
+              )}
+            </View>
           </View>
 
           <View className="mt-6">

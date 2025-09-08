@@ -53,12 +53,23 @@ export default function FactGWithRedux() {
   // Handle save
   const handleSave = async () => {
     try {
+      // Filter out null values from answers
+      const filteredAnswers = Object.fromEntries(
+        Object.entries(answers).filter(([_, value]) => value !== null)
+      ) as Record<string, number>;
+
       const factGData = {
         participantId: patientId,
         assessedOn,
         assessedBy,
-        answers,
-        scores: score,
+        answers: filteredAnswers,
+        scores: {
+          physicalWellBeing: score.physicalWellBeing || 0,
+          socialWellBeing: score.socialWellBeing || 0,
+          emotionalWellBeing: score.emotionalWellBeing || 0,
+          functionalWellBeing: score.functionalWellBeing || 0,
+          totalScore: score.totalScore || 0,
+        },
       };
 
       await dispatch(saveFactGAssessment(factGData)).unwrap();
@@ -81,7 +92,7 @@ export default function FactGWithRedux() {
   };
 
   // Check if form is complete
-  const isFormComplete = Object.keys(answers).length === subscales.reduce((total, scale) => total + scale.questions.length, 0);
+  const isFormComplete = Object.keys(answers).length === subscales.reduce((total, scale) => total + ((scale as any).questions?.length || 0), 0);
 
   if (factGLoading) {
     return (
@@ -138,22 +149,16 @@ export default function FactGWithRedux() {
         </FormCard>
 
         {subscales.map((scale, scaleIndex) => (
-          <FormCard key={scaleIndex} icon={scale.icon} title={scale.title} desc={scale.desc}>
-            {scale.questions.map((question, questionIndex) => (
+          <FormCard key={scaleIndex} icon={(scale as any).icon} title={(scale as any).title} desc={(scale as any).desc}>
+            {((scale as any).questions || []).map((question: any, questionIndex: number) => (
               <View key={questionIndex} className="mb-4">
                 <Text className="text-sm text-[#4b5f5a] mb-2">
                   {questionIndex + 1}. {question.text}
                 </Text>
                 <PillGroup
-                  options={[
-                    { label: '0', value: 0 },
-                    { label: '1', value: 1 },
-                    { label: '2', value: 2 },
-                    { label: '3', value: 3 },
-                    { label: '4', value: 4 },
-                  ]}
-                  value={answers[question.id] || null}
-                  onChange={(value) => handleAnswerSelect(question.id, value)}
+                  values={[0, 1, 2, 3, 4]}
+                  value={answers[question.id] || undefined}
+                  onChange={(value) => handleAnswerSelect(question.id, value as number)}
                 />
               </View>
             ))}

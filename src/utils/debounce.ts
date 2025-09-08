@@ -34,7 +34,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   delay: number,
   deps: React.DependencyList = []
 ): T {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedCallback = useCallback(
     (...args: Parameters<T>) => {
@@ -90,7 +90,7 @@ export function useDebouncedSearch<T>(
 ) {
   const [isSearching, setIsSearching] = useState(false);
   const [lastQuery, setLastQuery] = useState<string>('');
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedSearch = useCallback(
     (query: string) => {
@@ -158,7 +158,7 @@ export function useDebouncedApiCall<T, P extends any[]>(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [data, setData] = useState<T | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedApiCall = useCallback(
     (...args: P) => {

@@ -282,7 +282,7 @@ function FactGWithErrorHandling({ patientId }: FactGWithErrorHandlingProps) {
                 </Text>
                 <PillGroup
                   values={[0, 1, 2, 3, 4]}
-                  value={answers[item.code] || null}
+                  value={answers[item.code] || undefined}
                   onChange={(value) => handleAnswerSelect(item.code, Number(value))}
                 />
               </View>

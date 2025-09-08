@@ -26,7 +26,7 @@ export default function Screening(){
       <FormCard icon="D" title="Particpant Screening">
         <View className="flex-row gap-3">
           <View className="flex-1"><Field label="Participant ID" placeholder={`Participant ID: ${patientId}`}/></View>
-          <View className="flex-1"><DateField label="Date" /></View>
+          <View className="flex-1"><DateField label="Date" value="" onChange={() => {}} /></View>
         </View>
       </FormCard>
 

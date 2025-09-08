@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, View, Platform } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Navigation/types';
@@ -22,7 +22,7 @@ export default function BottomDock({ activeScreen }: BottomDockProps) {
   const Item = ({ label, active, screenName, iconName }: DockItemProps) => (
     <Pressable
       className="flex-1 items-center justify-center py-2 relative"
-      onPress={() => navigation.navigate(screenName)}
+      onPress={() => navigation.navigate(screenName as any)}
       accessible={true}
       accessibilityLabel={`${label} tab`}
       accessibilityRole="tab"
@@ -37,7 +37,7 @@ export default function BottomDock({ activeScreen }: BottomDockProps) {
         <Text
           style={{
             color: active ? '#fff' : 'rgba(255,255,255,0.75)',
-            fontWeight: Platform.OS === 'android' ? 'bold' : '700',
+            fontWeight: '700',
             letterSpacing: 1,
             fontSize: 14,
             textTransform: 'uppercase',
@@ -47,7 +47,9 @@ export default function BottomDock({ activeScreen }: BottomDockProps) {
         </Text>
       </View>
       {active && (
-        <View className="absolute -bottom-0.5 self-center w-9 h-1 rounded-sm bg-brand-accent-green" />
+        <View 
+          className="absolute -bottom-0.5 self-center w-16 h-1.5 rounded-sm bg-brand-accent-green transition-all duration-300 ease-in-out"
+        />
       )}
     </Pressable>
   );

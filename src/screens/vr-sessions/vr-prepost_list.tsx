@@ -424,7 +424,7 @@ export default function VRSummary() {
                         </View>
                         <TouchableOpacity
                             className="bg-teal-400 px-4 py-3 rounded-lg"
-                            onPress={() => navigation.navigate('PreAndPostVR', { patientId, age })}
+                            onPress={() => navigation.navigate('PreAndPostVR', { patientId, age, studyId: 1 })}
                         >
                             <Text className="text-white font-semibold">+ New VR Session</Text>
                         </TouchableOpacity>

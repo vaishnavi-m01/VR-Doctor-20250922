@@ -80,7 +80,7 @@ export default function HomeTab() {
             <Text className="text-white font-semibold text-center">Add Participant</Text>
           </Pressable>
           <Pressable 
-            onPress={() => navigation.navigate('SessionSetupScreen')}
+            onPress={() => navigation.navigate('SessionSetupScreen' as any)}
             className="flex-1 bg-[#0ea06c] rounded-xl p-4 items-center"
           >
             <Text className="text-white font-semibold text-center">Start Session</Text>

@@ -73,8 +73,7 @@ export default function DateField({
           setOpen(false);
         }}
         onCancel={() => setOpen(false)}
-        style={{ justifyContent: 'center', alignItems: 'center' }}
-        modalStyle={{ justifyContent: 'center', alignItems: 'center' }}
+        modalStyleIOS={{ justifyContent: 'center', alignItems: 'center' }}
       />
     </View>
   );

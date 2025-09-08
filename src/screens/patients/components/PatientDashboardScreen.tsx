@@ -36,7 +36,7 @@ export default function PatientDashboardScreen() {
       >
         {/* Patient Info Row */}
         <View className="flex-row gap-3">
-          <Pressable onPress={() => nav.navigate('ParticipantInfo', { patientId: 1 })}
+          <Pressable onPress={() => nav.navigate('ParticipantInfo', { patientId: 1, age: 30, studyId: 1 })}
             className="flex-1">
             <Card className="flex-1 p-3">
               <Text className="font-zen text-lg font-bold text-gray-800 mb-1">{DEFAULT_PATIENT_INFO.NAME}</Text>
@@ -83,7 +83,7 @@ export default function PatientDashboardScreen() {
         {/* Assessment Scores */}
         <View className="flex-row gap-3">
           {/* Distress Thermometer Score */}
-          <Pressable onPress={() => nav.navigate('DistressThermometerScreen', { patientId: 1 })}>
+          <Pressable onPress={() => nav.navigate('DistressThermometerScreen', { patientId: 1, age: 30, studyId: 1 })}>
             <Card className="flex-1 p-3">
               <View className="items-center">
                 {/* Mini Thermometer Visualization */}
@@ -102,7 +102,7 @@ export default function PatientDashboardScreen() {
           </Pressable>
 
           {/* FACT-G Score */}
-          <Pressable onPress={() => nav.navigate('EdmontonFactGScreen', { patientId: 1 })}>
+          <Pressable onPress={() => nav.navigate('EdmontonFactGScreen', { patientId: 1, age: 30, studyId: 1 })}>
             <Card className="flex-1 p-3">
               <View className="items-center">
                 {/* Progress Circle */}
@@ -160,7 +160,7 @@ export default function PatientDashboardScreen() {
         <Card className="p-4">
           <Text className="font-zen font-extrabold mb-2">Start New Session</Text>
           <Pressable 
-            onPress={() => nav.navigate('SessionSetupScreen')} 
+            onPress={() => nav.navigate('SessionSetupScreen' as any)} 
             className="self-start bg-[#0ea06c] px-4 py-2 rounded-xl"
           >
             <Text className="font-zen text-white font-semibold">{BUTTON_TEXTS.START_SESSION}</Text>
@@ -201,19 +201,19 @@ export default function PatientDashboardScreen() {
               <Text className="font-zen text-[#0ea06c] text-sm">Socio-Demographic</Text>
             </Pressable>
             <Pressable 
-              onPress={() => nav.navigate('PatientScreening', { patientId: 1 })}
+              onPress={() => nav.navigate('PatientScreening', { patientId: 1, age: 30, studyId: 1 })}
               className="bg-white px-3 py-2 rounded-lg border border-[#0ea06c]"
             >
               <Text className="font-zen text-[#0ea06c] text-sm">Screening</Text>
             </Pressable>
             <Pressable 
-              onPress={() => nav.navigate('FactG', { patientId: 1 })}
+              onPress={() => nav.navigate('FactG', { patientId: 1, age: 30 })}
               className="bg-white px-3 py-2 rounded-lg border border-[#0ea06c]"
             >
               <Text className="font-zen text-[#0ea06c] text-sm">FACT-G</Text>
             </Pressable>
             <Pressable 
-              onPress={() => nav.navigate('PreVR', { patientId: 1 })}
+              onPress={() => nav.navigate('PreVR', { patientId: 1, age: 30, studyId: 1 })}
               className="bg-white px-3 py-2 rounded-lg border border-[#0ea06c]"
             >
               <Text className="font-zen text-[#0ea06c] text-sm">Pre-VR</Text>

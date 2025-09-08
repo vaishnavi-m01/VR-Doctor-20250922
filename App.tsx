@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import toastConfig from '@components/toastConfig';
 import * as Font from 'expo-font';
@@ -109,7 +109,7 @@ export default function App() {
   if (!fontsLoaded) {
     return (
       <SafeAreaProvider>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#0e4336', justifyContent: 'center', alignItems: 'center' }}>
+        <SafeAreaView className="flex-1 bg-[#0e4336] justify-center items-center">
           <Text style={{ fontSize: 24, color: 'white', fontWeight: 'bold' }}>VR Doctor</Text>
           <Text style={{ fontSize: 16, color: 'white', marginTop: 10 }}>Loading fonts...</Text>
         </SafeAreaView>
@@ -123,7 +123,7 @@ export default function App() {
     <Provider store={store}>
       <ErrorBoundary>
         <SafeAreaProvider>
-          <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+          <SafeAreaView className="flex-1 bg-white">
             <NavigationContainer
             onStateChange={(state) => {
               try {

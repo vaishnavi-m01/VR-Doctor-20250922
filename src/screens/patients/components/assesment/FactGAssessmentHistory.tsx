@@ -263,7 +263,7 @@ const FactGAssessmentHistory = () => {
 
                         <TouchableOpacity
                             className="bg-teal-400 px-4 py-3 rounded-lg"
-                            onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age })}
+                            onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId: 1 })}
                         >
                             <Text className="text-white font-semibold">+ New Assessment</Text>
                         </TouchableOpacity>

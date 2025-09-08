@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, TextInput, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDebouncedCallback } from '../utils/debounce';
 import { withMemo } from '../utils/memoization';
@@ -135,13 +135,9 @@ function SearchWithDebounce<T>({
 
     if (results.length > 0) {
       return (
-        <FlatList
-          data={results}
-          renderItem={memoizedRenderItem}
-          keyExtractor={memoizedKeyExtractor}
-          showsVerticalScrollIndicator={false}
-          style={{ maxHeight: 300 }}
-        />
+        <View style={{ maxHeight: 300 }}>
+          {results.map((item, index) => memoizedRenderItem({ item, index }))}
+        </View>
       );
     }
 

@@ -7,7 +7,7 @@ import { RootStackParamList } from "src/Navigation/types";
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 
-type ObservationStatus = "Motion Sickness with Nausea" | "Eye Strain and Headache" | "Severe Motion Sickness" | "Mild Dizziness" | "Anxiety Attack" | "Equipment Malfunction" | "Mild Nausea";
+type ObservationStatus = "Motion Sickness with Nausea" | "Eye Strain and Headache" | "Severe Motion Sickness" | "Mild Dizziness" | "Anxiety Attack" | "Equipment Malfunction" | "Mild Nausea" | "complete" | "incomplete" | "flagged" | "pending";
 
 
 
@@ -19,7 +19,7 @@ type Observation = {
     observerName: string;
     EventDescription: string[];
     ActionsTake: string[];
-    actionItems: Array<"Nausea" | "Dizziness" | "Disorientation" | "Eye Strain" | "Headache" | "Anxiety">;
+    actionItems: Array<"Nausea" | "Dizziness" | "Disorientation" | "Eye Strain" | "Headache" | "Anxiety" | "Follow-up" | "Monitor" | "Alert">;
     notes?: string;
     VRSessionContext: {
         OnsetTime: string,
@@ -28,7 +28,10 @@ type Observation = {
     },
     ReportID: string,
     duration: string;
-    alertsRaised: string;
+    completionPercentage?: number;
+    alertsRaised?: string | number;
+    categories?: Record<string, any>;
+    keyObservations?: string[];
 };
 
 const OBSERVATIONS: Observation[] = [
@@ -219,7 +222,7 @@ function statusIcon(s: ObservationStatus) {
     }
 }
 
-type FilterKey = "all" | "Critical" | "Unresolved" | "Recent" | "Motion Sickness";
+type FilterKey = "all" | "Critical" | "Unresolved" | "Recent" | "Motion Sickness" | "recent" | "complete" | "flagged" | "pending";
 
 export default function AdverseEventReportsHistory() {
 
@@ -288,7 +291,7 @@ export default function AdverseEventReportsHistory() {
                         </View>
                         <TouchableOpacity
                             className="bg-red-400 px-4 py-3 rounded-lg"
-                            onPress={() => navigation.navigate('AdverseEventForm', { patientId, age })}
+                            onPress={() => navigation.navigate('AdverseEventForm', { patientId, age, studyId: 1 })}
                         >
                             <Text className="text-white font-semibold flex-row items-center">
                                 <Icon name="exclamation-triangle" size={12} color="white" /> Report Event
@@ -417,7 +420,7 @@ export default function AdverseEventReportsHistory() {
                                                                 o.status === "pending" && "text-gray-500",
                                                             ].filter(Boolean).join(" ")}
                                                         >
-                                                            {o.status[0].toUpperCase() + o.status.slice(1)} ({o.completionPercentage}%)
+                                                            {o.status[0].toUpperCase() + o.status.slice(1)} {o.completionPercentage ? `(${o.completionPercentage}%)` : ''}
                                                         </Text>
                                                         <Text className="text-xs text-gray-500">
                                                             {formatTime(o.observationDate)} • {o.duration} min
@@ -429,7 +432,7 @@ export default function AdverseEventReportsHistory() {
                                                     <Text className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
                                                         {o.duration} min
                                                     </Text>
-                                                    {o.alertsRaised > 0 && (
+                                                    {typeof o.alertsRaised === 'number' && o.alertsRaised > 0 && (
                                                         <Text className="text-xs px-2 py-1 rounded bg-red-50 text-red-800">
                                                             {o.alertsRaised} alerts
                                                         </Text>
@@ -441,7 +444,7 @@ export default function AdverseEventReportsHistory() {
                                             <View className="my-3">
                                                 <Text className="text-sm font-medium text-gray-700 mb-3">Observation Categories:</Text>
                                                 <View className="grid grid-cols-3 gap-3">
-                                                    {Object.entries(o.categories).map(([key, val]) => {
+                                                    {Object.entries(o.categories || {}).map(([key, val]) => {
                                                         const base =
                                                             key === "behavioral" ? "bg-blue-100 border-blue-300" :
                                                                 key === "physical" ? "bg-green-100 border-green-300" :
@@ -460,10 +463,10 @@ export default function AdverseEventReportsHistory() {
                                             </View>
 
                                             {/* Key observations */}
-                                            {o.keyObservations.length > 0 && (
+                                            {(o.keyObservations?.length || 0) > 0 && (
                                                 <View className="my-3 rounded-xl border-l-4 border-teal-400 bg-slate-50 px-4 py-3">
                                                     <Text className="text-sm font-semibold text-gray-700 mb-1">Key Observations:</Text>
-                                                    {o.keyObservations.map((line, idx) => (
+                                                    {(o.keyObservations || []).map((line, idx) => (
                                                         <View key={idx} className="flex-row">
                                                             <Text className="mr-2 text-teal-400">•</Text>
                                                             <Text className="text-[13px] text-gray-600 flex-1">{line}</Text>

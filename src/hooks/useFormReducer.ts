@@ -186,12 +186,28 @@ export function useFormReducer<T>(initialData: T) {
   }, []);
 
   // Validation helper
-  const validate = useCallback((validationRules: Record<keyof T, (value: any) => string | null>) => {
+  const validate = useCallback((validationRules: Record<keyof T, any>) => {
     const errors: Record<string, string> = {};
     let isValid = true;
 
-    Object.entries(validationRules).forEach(([field, validator]) => {
-      const error = validator(state.data[field as keyof T]);
+    Object.entries(validationRules).forEach(([field, rule]) => {
+      let error: string | null = null;
+      
+      if (typeof rule === 'function') {
+        error = rule(state.data[field as keyof T]);
+      } else if (rule && typeof rule === 'object') {
+        // Handle validation rule objects
+        const value = state.data[field as keyof T];
+        const ruleObj = rule as any;
+        if (ruleObj.required && (!value || (typeof value === 'string' && !value.trim()))) {
+          error = `${field} is required`;
+        } else if (ruleObj.min && typeof value === 'number' && value < ruleObj.min) {
+          error = `${field} must be at least ${ruleObj.min}`;
+        } else if (ruleObj.max && typeof value === 'number' && value > ruleObj.max) {
+          error = `${field} must be no more than ${ruleObj.max}`;
+        }
+      }
+      
       if (error) {
         errors[field] = error;
         isValid = false;

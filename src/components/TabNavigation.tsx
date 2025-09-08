@@ -54,7 +54,7 @@ export default function TabNavigation({
               <ChevronRightIcon 
                 size={16} 
                 color="white" 
-                style={{ marginLeft: 8 }}
+                className="ml-2"
               />
             )}
           </Pressable>

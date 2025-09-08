@@ -210,7 +210,7 @@ export function createLazyComponent<P extends object>(
     return content;
   });
 
-  WrappedComponent.displayName = `LazyComponent(${LazyComponent.displayName || 'Unknown'})`;
+  WrappedComponent.displayName = `LazyComponent(${(LazyComponent as any).displayName || 'Unknown'})`;
   
   return WrappedComponent;
 }

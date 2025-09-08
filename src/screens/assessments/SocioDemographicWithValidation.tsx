@@ -13,7 +13,7 @@ import Toast from 'react-native-toast-message';
 import { useSocioDemographicValidation, SocioDemographicData } from '../../hooks/useSocioDemographicValidation';
 import { withMemo } from '../../utils/memoization';
 
-export default function SocioDemographicWithValidation() {
+function SocioDemographicWithValidation() {
   const route = useRoute<RouteProp<RootStackParamList, 'SocioDemographic'>>();
   const navigation = useNavigation();
   const { patientId, isEditMode = false } = route.params as { patientId: number; isEditMode?: boolean };

@@ -45,7 +45,7 @@ export default function ExitInterview() {
         <FormCard icon="PI" title="Exit Interview">
           <View className="flex-row gap-3">
             <View className="flex-1"><Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} /></View>
-            <View className="flex-1"><DateField label="Date" /></View>
+            <View className="flex-1"><DateField label="Date" value="" onChange={() => {}} /></View>
           </View>
         </FormCard>
 
@@ -337,11 +337,11 @@ export default function ExitInterview() {
         <FormCard icon="✔︎" title="Acknowledgment & Consent">
           <View className="flex-row gap-3">
             <View className="flex-1"><Field label="Participant Signature (full name)" placeholder="Participant full name" /></View>
-            <View className="flex-1"><DateField label="Date" /></View>
+            <View className="flex-1"><DateField label="Date" value="" onChange={() => {}} /></View>
           </View>
           <View className="flex-row gap-3 mt-2">
             <View className="flex-1"><Field label="Interviewer Signature (full name)" placeholder="Interviewer full name" /></View>
-            <View className="flex-1"><DateField label="Date" /></View>
+            <View className="flex-1"><DateField label="Date" value="" onChange={() => {}} /></View>
           </View>
           
           {/* Extra space to ensure last field is not hidden by BottomBar */}

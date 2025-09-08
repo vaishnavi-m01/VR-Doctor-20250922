@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Modal, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, Pressable, TouchableOpacity } from "react-native";
 
 const weeks = [
   { label: "Week 1", value: "week1" },
@@ -29,16 +29,13 @@ export default function WeekDropdown({ selectedWeek, setSelectedWeek }) {
       </Pressable>
 
       {/* Modal Dropdown */}
-      <Modal visible={open} transparent animationType="fade">
+      <View visible={open} transparent animationType="fade">
         <Pressable
           className="flex-1 bg-black/40 justify-center items-center"
           onPress={() => setOpen(false)}
         >
           <View className="bg-white rounded-xl w-60 p-4 shadow-lg">
-            <FlatList
-              data={weeks}
-              keyExtractor={(item) => item.value}
-              renderItem={({ item }) => (
+            {weeks.map((item) => (
                 <TouchableOpacity
                   onPress={() => handleSelect(item.value)}
                   className={`p-3 rounded-lg mb-2 ${
@@ -53,11 +50,10 @@ export default function WeekDropdown({ selectedWeek, setSelectedWeek }) {
                     {item.label}
                   </Text>
                 </TouchableOpacity>
-              )}
-            />
+            ))}
           </View>
         </Pressable>
-      </Modal>
+      </View>
     </View>
   );
 }

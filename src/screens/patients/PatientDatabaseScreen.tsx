@@ -83,7 +83,7 @@ export default function PatientDatabaseScreen() {
       `ID: ${participant.ParticipantId}\nMR Number: ${participant.MRNumber || 'N/A'}\nAge: ${participant.Age || 'N/A'}\nGender: ${participant.Gender || 'N/A'}\nStatus: ${participant.CriteriaStatus || 'N/A'}`,
       [
         { text: 'OK', style: 'default' },
-        { text: 'Start Session', style: 'default', onPress: () => nav.navigate('SessionSetupScreen') },
+        { text: 'Start Session', style: 'default', onPress: () => nav.navigate('SessionSetupScreen' as any) },
       ]
     );
   };

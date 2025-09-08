@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, Platform } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type DropdownOption = { label: string; value: string };
 
@@ -17,40 +17,58 @@ export function DropdownField({
   value,
   onValueChange,
   options,
-  placeholder
+  placeholder,
 }: DropdownFieldProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  const selectedOption = options.find(option => option.value === value);
+  const displayText = selectedOption ? selectedOption.label : (placeholder || "Select an option");
+
+  const handleSelect = (option: DropdownOption) => {
+    onValueChange(option.value);
+    setIsVisible(false);
+  };
+
   return (
     <View className="mb-4 w-full">
       {/* Label */}
-      <Text className="text-sm md:text-base text-[#4b5f5a] mb-2 font-semibold">
+      <Text className="text-sm text-[#4b5f5a] mb-2 font-semibold">
         {label}
       </Text>
 
-      {/* Picker wrapper */}
-      <View className="border border-[#dce9e4] rounded-2xl bg-white h-12 md:h-14 lg:h-16 justify-center px-3 overflow-hidden">
-        <Picker
-          selectedValue={value}
-          onValueChange={onValueChange}
-          dropdownIconColor="#4b5f5a"
-          mode="dropdown"
-          className="w-full h-full pr-[25%]"
-          style={{
-            fontSize: Platform.OS === "ios" ? 16 : 15,
-          }}
-        >
-          {placeholder && (
-            <Picker.Item label={placeholder} value="" enabled={false} />
-          )}
-          {options.map((opt) => (
-            <Picker.Item
-              key={opt.value}
-              label={opt.label}
-              value={opt.value}
-              color="#2c3e50"
-            />
-          ))}
-        </Picker>
-      </View>
+      {/* Dropdown Button */}
+      <TouchableOpacity
+        onPress={() => setIsVisible(true)}
+        className="border border-[#dce9e4] rounded-2xl bg-white h-12 justify-center px-3 flex-row items-center"
+      >
+        <Text className="flex-1 text-base text-[#4b5f5a]">
+          {displayText}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#4b5f5a" />
+      </TouchableOpacity>
+
+      {/* Modal Dropdown */}
+      {isVisible && (
+        <View className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-[#dce9e4] rounded-2xl shadow-lg max-h-60">
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => handleSelect(option)}
+                className={`p-4 border-b border-gray-100 ${
+                  value === option.value ? 'bg-blue-50' : ''
+                }`}
+              >
+                <Text className={`text-base ${
+                  value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
+                }`}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </View>
   );
 }

@@ -23,7 +23,7 @@ export default function SubMenu({ title, items, className = "" }: SubMenuProps) 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleItemPress = (item: SubMenuItem) => {
-    navigation.navigate(item.route, item.params);
+    navigation.navigate(item.route as any, item.params);
   };
 
   return (

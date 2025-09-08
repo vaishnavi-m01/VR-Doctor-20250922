@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useCallback, ComponentType } from 'react';
+import { Text } from 'react-native';
 
 /**
  * Higher-order component for memoizing components with custom comparison
@@ -326,7 +327,7 @@ export function usePerformanceMonitor(componentName: string) {
     const timeSinceLastRender = currentTime - lastRenderTime.current;
     
     if (__DEV__) {
-      console.log(`${componentName} rendered ${renderCount.current} times. Time since last render: ${timeSinceLastRender}ms`);
+      // console.log(`${componentName} rendered ${renderCount.current} times. Time since last render: ${timeSinceLastRender}ms`);
     }
     
     lastRenderTime.current = currentTime;

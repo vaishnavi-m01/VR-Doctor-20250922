@@ -218,7 +218,7 @@ export default function DistressThermometerList() {
             </View>
             <TouchableOpacity
               className="bg-teal-400 px-4 py-3 rounded-lg"
-              onPress={() => navigation.navigate('DistressThermometerScreen', { patientId, age })}
+              onPress={() => navigation.navigate('DistressThermometerScreen', { patientId, age, studyId: 1 })}
             >
               <Text className="text-white font-semibold">+ New Assessment</Text>
             </TouchableOpacity>

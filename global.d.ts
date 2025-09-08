@@ -8,6 +8,14 @@ declare module 'react-native' {
   export const Alert: any;
   export const ActivityIndicator: any;
   export const TextInput: any;
+  export const TouchableOpacity: any;
+  export const Image: any;
+  export const SafeAreaView: any;
+  export const StyleSheet: any;
+  export const Keyboard: any;
+  export const TouchableWithoutFeedback: any;
+  export const RefreshControl: any;
+  export const Switch: any;
 
   interface ViewProps {
     className?: string;
@@ -20,8 +28,26 @@ declare module 'react-native' {
   }
   interface PressableProps {
     className?: string;
+    disabled?: boolean;
   }
   interface TextInputProps {
+    className?: string;
+    placeholder?: string;
+    value?: string;
+    onChangeText?: (text: string) => void;
+    keyboardType?: string;
+    multiline?: boolean;
+    numberOfLines?: number;
+    editable?: boolean;
+    maxLength?: number;
+  }
+  interface TouchableOpacityProps {
+    className?: string;
+  }
+  interface ImageProps {
+    className?: string;
+  }
+  interface SafeAreaViewProps {
     className?: string;
   }
 }

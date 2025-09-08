@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Pressable, Image, Alert } from 'react-native';
-import FormCard from '@components/FormCard';
-import Segmented from '@components/Segmented';
-import { Field } from '@components/Field';
-import DateField from '@components/DateField';
-import BottomBar from '@components/BottomBar';
-import { Btn } from '@components/Button';
+import * as React from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import FormCard from '../../components/FormCard';
+import Segmented from '../../components/Segmented';
+import { Field } from '../../components/Field';
+import DateField from '../../components/DateField';
+import BottomBar from '../../components/BottomBar';
+import { Btn } from '../../components/Button';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
-import Header from '@components/Header';
+import Header from '../../components/Header';
 import axios from "axios";
-import { apiService } from 'src/services';
+import { apiService } from '../../services';
 import Toast from 'react-native-toast-message';
 
 interface ParticipantDetails {
@@ -411,7 +412,7 @@ export default function SocioDemographicRefactored() {
               <Pressable
                 onPress={() => handleGenderSelection("Female")}
                 className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                  gender === 'Female' ? 'bg-[#4FC264]'' : 'bg-[#EBF6D6]'
+                  gender === 'Female' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                 }`}
               >
                 <Text className={`font-medium text-sm ${

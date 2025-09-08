@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { Image, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ListItem from '../../components/ListItem';
 import TabPills from '../../components/TabPills';
 import ParticipantInfo from './components/participant_info';
@@ -22,8 +24,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { apiService } from 'src/services';
 import Pagination from '../../components/Pagination';
-import { Image } from 'react-native';
-import { TouchableOpacity } from 'react-native';
 
 
 export interface Patient {
@@ -47,17 +47,141 @@ export default function ParticipantAssessmentSplit() {
   const [selId, setSelId] = useState<number | null>(null); // holds ParticipantId
   const [tab, setTab] = useState('assessment');
   const [searchText, setSearchText] = useState("");
+  const hasLoadedDataRef = useRef<boolean>(false); // Track if data has been loaded
+
+  // Constants for AsyncStorage keys
+  const SELECTED_PARTICIPANT_KEY = 'selectedParticipantId';
+  const SELECTED_TAB_KEY = 'selectedTab';
+
+  // Function to save selected participant ID to AsyncStorage
+  const saveSelectedParticipant = async (participantId: number | null) => {
+    try {
+      if (participantId !== null) {
+        await AsyncStorage.setItem(SELECTED_PARTICIPANT_KEY, participantId.toString());
+        console.log(`💾 Saved participant selection: ${participantId}`);
+      } else {
+        await AsyncStorage.removeItem(SELECTED_PARTICIPANT_KEY);
+        console.log(`🗑️ Cleared participant selection`);
+      }
+    } catch (error) {
+      console.error('Error saving selected participant:', error);
+    }
+  };
+
+  // Function to load selected participant ID from AsyncStorage
+  const loadSelectedParticipant = async () => {
+    try {
+      const savedParticipantId = await AsyncStorage.getItem(SELECTED_PARTICIPANT_KEY);
+      if (savedParticipantId) {
+        return parseInt(savedParticipantId, 10);
+      }
+    } catch (error) {
+      console.error('Error loading selected participant:', error);
+    }
+    return null;
+  };
+
+  // Function to save selected tab to AsyncStorage
+  const saveSelectedTab = async (tabName: string) => {
+    try {
+      await AsyncStorage.setItem(SELECTED_TAB_KEY, tabName);
+    } catch (error) {
+      console.error('Error saving selected tab:', error);
+    }
+  };
+
+  // Function to load selected tab from AsyncStorage
+  const loadSelectedTab = async () => {
+    try {
+      const savedTab = await AsyncStorage.getItem(SELECTED_TAB_KEY);
+      return savedTab || 'assessment';
+    } catch (error) {
+      console.error('Error loading selected tab:', error);
+      return 'assessment';
+    }
+  };
 
   // pagination states
   const [page, setPage] = useState(1);
   const perPage = 10;
 
 
+  // Load data once on mount
+  useEffect(() => {
+    const loadData = async () => {
+      if (!hasLoadedDataRef.current) {
+        console.log(`📥 Loading participants data`);
+        const fetchedParticipants = await fetchParticipants();
+        hasLoadedDataRef.current = true;
+        
+        // After loading data, restore selection
+        const savedParticipantId = await loadSelectedParticipant();
+        const savedTab = await loadSelectedTab();
+        
+        console.log(`🔄 Restoring selection: ${savedParticipantId}`);
+        if (savedParticipantId !== null && fetchedParticipants.length > 0) {
+          // Check if saved participant exists in fetched data
+          const participantExists = fetchedParticipants.some(p => p.ParticipantId === savedParticipantId);
+          if (participantExists) {
+            setSelId(savedParticipantId);
+          } else {
+            // If saved participant doesn't exist, select first one
+            setSelId(fetchedParticipants[0].ParticipantId);
+            await saveSelectedParticipant(fetchedParticipants[0].ParticipantId);
+          }
+        } else if (fetchedParticipants.length > 0) {
+          // No saved selection, select first participant
+          setSelId(fetchedParticipants[0].ParticipantId);
+          await saveSelectedParticipant(fetchedParticipants[0].ParticipantId);
+        }
+        setTab(savedTab);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  // Restore selection when screen comes into focus (but don't reload data)
   useFocusEffect(
     useCallback(() => {
-      fetchParticipants();
-    }, [])
+      const restoreSelection = async () => {
+        if (hasLoadedDataRef.current && participants.length > 0) {
+          const savedParticipantId = await loadSelectedParticipant();
+          const savedTab = await loadSelectedTab();
+          
+          console.log(`♻️ Restoring selection on focus: ${savedParticipantId}`);
+          if (savedParticipantId !== null) {
+            // Check if saved participant still exists in current data
+            const participantExists = participants.some(p => p.ParticipantId === savedParticipantId);
+            if (participantExists) {
+              setSelId(savedParticipantId);
+            } else {
+              // If saved participant no longer exists, select first one
+              setSelId(participants[0].ParticipantId);
+              await saveSelectedParticipant(participants[0].ParticipantId);
+            }
+          }
+          setTab(savedTab);
+        }
+      };
+      
+      restoreSelection();
+    }, [participants])
   );
+
+
+  // Save selected participant when it changes
+  useEffect(() => {
+    if (selId !== null) {
+      console.log(`💾 Saving participant selection: ${selId}`);
+      saveSelectedParticipant(selId);
+    }
+  }, [selId]);
+
+  // Save selected tab when it changes
+  useEffect(() => {
+    saveSelectedTab(tab);
+  }, [tab]);
 
 
    const fetchParticipants = async (search: string = "") => {
@@ -113,10 +237,12 @@ export default function ParticipantAssessmentSplit() {
         }));
 
         setParticipants(parsed);
-        setSelId(parsed[0]?.ParticipantId ?? null);
+        return parsed; // Return the participants data
       }
+      return []; // Return empty array if no data
     } catch (error) {
       console.error("Failed to fetch participants:", error);
+      return []; // Return empty array on error
     } finally {
       setLoading(false);
     }
@@ -227,7 +353,12 @@ export default function ParticipantAssessmentSplit() {
               paginatedParticipants.map((p) => (
                 <ListItem
                   key={p.ParticipantId}
-                  item={p}
+                  item={{
+                    ...p,
+                    ParticipantId: p.ParticipantId.toString(),
+                    status: p.status as 'ok' | 'pending' | 'alert',
+                    gender: p.gender as 'Male' | 'Female' | 'Other'
+                  }}
                   selected={p.ParticipantId === selId}
                   onPress={() => setSelId(p.ParticipantId)}
                 />

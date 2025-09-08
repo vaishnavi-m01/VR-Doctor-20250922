@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import Card from './Card';
 
 type AssessItemProps = {
-  icon?: string | ImageSourcePropType;
+  icon?: string | any;
   title: string;
   subtitle?: string;
   onPress?: () => void;
@@ -35,7 +35,7 @@ export default function AssessItem({
               <Text className="text-[#0b6b52] text-xl">{icon}</Text>
             ) : (
               <Image
-                source={icon as ImageSourcePropType}
+                source={icon as any}
                 className="w-8 h-8"
                 resizeMode="contain"
               />

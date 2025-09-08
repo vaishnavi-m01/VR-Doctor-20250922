@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Alert } from 'react-native';
+import { View, Text, RefreshControl, Alert } from 'react-native';
 import { useParticipants } from '../hooks/useParticipants';
 import { ParticipantFilters } from '../services/participantService';
 import { Participant } from '../services/participantService';
@@ -173,22 +173,9 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
 
       {showFilters && renderFilters()}
 
-      <FlatList
-        data={filteredParticipants}
-        renderItem={renderParticipantItem}
-        keyExtractor={(item) => item.ParticipantId}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refreshParticipants} />
-        }
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View className="flex-1 justify-center items-center py-8">
-            <Text className="text-gray-500 text-center">
-              {loading ? 'Loading participants...' : 'No participants found'}
-            </Text>
-          </View>
-        }
-      />
+      <View className="flex-1">
+        {filteredParticipants.map((item) => renderParticipantItem({ item }))}
+      </View>
     </View>
   );
 };

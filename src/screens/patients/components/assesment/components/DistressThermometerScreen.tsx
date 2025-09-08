@@ -170,6 +170,7 @@ export default function DistressThermometerScreen() {
         CreatedBy: "UH-1000",
         CreatedDate: today,
         DistressData: distressData,
+        // otherProblems:otherProblems
       };
 
       console.log("Saving payload:", reqObj);

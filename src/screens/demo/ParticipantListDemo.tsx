@@ -18,7 +18,7 @@ export const ParticipantListDemo: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <Header title="Participants List" showBackButton />
+      <Header title="Participants List" onBack={() => {}} />
       
       <View className="flex-1 px-4 pt-4">
         <Text className="text-sm text-gray-600 mb-4">

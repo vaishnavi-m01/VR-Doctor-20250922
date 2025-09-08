@@ -282,7 +282,7 @@ export default function StudyObservation_List() {
                         </View>
                         <TouchableOpacity
                             className="bg-teal-400 px-4 py-3 rounded-lg"
-                            onPress={() => navigation.navigate('StudyObservation', { patientId, age })}
+                            onPress={() => navigation.navigate('StudyObservation', { patientId, age, studyId: 1 })}
                         >
                             <Text className="text-white font-semibold">+ New Assessment</Text>
                         </TouchableOpacity>

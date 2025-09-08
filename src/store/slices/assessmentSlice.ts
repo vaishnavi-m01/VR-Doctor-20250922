@@ -183,7 +183,7 @@ const assessmentSlice = createSlice({
         state.factGError = action.error.message || 'Failed to save FACT-G assessment';
       })
       .addCase(updateFactGAssessment.fulfilled, (state, action) => {
-        const index = state.factGAssessments.findIndex(assessment => assessment.id === action.payload.id);
+        const index = state.factGAssessments.findIndex(assessment => (assessment as any).id === (action.payload as any).id);
         if (index !== -1) {
           state.factGAssessments[index] = action.payload;
         }

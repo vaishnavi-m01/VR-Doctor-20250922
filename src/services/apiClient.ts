@@ -42,7 +42,7 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-    const token = store.getState().ui?.authToken; // You might want to add auth to your UI slice
+    const token = (store.getState().ui as any)?.authToken; // You might want to add auth to your UI slice
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -69,8 +69,8 @@ apiClient.interceptors.response.use(
     const enhancedError = {
       ...error,
       isNetworkError: !error.response,
-      isServerError: error.response?.status >= 500,
-      isClientError: error.response?.status >= 400 && error.response?.status < 500,
+      isServerError: (error.response?.status || 0) >= 500,
+      isClientError: (error.response?.status || 0) >= 400 && (error.response?.status || 0) < 500,
       isAuthError: error.response?.status === 401,
       isForbiddenError: error.response?.status === 403,
       isNotFoundError: error.response?.status === 404,

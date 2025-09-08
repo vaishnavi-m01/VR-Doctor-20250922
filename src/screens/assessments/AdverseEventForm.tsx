@@ -39,8 +39,8 @@ export default function AdverseEventForm() {
     const [physicianName, setPhysicianName] = useState("");
     const [aeRelated, setAeRelated] = useState<string | null>(null);
     const [conditionContribution, setConditionContribution] = useState<string | null>(null);
-    const [severity, setSeverity] = useState(null);
-    const [outcome, setOutcome] = useState([]);
+    const [severity, setSeverity] = useState<string | null>(null);
+    const [outcome, setOutcome] = useState<string[]>([]);
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const route = useRoute<RouteProp<RootStackParamList, 'AdverseEventForm'>>();
     const { patientId,age,studyId } = route.params as { patientId: number,age:number,studyId:number };
@@ -57,7 +57,7 @@ export default function AdverseEventForm() {
         await AsyncStorage.setItem(`prevr-${patientId}-${today}`, 'done');
         navigation.goBack();
     };
-    const toggleOutcome = (item) => {
+    const toggleOutcome = (item: string) => {
         if (outcome.includes(item)) {
             setOutcome(outcome.filter((x) => x !== item));
         } else {
@@ -319,7 +319,7 @@ export default function AdverseEventForm() {
                                 { label: "No", value: "No" },
                                 { label: "Uncertain", value: "Uncertain" },
                             ]}
-                            value={aeRelated}
+                            value={aeRelated || undefined}
                             onChange={setAeRelated}
                         />
                     </View>
@@ -331,7 +331,7 @@ export default function AdverseEventForm() {
                                 { label: "Yes", value: "Yes" },
                                 { label: "No", value: "No" },
                             ]}
-                            value={conditionContribution}
+                            value={conditionContribution || undefined}
                             onChange={setConditionContribution}
                         />
                     </View>

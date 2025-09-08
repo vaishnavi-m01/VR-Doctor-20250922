@@ -25,7 +25,7 @@ export default function FactG(){
       <FormCard icon="FG" title="FACT-G (Version 4)" desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.">
         <View className="flex-row gap-3">
           <View className="flex-1"><Field label="Participant ID" placeholder={`${patientId}`}/></View>
-          <View className="flex-1"><DateField label="Assessed On" /></View>
+          <View className="flex-1"><DateField label="Assessed On" value="" onChange={() => {}} /></View>
           <View className="flex-1"><Field label="Assessed By" placeholder="Name & role"/></View>
         </View>
       </FormCard>

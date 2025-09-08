@@ -5,12 +5,12 @@ import type { RootStackParamList } from '../../../Navigation/types';
 import AssessItem from '../../../components/AssessItem';
 
 interface ParticipantInfoProps {
-  patientId: number;
-  age?: number
-  studyId?:number;
+  patientId?: number;
+  age?: number;
+  studyId?: number;
 }
 
-export default function ParticipantInfo({ patientId,age,studyId }: ParticipantInfoProps) {
+export default function ParticipantInfo({ patientId = 1, age = 0, studyId = 1 }: ParticipantInfoProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
@@ -27,7 +27,7 @@ export default function ParticipantInfo({ patientId,age,studyId }: ParticipantIn
         icon="❤️"
         title="Particpant Screening Form"
         subtitle="Assess eligibility, medical history, and clinical checklist"
-        onPress={() => navigation.navigate("PatientScreening", { patientId,age,studyId })}
+        onPress={() => navigation.navigate("PatientScreening", { patientId, age: age || 0, studyId: studyId || 1 })}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
 
@@ -36,7 +36,7 @@ export default function ParticipantInfo({ patientId,age,studyId }: ParticipantIn
         title="Study and Control Group Assignment"
         subtitle="Assign participants to study groups and track assignments"
         onPress={() => 
-          navigation.navigate('StudyGroupAssignment', { patientId,age,studyId })
+          navigation.navigate('StudyGroupAssignment', { patientId, age: age || 0, studyId: studyId || 1 })
         }
         className="bg-[#F6F7F7] border-[#F6F7F7]"/>
     </ScrollView>

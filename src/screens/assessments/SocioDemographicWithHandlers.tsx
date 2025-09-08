@@ -113,6 +113,11 @@ export default function SocioDemographicWithHandlers() {
     technologyExperience: { required: true },
     participantSignature: { required: true },
     consentDate: { required: true },
+    numberOfChildren: { required: false },
+    religionSpecify: { required: false },
+    otherMedicalConditions: { required: false },
+    currentMedications: { required: false },
+    durationOfTreatmentMonths: { required: false },
   };
 
   // Handle form submission

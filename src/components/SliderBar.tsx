@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { View, LayoutChangeEvent, GestureResponderEvent, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 
 export default function SliderBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [w, setW] = useState(1);
   const pct = Math.max(0, Math.min(1, value));
-  const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
-  const handlePress = (e: GestureResponderEvent) => {
+  const onLayout = (e: any) => setW(e.nativeEvent.layout.width);
+  const handlePress = (e: any) => {
     const x = e.nativeEvent.locationX;
     onChange(Math.max(0, Math.min(1, x / w)));
   };

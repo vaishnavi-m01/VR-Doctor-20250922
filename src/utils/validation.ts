@@ -11,7 +11,7 @@ export interface ValidationRule {
   email?: boolean;
   phone?: boolean;
   date?: boolean;
-  custom?: (value: any) => string | null;
+  custom?: (value: any, formData?: any) => string | null;
   message?: string;
 }
 
@@ -318,7 +318,7 @@ export function useFormValidation<T extends Record<string, any>>(
   const [isValid, setIsValid] = useState(false);
 
   const validate = useCallback((data: T): ValidationResult => {
-    const result = ValidationHelper.validateForm(data, validationRules, conditionalRules);
+    const result = ValidationHelper.validateForm(data, validationRules, conditionalRules as any);
     setErrors(result.errors);
     setIsValid(result.isValid);
     return result;

@@ -1,5 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import * as React from 'react';
+import { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+// Use any type for Animated to avoid import issues
+const Animated = require('react-native').Animated;
 
 interface ToastProps {
   message: string;

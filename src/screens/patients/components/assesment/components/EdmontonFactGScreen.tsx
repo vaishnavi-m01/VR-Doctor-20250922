@@ -117,10 +117,10 @@ export default function EdmontonFactGScreen() {
   };
 
   function setAnswer(code: string, value: number) {
-    console.log(`Setting answer for ${code} to ${value} (type: ${typeof value})`);
+    // console.log(`Setting answer for ${code} to ${value} (type: ${typeof value})`);
     setAnswers((prev) => {
       const newAnswers = { ...prev, [code]: value };
-      console.log(`Updated answers for ${code}:`, newAnswers[code]);
+      // console.log(`Updated answers for ${code}:`, newAnswers[code]);
       return newAnswers;
     });
   }
@@ -178,7 +178,7 @@ export default function EdmontonFactGScreen() {
           code: q.FactGQuestionId,
           FactGCategoryId: q.FactGCategoryId,
           text: q.FactGQuestion,
-          value: q.ScaleValue,
+          value: q.ScaleValue || undefined,
           TypeOfQuestion: q.TypeOfQuestion,
         });
       });
@@ -325,6 +325,7 @@ export default function EdmontonFactGScreen() {
         ParticipantId: `${patientId}`,
         SessionNo: `SessionNo-${parseInt(selectedWeek.replace('week', ''))}`,
         FactGData: factGData,
+        FinalScore: score.TOTAL,
         CreatedBy: "UH-1000",
         CreatedDate: today,
       };
@@ -615,7 +616,8 @@ export default function EdmontonFactGScreen() {
                   <Text className="flex-1 text-sm">{item.text}</Text>
                   <RatingButtons
                     questionCode={item.code}
-                    currentValue={answers[item.code] || null}
+                   currentValue={answers[item.code] !== undefined ? answers[item.code] : null}
+
                   />
                 </View>
                 {index < scale.items.length - 1 && (

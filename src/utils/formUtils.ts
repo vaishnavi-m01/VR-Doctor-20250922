@@ -1,4 +1,15 @@
-import { MESSAGES, VALIDATION_RULES } from '../constants/appConstants';
+import { MESSAGES } from '../constants/appConstants';
+
+// Validation rules constants
+const VALIDATION_RULES = {
+  EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE_REGEX: /^[\+]?[1-9][\d]{0,15}$/,
+  AGE_MIN: 1,
+  AGE_MAX: 120,
+  PASSWORD_MIN_LENGTH: 8,
+  NAME_MIN_LENGTH: 2,
+  NAME_MAX_LENGTH: 50,
+};
 
 // Form validation utilities
 export const validateRequired = (value: string | number | undefined | null, fieldName: string): string | null => {
