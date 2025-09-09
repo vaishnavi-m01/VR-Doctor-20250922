@@ -74,7 +74,6 @@ export default function AdverseEventForm() {
 
     return (
         <>
-
             <View className="px-4 pt-4">
                 <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
                     <Text className="text-lg font-bold text-green-600">

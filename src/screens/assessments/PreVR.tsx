@@ -35,76 +35,102 @@ interface ApiResponse {
   ResponseData: AssessmentQuestion[];
 }
 
+interface ResponseEntry {
+  PMPVRID: string | null; // null = new answer
+  ScaleValue: string | null;
+  Notes: string | null;
+}
+
+// ResponsesState stores multiple responses per AssessmentId keyed by PMPVRID
+type ResponsesState = Record<string /*AssessmentId*/, ResponseEntry[]>;
+
 export default function PreVR() {
   // Basic form data
   const [participantId, setParticipantId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   const [error, setError] = useState<string | null>(null);
-  
-  // Dynamic questions and responses
+
   const [preQuestions, setPreQuestions] = useState<AssessmentQuestion[]>([]);
-  const [responses, setResponses] = useState<Record<string, any>>({});
+  const [responses, setResponses] = useState<ResponsesState>({});
 
   const route = useRoute<RouteProp<RootStackParamList, 'PostVRAssessment'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { patientId, age, studyId } = route.params;
 
-  useEffect(() => {
-    setParticipantId(patientId.toString());
-    fetchAssessmentQuestions();
-  }, []);
+  const formatStudyId = (sid: string | number) => {
+    const s = sid.toString();
+    return s.startsWith('CS-') ? s : `CS-${s.padStart(4, '0')}`;
+  };
 
-  const fetchAssessmentQuestions = async () => {
+  useEffect(() => {
+    if (patientId && studyId !== undefined && studyId !== null) {
+      const pid = patientId.toString();
+      const sid = studyId.toString();
+      setParticipantId(pid);
+      fetchAssessmentQuestions(pid, sid);
+    }
+  }, [patientId, studyId]);
+
+  const fetchAssessmentQuestions = async (participantIdParam: string, studyIdParam: string) => {
     try {
       setLoading(true);
       setError(null);
+      const formattedStudyId = formatStudyId(studyIdParam);
 
-      const response = await apiService.post<ApiResponse>(
-        "/GetParticipantMainPrePostVRAssessment",
-        {
-          ParticipantId: participantId,
-          StudyId: studyId ? studyId.toString() : "0001"
-        }
-      );
-
-      console.log("Assessment API Response:", response.data);
+      const response = await apiService.post<ApiResponse>('/GetParticipantMainPrePostVRAssessment', {
+        ParticipantId: participantIdParam,
+        StudyId: formattedStudyId,
+      });
 
       const { ResponseData } = response.data;
 
       if (ResponseData && ResponseData.length > 0) {
-        // Only Pre questions (remove Post)
-        const preQs = ResponseData.filter(q => q.Type === "Pre").sort((a, b) => a.SortKey - b.SortKey);
-        
+        const hasParticipantAnswers = ResponseData.some(
+          (q) => q.ParticipantId !== null && q.ParticipantId === participantIdParam
+        );
+
+        const preQs = ResponseData.filter((q) => {
+          if (q.Type !== 'Pre' || q.StudyId !== formattedStudyId) return false;
+
+          if (hasParticipantAnswers) {
+            return q.ParticipantId === participantIdParam;
+          } else {
+            return q.ParticipantId === null || q.ParticipantId === participantIdParam;
+          }
+        }).sort((a, b) => a.SortKey - b.SortKey);
+
         setPreQuestions(preQs);
 
-        // Set existing responses if any
-        const existingResponses: Record<string, any> = {};
-        ResponseData.forEach(q => {
-          if (q.Type === "Pre") {
-            if (q.ScaleValue !== null) {
-              existingResponses[q.AssessmentId] = q.ScaleValue;
-            }
-            if (q.Notes !== null) {
-              existingResponses[`${q.AssessmentId}_notes`] = q.Notes;
-            }
-          }
-        });
-        setResponses(existingResponses);
+        // Group responses by AssessmentId, keep multiple entries per question
+        const groupedResponses: ResponsesState = {};
 
+        preQs.forEach((q) => {
+          if (!groupedResponses[q.AssessmentId]) {
+            groupedResponses[q.AssessmentId] = [];
+          }
+          groupedResponses[q.AssessmentId].push({
+            PMPVRID: q.PMPVRID,
+            ScaleValue: q.ScaleValue,
+            Notes: q.Notes,
+          });
+        });
+
+        setResponses(groupedResponses);
       } else {
-        setError("No assessment questions found for this participant.");
+        setPreQuestions([]);
+        setResponses({});
+        setError('No assessment questions found for this participant.');
       }
     } catch (err) {
-      console.error("Error fetching assessment questions:", err);
-      setError("Failed to load assessment questions. Please try again.");
+      setError('Failed to load assessment questions. Please try again.');
       Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to load assessment data",
-        position: "top",
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load assessment data',
+        position: 'top',
         topOffset: 50,
       });
     } finally {
@@ -112,25 +138,50 @@ export default function PreVR() {
     }
   };
 
-  const setResponse = (questionId: string, value: any, isNotes: boolean = false) => {
-    const key = isNotes ? `${questionId}_notes` : questionId;
-    setResponses(prev => ({
-      ...prev,
-      [key]: value
-    }));
+  // Set response for specific question and index
+  const setResponse = (
+    questionId: string,
+    value: string | null,
+    isNotes: boolean = false,
+    index: number = 0
+  ) => {
+    setResponses((prev) => {
+      const questionResponses = prev[questionId] ? [...prev[questionId]] : [];
+      //  array length for index
+      while (questionResponses.length <= index) {
+        questionResponses.push({ PMPVRID: null, ScaleValue: null, Notes: null });
+      }
+
+      if (isNotes) {
+        questionResponses[index].Notes = value;
+      } else {
+        questionResponses[index].ScaleValue = value;
+      }
+      return {
+        ...prev,
+        [questionId]: questionResponses,
+      };
+    });
   };
+
 
   const getQuestionType = (question: string): string => {
     const lowerQ = question.toLowerCase();
-    
+
     if (lowerQ.includes('scale of 1-5') || lowerQ.includes('1 = ') || lowerQ.includes('5 = ')) {
       return 'scale_5';
     }
     if (lowerQ.includes('1-10') || lowerQ.includes('10 = excellent')) {
       return 'scale_10';
     }
-    if (lowerQ.includes('did you') || lowerQ.includes('were you') || lowerQ.includes('would you') || 
-        lowerQ.includes('do you') || lowerQ.includes('has the') || lowerQ.includes('have you')) {
+    if (
+      lowerQ.includes('did you') ||
+      lowerQ.includes('were you') ||
+      lowerQ.includes('would you') ||
+      lowerQ.includes('do you') ||
+      lowerQ.includes('has the') ||
+      lowerQ.includes('have you')
+    ) {
       return 'yes_no';
     }
     if (lowerQ.includes('comfort') && !lowerQ.includes('scale')) {
@@ -142,139 +193,153 @@ export default function PreVR() {
     return 'text';
   };
 
-  const renderScale = (questionId: string, max: number, labels?: string[]) => (
-    <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
-      <View className="flex-row">
-        {Array.from({ length: max }, (_, i) => i + 1).map((value, index) => (
-          <React.Fragment key={value}>
-            <Pressable
-              onPress={() => setResponse(questionId, value)}
-              className={`flex-1 py-3 items-center justify-center ${
-                responses[questionId] === value ? 'bg-[#4FC264]' : 'bg-white'
-              }`}
-            >
-              <Text className={`font-medium text-sm ${
-                responses[questionId] === value ? 'text-white' : 'text-[#4b5f5a]'
-              }`}>
-                {value}
-              </Text>
-            </Pressable>
-            {index < max - 1 && <View className="w-px bg-[#e6eeeb]" />}
-          </React.Fragment>
-        ))}
+  const renderScale = (questionId: string, max: number, index: number) => {
+    const value = responses[questionId]?.[index]?.ScaleValue;
+    return (
+      <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
+        <View className="flex-row">
+          {Array.from({ length: max }, (_, i) => i + 1).map((v, idx) => (
+            <React.Fragment key={v}>
+              <Pressable
+                onPress={() => setResponse(questionId, v.toString(), false, index)}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
+              >
+                <Text
+                  className={`font-medium text-sm ${
+                    value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
+                  }`}
+                >
+                  {v}
+                </Text>
+              </Pressable>
+              {idx < max - 1 && <View className="w-px bg-[#e6eeeb]" />}
+            </React.Fragment>
+          ))}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
-  const renderYesNo = (questionId: string) => (
-    <View className="flex-row gap-2">
-      <Pressable 
-        onPress={() => setResponse(questionId, 'Yes')}
-        className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-          responses[questionId] === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-        }`}
-      >
-        <Text className={`text-lg mr-1 ${
-          responses[questionId] === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-        }`}>
-          ✅
-        </Text>
-        <Text className={`font-medium text-xs ${
-          responses[questionId] === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-        }`}>
-          Yes
-        </Text>
-      </Pressable>
-      <Pressable 
-        onPress={() => setResponse(questionId, 'No')}
-        className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-          responses[questionId] === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-        }`}
-      >
-        <Text className={`text-lg mr-1 ${
-          responses[questionId] === 'No' ? 'text-white' : 'text-[#2c4a43]'
-        }`}>
-          ❌
-        </Text>
-        <Text className={`font-medium text-xs ${
-          responses[questionId] === 'No' ? 'text-white' : 'text-[#2c4a43]'
-        }`}>
-          No
-        </Text>
-      </Pressable>
-    </View>
-  );
-
-  const renderMultipleChoice = (questionId: string, options: string[]) => (
-    <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
-      <View className="flex-row">
-        {options.map((option, index) => (
-          <React.Fragment key={option}>
-            <Pressable
-              onPress={() => setResponse(questionId, option)}
-              className={`flex-1 py-3 items-center justify-center ${
-                responses[questionId] === option ? 'bg-[#4FC264]' : 'bg-white'
-              }`}
-            >
-              <Text className={`font-medium text-xs text-center ${
-                responses[questionId] === option ? 'text-white' : 'text-[#4b5f5a]'
-              }`}>
-                {option}
-              </Text>
-            </Pressable>
-            {index < options.length - 1 && <View className="w-px bg-[#e6eeeb]" />}
-          </React.Fragment>
-        ))}
+  const renderYesNo = (questionId: string, index: number) => {
+    const value = responses[questionId]?.[index]?.ScaleValue;
+    return (
+      <View className="flex-row gap-2">
+        <Pressable
+          onPress={() => setResponse(questionId, 'Yes', false, index)}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
+        >
+          <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+          <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
+            Yes
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setResponse(questionId, 'No', false, index)}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
+        >
+          <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+          <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+        </Pressable>
       </View>
-    </View>
-  );
+    );
+  };
+
+  const renderMultipleChoice = (questionId: string, options: string[], index: number) => {
+    const value = responses[questionId]?.[index]?.ScaleValue;
+    return (
+      <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
+        <View className="flex-row">
+          {options.map((option, idx) => (
+            <React.Fragment key={option}>
+              <Pressable
+                onPress={() => setResponse(questionId, option, false, index)}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value === option ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
+              >
+                <Text
+                  className={`font-medium text-xs text-center ${
+                    value === option ? 'text-white' : 'text-[#4b5f5a]'
+                  }`}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+              {idx < options.length - 1 && <View className="w-px bg-[#e6eeeb]" />}
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   const renderQuestion = (question: AssessmentQuestion) => {
     const questionType = getQuestionType(question.AssignmentQuestion);
     const questionId = question.AssessmentId;
+    // For now render only first response index (index=0)
+    const index = 0;
+
+    const scaleValue = responses[questionId]?.[index]?.ScaleValue || '';
+    const notesValue = responses[questionId]?.[index]?.Notes || '';
 
     return (
       <View key={questionId} className="mt-3">
         <Text className="text-xs text-[#4b5f5a] mb-2">{question.AssessmentTitle}</Text>
         <Text className="text-xs text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
-        
-        {questionType === 'scale_5' && renderScale(questionId, 5)}
+
+        {questionType === 'scale_5' && renderScale(questionId, 5, index)}
         {questionType === 'scale_10' && (
-          <Field 
+          <Field
             label="Rating (1-10)"
             placeholder="Rate from 1-10"
-            value={responses[questionId]?.toString() || ''}
-            onChangeText={(value) => setResponse(questionId, value)}
+            value={scaleValue.toString()}
+            onChangeText={(value) => setResponse(questionId, value, false, index)}
             keyboardType="number-pad"
           />
         )}
-        {questionType === 'yes_no' && renderYesNo(questionId)}
-        {questionType === 'comfort_level' && renderMultipleChoice(questionId, [
-          'Very Comfortable', 'Somewhat Comfortable', 'Neutral', 'Uncomfortable', 'Very Uncomfortable'
-        ])}
-        {questionType === 'engagement_level' && renderMultipleChoice(questionId, [
-          'Very Engaging', 'Somewhat Engaging', 'Neutral', 'Not Very Engaging', 'Not Engaging at All'
-        ])}
+        {questionType === 'yes_no' && renderYesNo(questionId, index)}
+
+        {questionType === 'comfort_level' &&
+          renderMultipleChoice(questionId, [
+            'Very Comfortable',
+            'Somewhat Comfortable',
+            'Neutral',
+            'Uncomfortable',
+            'Very Uncomfortable',
+          ], index)}
+        {questionType === 'engagement_level' &&
+          renderMultipleChoice(questionId, [
+            'Very Engaging',
+            'Somewhat Engaging',
+            'Neutral',
+            'Not Very Engaging',
+            'Not Engaging at All',
+          ], index)}
+
         {questionType === 'text' && (
-          <Field 
+          <Field
             label="Response"
             placeholder="Your response..."
-            value={responses[questionId] || ''}
-            onChangeText={(value) => setResponse(questionId, value)}
+            value={notesValue}
+            onChangeText={(value) => setResponse(questionId, value, true, index)}
             multiline
             numberOfLines={3}
           />
         )}
 
-        {/* Additional notes field for certain questions */}
-        {(responses[questionId] === 'Yes' || responses[questionId] === 'No') && 
-         questionType === 'yes_no' && (
+        {(scaleValue === 'Yes' || scaleValue === 'No') && questionType === 'yes_no' && (
           <View className="mt-2">
-            <Field 
+            <Field
               label="Additional notes (optional)"
               placeholder="Please provide details..."
-              value={responses[`${questionId}_notes`] || ''}
-              onChangeText={(value) => setResponse(questionId, value, true)}
+              value={notesValue}
+              onChangeText={(value) => setResponse(questionId, value, true, index)}
               multiline
               numberOfLines={2}
             />
@@ -288,66 +353,65 @@ export default function PreVR() {
     try {
       setSaving(true);
 
-      // Prepare question data only for Pre questions
-      const questionData = Object.keys(responses)
-        .filter(key => !key.endsWith('_notes')) 
-        .map(questionId => {
-          const originalQuestion = preQuestions.find(
-            q => q.AssessmentId === questionId
-          );
-          
-          return {
-            PMPVRID: originalQuestion?.PMPVRID || null,
+      const formattedStudyId = formatStudyId(studyId || '0001');
+
+      // Flatten all responses for all questions and their entries
+      const questionData = Object.entries(responses)
+        .flatMap(([questionId, entries]) =>
+          entries.map((entry) => ({
+            PMPVRID: entry.PMPVRID,
             AssessmentQuestionId: questionId,
-            ScaleValue: responses[questionId]?.toString() || "",
-            Notes: responses[`${questionId}_notes`] || ""
-          };
-        })
-        .filter(item => item.ScaleValue !== "" || item.Notes !== "");
+            ScaleValue: entry.ScaleValue === '' ? null : entry.ScaleValue,
+            Notes: entry.Notes === '' ? null : entry.Notes,
+            ParticipantId: participantId,
+            StudyId: formattedStudyId,
+            Status: 1,
+            CreatedBy: 'UH-1000',
+            ModifiedBy: 'UH-1000',
+          }))
+        )
+        .filter((item) => item.ScaleValue !== null || item.Notes !== null);
 
       const payload = {
         ParticipantId: participantId,
-        StudyId: studyId ? studyId.toString() : "0001",
+        StudyId: formattedStudyId,
         QuestionData: questionData,
         Status: 1,
-        CreatedBy: "UH-1000",
-        ModifiedBy: "UH-1000"
+        CreatedBy: 'UH-1000',
+        ModifiedBy: 'UH-1000',
       };
 
-      console.log("Saving Assessment Payload:", payload);
+      console.log('Saving Assessment Payload:', payload);
 
-      const response = await apiService.post(
-        "/AddUpdateParticipantMainPrePostVRAssessment",
-        payload
-      );
+      const response = await apiService.post('/AddUpdateParticipantMainPrePostVRAssessment', payload);
 
-      console.log("Save response data:", response.data);
+      console.log('Save response data:', response.data);
 
       if (response.status === 200) {
         Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: "Assessment saved successfully!",
-          position: "top",
+          type: 'success',
+          text1: 'Success',
+          text2: 'Assessment saved successfully!',
+          position: 'top',
           topOffset: 50,
         });
         navigation.goBack();
       } else {
         Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Something went wrong. Please try again.",
-          position: "top",
+          type: 'error',
+          text1: 'Error',
+          text2: 'Something went wrong. Please try again.',
+          position: 'top',
           topOffset: 50,
         });
       }
     } catch (error: any) {
-      console.error("Error saving assessment:", error.message);
+      console.error('Error saving assessment:', error.message);
       Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to save assessment.",
-        position: "top",
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save assessment.',
+        position: 'top',
         topOffset: 50,
       });
     } finally {
@@ -373,15 +437,11 @@ export default function PreVR() {
       {/* Header */}
       <View className="px-4 pt-4">
         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">
-            Participant ID: {participantId}
-          </Text>
+          <Text className="text-lg font-bold text-green-600">Participant ID: {participantId}</Text>
           <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId ? `CS-${studyId.toString().padStart(4, '0')}` : 'CS-0001'}
+            Study ID: {studyId ? formatStudyId(studyId) : 'CS-0001'}
           </Text>
-          <Text className="text-base font-semibold text-gray-700">
-            Age: {age || 'Not specified'}
-          </Text>
+          <Text className="text-base font-semibold text-gray-700">Age: {age || 'Not specified'}</Text>
         </View>
       </View>
 
@@ -390,20 +450,10 @@ export default function PreVR() {
         <FormCard icon="J" title="Pre-VR Assessment & Questionnaires">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Field 
-                label="Participant ID" 
-                placeholder="e.g., PID-0234"
-                value={participantId}
-                onChangeText={setParticipantId}
-                editable={false}
-              />
+              <Field label="Participant ID" placeholder="e.g., PID-0234" value={participantId} onChangeText={setParticipantId} editable={false} />
             </View>
             <View className="flex-1">
-              <DateField 
-                label="Date" 
-                value={date}
-                onChange={setDate}
-              />
+              <DateField label="Date" value={date} onChange={setDate} />
             </View>
           </View>
         </FormCard>
@@ -412,7 +462,7 @@ export default function PreVR() {
         {error && (
           <View className="bg-red-50 rounded-lg p-4 shadow-md mb-4">
             <Text className="text-red-600 text-center font-semibold">{error}</Text>
-            <Pressable onPress={fetchAssessmentQuestions} className="mt-2">
+            <Pressable onPress={() => fetchAssessmentQuestions(participantId, studyId ? studyId.toString() : '0001')} className="mt-2">
               <Text className="text-blue-600 text-center font-semibold">Try Again</Text>
             </Pressable>
           </View>
@@ -420,9 +470,7 @@ export default function PreVR() {
 
         {/* Pre-VR Questions */}
         {preQuestions.length > 0 && (
-          <FormCard icon="A" title="Pre-VR Assessment">
-            {preQuestions.map(renderQuestion)}
-          </FormCard>
+          <FormCard icon="A" title="Pre-VR Assessment">{preQuestions.map(renderQuestion)}</FormCard>
         )}
 
         {/* Instructions */}
@@ -437,17 +485,18 @@ export default function PreVR() {
           </View>
         )}
 
-        {/* Extra space to ensure content is not hidden by BottomBar */}
         <View style={{ height: 150 }} />
       </ScrollView>
 
       <BottomBar>
-        <Btn variant="light" onPress={handleClear}>Clear</Btn>
-        <Btn variant="light" onPress={fetchAssessmentQuestions} disabled={loading}>
+        <Btn variant="light" onPress={handleClear}>
+          Clear
+        </Btn>
+        <Btn variant="light" onPress={() => fetchAssessmentQuestions(participantId, studyId ? studyId.toString() : '0001')} disabled={loading}>
           Refresh
         </Btn>
         <Btn onPress={handleSave} disabled={saving || loading}>
-          {saving ? "Saving..." : "Save Assessment"}
+          {saving ? 'Saving...' : 'Save Assessment'}
         </Btn>
       </BottomBar>
     </>

@@ -48,6 +48,7 @@ export default function StudyGroupAssignment() {
   const navigation = useNavigation<
     NativeStackNavigationProp<RootStackParamList, 'StudyGroupAssignment'>
   >();
+  
   const route = useRoute<StudyGroupAssignmentRouteProp>();
   const { studyId } = route.params;
 
