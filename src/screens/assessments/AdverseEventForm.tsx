@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -16,15 +16,44 @@ import { RootStackParamList } from '../../Navigation/types';
 import { RouteProp } from '@react-navigation/native';
 import {
 
-  FORM_PLACEHOLDERS,
+    FORM_PLACEHOLDERS,
 
 } from '../../constants/appConstants';
+import { apiService } from 'src/services';
+import Toast from "react-native-toast-message";
 
 
+
+interface AeSeverity {
+    SeverityId?: string;
+    SeverityName: string;
+    Description: string;
+    SortKey?: number;
+    Status: number | string;
+}
+
+interface AeOutcome {
+    OutcomeId?: string;
+    OutcomeName: string;
+    Description: string;
+    SortKey?: number;
+    Status: number | string;
+}
+
+interface AeImmediateAction {
+    ActionId?: string;
+    ActionName: string;
+    Description: string;
+    SortKey?: number;
+    Status: number | string;
+
+}
 
 export default function AdverseEventForm() {
-    const [reportDate, setReportDate] = useState("");
-    const [dateOfAE, setdateOfAE] = useState("");
+    const today = new Date().toISOString().split("T")[0];
+
+    const [reportDate, setReportDate] = useState(today);
+    const [dateOfAE, setdateOfAE] = useState(today);
     const [timeOfAE, settimeOfAE] = useState("");
     const [participantIdField, setParticipantIdField] = useState("");
     const [reportedBy, setReportedBy] = useState("");
@@ -41,17 +70,29 @@ export default function AdverseEventForm() {
     const [completed, setCompleted] = useState('');
     const [vrContentType, setVrContentType] = useState("");
 
-    const [actions, setActions] = useState<string[]>([]);
     const [physicianDateTime, setPhysicianDateTime] = useState("");
     const [physicianName, setPhysicianName] = useState("");
     const [aeRelated, setAeRelated] = useState<string | null>(null);
     const [conditionContribution, setConditionContribution] = useState<string | null>(null);
-    const [severity, setSeverity] = useState<string | null>(null);
-    const [outcome, setOutcome] = useState<string[]>([]);
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const route = useRoute<RouteProp<RootStackParamList, 'AdverseEventForm'>>();
-    const { patientId,age,studyId } = route.params as { patientId: number,age:number,studyId:number };
+    const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
     console.log("PATIENTID", patientId)
+
+    const [aeOutcome, setAeOutcome] = useState<AeOutcome[]>([]);
+    const [outcome, setOutcome] = useState<string[]>([]);
+
+    const [aeImmediateAction, setAeImmediateAction] = useState<AeImmediateAction[]>([]);
+    const [actions, setActions] = useState<string[]>([]);
+
+    const [aeSeverity, setAeServerity] = useState<AeSeverity[]>([]);
+    const [severity, setSeverity] = useState<string | null>(null);
+    const [Description, setdescription] = useState<string | null>("");
+    const [followUpParticipantStatus, setFollowUpParticipantStatus] = useState<string | null>("");
+    const [investigatorSignature, setInvestigatorSignature] = useState<string | null>("");
+
+
+
 
     const ready = (() => {
         const base = (effect && clarity && confidence) ? Math.round(((effect || 0) + (clarity || 0) + (confidence || 0)) / 3) : '—';
@@ -59,21 +100,196 @@ export default function AdverseEventForm() {
         return base === '—' ? '—' : `${base}${extras ? ` (+${extras})` : ''}`;
     })();
 
-    const handleSave = async () => {
-        const today = new Date().toISOString().split('T')[0];
-        await AsyncStorage.setItem(`prevr-${patientId}-${today}`, 'done');
-        navigation.goBack();
+    // const handleSave = async () => {
+    //     const today = new Date().toISOString().split('T')[0];
+    //     await AsyncStorage.setItem(`prevr-${patientId}-${today}`, 'done');
+    //     navigation.goBack();
+    // };
+
+
+    const toggleOutcome = (id: string) => {
+        setOutcome((prev) =>
+            prev.includes(id) ? prev.filter((o) => o !== id) : [...prev, id]
+        );
     };
-    const toggleOutcome = (item: string) => {
-        if (outcome.includes(item)) {
-            setOutcome(outcome.filter((x) => x !== item));
-        } else {
-            setOutcome([...outcome, item]);
+
+    useEffect(() => {
+        apiService
+            .post<{ ResponseData: AeSeverity[] }>("/GetAeSeverityMaster")
+            .then((res) => {
+                setAeServerity(res.data.ResponseData || []);
+            })
+            .catch((err) => console.error(err))
+    }, []);
+
+
+    useEffect(() => {
+        apiService
+            .post<{ ResponseData: AeOutcome[] }>("/GetAeOutcomeMaster")
+            .then((res) => {
+                setAeOutcome(res.data.ResponseData || []);
+            })
+            .catch((err) => console.error(err));
+    }, []);
+
+
+    useEffect(() => {
+        apiService
+            .post<{ ResponseData: AeImmediateAction[] }>("/GetAeImmediateActionMaster")
+            .then((res) => {
+                setAeImmediateAction(res.data.ResponseData || []);
+            })
+            .catch((err) => console.error(err))
+    }, []);
+
+
+
+   const handleSave = async () => {
+    try {
+        // Optional: Add validation
+        if (!reportedBy.trim()) {
+            Toast.show({
+                type: "error",
+                text1: "Validation Error",
+                text2: "Reported By is required.",
+                position: "top",
+                topOffset: 50,
+            });
+            return;
         }
-    };
+
+        if (!Description?.trim()) {
+            Toast.show({
+                type: "error",
+                text1: "Validation Error",
+                text2: "Description is required.",
+                position: "top",
+                topOffset: 50,
+            });
+            return;
+        }
+
+        const payload = {
+            ParticipantId: String(patientId),
+            StudyId: studyId,
+            DateOfReport: reportDate || new Date().toISOString(),
+            ReportedByName: reportedBy.split("(")[0]?.trim() || "",
+            ReportedByRole: reportedBy.match(/\((.*?)\)/)?.[1] || "",
+            OnsetDateTime: dateOfAE || new Date().toISOString(),
+            AEDescription: Description,
+            VRSessionInProgress: completed,
+            ContentType: vrContentType,
+            SessionInterrupted: guidance,
+            PhysicianNotifiedDateTime: physicianDateTime || reportDate || new Date().toISOString(),
+            PhysicianNotifiedName: physicianName,
+            VRRelated: aeRelated,
+            PreExistingContribution: conditionContribution,
+            FollowUpVisitDate: reportDate || new Date().toISOString(),
+            FollowUpPatientStatus: followUpParticipantStatus,
+            InvestigatorSignature: investigatorSignature,
+            InvestigatorSignDate: reportDate || new Date().toISOString(),
+
+            // ✅ Fixed mappings
+            SeverityOutcomeData: severity
+                ? outcome.map((outcomeId) => ({
+                    SeverityId: severity,
+                    OutcomeId: outcomeId || null,
+                }))
+                : [],
+            immediateActionsData: actions.map((actionId) => ({
+                ActionId: actionId || null,
+            })),
+
+            SortKey: 0,
+            Status: 1,
+            CreatedBy: "UH-1000",
+        };
+
+        console.log("FINAL PAYLOAD", payload);
+
+        const response = await apiService.post("/AddUpdateParticipantAdverseEvent", payload);
+
+        if (response.status === 200) {
+            Toast.show({
+                type: "success",
+                text1: "Success",
+                text2: "Participant updated successfully!",
+                position: "top",
+                topOffset: 50,
+                visibilityTime: 2000,
+                onHide: () => navigation.goBack(),
+            });
+        } else {
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Something went wrong. Please try again.",
+                position: "top",
+                topOffset: 50,
+            });
+        }
+    } catch (error: any) {
+        console.error("Error saving participant:", error.message);
+        Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Failed to save participant.",
+            position: "top",
+            topOffset: 50,
+        });
+    }
+};
+
+
+    useEffect(() => {
+        const fetchAeData = async () => {
+            try {
+                const res = await apiService.post<{ ResponseData: any[] }>(
+                    "/GetParticipantAdverseEvent",
+                    { ParticipantId: `${patientId}`, StudyId: studyId }
+                );
+
+                if (res.data.ResponseData && res.data.ResponseData.length > 0) {
+                    const ae = res.data.ResponseData[0];
+
+                    setReportDate(ae.DateOfReport?.split("T")[0] || "");
+                    setdateOfAE(ae.OnsetDateTime?.split("T")[0] || "");
+                    settimeOfAE(ae.OnsetDateTime ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
+                    setParticipantIdField(ae.ParticipantId || "");
+                    setReportedBy(
+                        ae.ReportedByRole
+                            ? `${ae.ReportedByName} (${ae.ReportedByRole})`
+                            : ae.ReportedByName || ""
+                    );
+                    setdescription(ae.AEDescription || "");
+                    setCompleted(ae.VRSessionInProgress || "");
+                    setVrContentType(ae.ContentType || "");
+                    setGuidance(ae.SessionInterrupted || "");
+                    setPhysicianDateTime(ae.PhysicianNotifiedDateTime?.split("T")[0] || "");
+                    setPhysicianName(ae.PhysicianNotifiedName || "");
+                    setAeRelated(ae.VRRelated || "");
+                    setConditionContribution(ae.PreExistingContribution || "");
+                    setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
+                    setInvestigatorSignature(ae.InvestigatorSignature || "");
+                }
+            } catch (err) {
+                console.error("Error fetching AE data:", err);
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to fetch AE data",
+                    position: "top",
+                    topOffset: 50,
+                });
+            }
+        };
+
+        fetchAeData();
+    }, [patientId, studyId]);
 
     return (
         <>
+
             <View className="px-4 pt-4">
                 <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
                     <Text className="text-lg font-bold text-green-600">
@@ -94,7 +310,13 @@ export default function AdverseEventForm() {
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="📅 Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
-                        <View className="flex-1"><Field label="👤 Participant ID (Optional)" placeholder="e.g., PT-0234" value={participantIdField} onChangeText={setParticipantIdField} /></View>
+                        <View className="flex-1"><Field
+                            label="👤 Participant ID (Optional)"
+                            placeholder="e.g., PT-0234"
+                            value={String(patientId)}
+                            onChangeText={setParticipantIdField}
+                        />
+                        </View>
                     </View>
                     <Field
                         label="👩 Reported By (Name & Role) (Optional)"
@@ -124,48 +346,44 @@ export default function AdverseEventForm() {
                         label={`📝 Description (symptoms, severity)`}
                         placeholder="symptoms, context, severity..."
                         multiline
+                        value={Description}
+                        onChangeText={setdescription}
                     />
                     <View className="mb-3">
                         <Text className="text-xs text-[#4b5f5a] mb-2">🎧 VR session in progress?</Text>
                         <View className="flex-row gap-2">
                             {/* Yes Button */}
-                            <Pressable 
+                            <Pressable
                                 onPress={() => setCompleted('Yes')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                                    completed === 'Yes' 
-                                        ? 'bg-[#4FC264]' 
-                                        : 'bg-[#EBF6D6]'
-                                }`}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'Yes'
+                                    ? 'bg-[#4FC264]'
+                                    : 'bg-[#EBF6D6]'
+                                    }`}
                             >
-                                <Text className={`text-lg mr-1 ${
-                                    completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`text-lg mr-1 ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     ✅
                                 </Text>
-                                <Text className={`font-medium text-xs ${
-                                    completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`font-medium text-xs ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     Yes
                                 </Text>
                             </Pressable>
 
                             {/* No Button */}
-                            <Pressable 
+                            <Pressable
                                 onPress={() => setCompleted('No')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                                    completed === 'No' 
-                                        ? 'bg-[#4FC264]' 
-                                        : 'bg-[#EBF6D6]'
-                                }`}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'No'
+                                    ? 'bg-[#4FC264]'
+                                    : 'bg-[#EBF6D6]'
+                                    }`}
                             >
-                                <Text className={`text-lg mr-1 ${
-                                    completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`text-lg mr-1 ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     ❌
                                 </Text>
-                                <Text className={`font-medium text-xs ${
-                                    completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`font-medium text-xs ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     No
                                 </Text>
                             </Pressable>
@@ -192,43 +410,37 @@ export default function AdverseEventForm() {
                         <Text className="text-xs text-[#4b5f5a] mb-2">Was the Session Interrupted?</Text>
                         <View className="flex-row gap-2">
                             {/* Yes Button */}
-                            <Pressable 
+                            <Pressable
                                 onPress={() => setGuidance('Yes')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                                    guidance === 'Yes' 
-                                        ? 'bg-[#4FC264]' 
-                                        : 'bg-[#EBF6D6]'
-                                }`}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'Yes'
+                                    ? 'bg-[#4FC264]'
+                                    : 'bg-[#EBF6D6]'
+                                    }`}
                             >
-                                <Text className={`text-lg mr-1 ${
-                                    guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`text-lg mr-1 ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     ✅
                                 </Text>
-                                <Text className={`font-medium text-xs ${
-                                    guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`font-medium text-xs ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     Yes
                                 </Text>
                             </Pressable>
 
                             {/* No Button */}
-                            <Pressable 
+                            <Pressable
                                 onPress={() => setGuidance('No')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                                    guidance === 'No' 
-                                        ? 'bg-[#4FC264]' 
-                                        : 'bg-[#EBF6D6]'
-                                }`}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'No'
+                                    ? 'bg-[#4FC264]'
+                                    : 'bg-[#EBF6D6]'
+                                    }`}
                             >
-                                <Text className={`text-lg mr-1 ${
-                                    guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`text-lg mr-1 ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     ❌
                                 </Text>
-                                <Text className={`font-medium text-xs ${
-                                    guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                }`}>
+                                <Text className={`font-medium text-xs ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                                    }`}>
                                     No
                                 </Text>
                             </Pressable>
@@ -245,26 +457,25 @@ export default function AdverseEventForm() {
                         🌡️ AE Severity Level (Check One):
                     </Text>
                     <View className="space-y-2">
-                        {[
-                            "Mild (No intervention needed)",
-                            "Moderate (Medical attention needed but not serious)",
-                            "Severe (Life-threatening or requires hospitalization)",
-                        ].map((item, index) => (
+                        {aeSeverity.map((item, index) => (
                             <TouchableOpacity
-                                key={index}
-                                onPress={() => setSeverity(item)}
+                                key={item.SeverityId || index}
+                                onPress={() => setSeverity(item.SeverityId || "")}
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dce9e4]"
                             >
-
                                 <View className="w-5 h-5 rounded-full border border-gray-400 items-center justify-center mr-2">
-                                    {severity === item && (
+                                    {severity === item.SeverityId && (
                                         <View className="w-2.5 h-2.5 rounded-full bg-green-600" />
                                     )}
                                 </View>
-                                <Text className="text-sm text-gray-800">{item}</Text>
+
+                                <Text className="text-sm text-gray-800">
+                                    {item.SeverityName} ({item.Description})
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
+
 
                     {/* Divider */}
                     <View className="h-px bg-gray-200 my-4" />
@@ -274,48 +485,45 @@ export default function AdverseEventForm() {
                         🔄 Outcome of AE:
                     </Text>
                     <View className="flex flex-wrap flex-row gap-2">
-                        {[
-                            "Resolved without intervention",
-                            "Resolved with medication/treatment",
-                            "Ongoing at time of report",
-                            "Led to study withdrawal",
-                        ].map((item, index) => (
+                        {aeOutcome.map((item, index) => (
                             <TouchableOpacity
-                                key={index}
-                                onPress={() => toggleOutcome(item)}
-                                className="flex-row items-center px-3 py-2 rounded-xl border  border-[#dbe8e3] bg-[#F6F7F7]"
+                                key={item.OutcomeId || index}
+                                // onPress={() => toggleOutcome(item.OutcomeName)}
+                                onPress={() => toggleOutcome(item.OutcomeId || "")}
+
+                                className="flex-row items-center px-3 py-2 rounded-xl border border-[#dbe8e3] bg-[#F6F7F7]"
                             >
                                 <View className="w-5 h-5 border border-gray-400 rounded mr-2 items-center justify-center">
-                                    {outcome.includes(item) && (
+                                    {outcome.includes(item.OutcomeId) && (
                                         <Text className="text-white text-xs font-bold bg-green-600 w-4 h-4 text-center rounded">
                                             ✓
                                         </Text>
                                     )}
                                 </View>
-                                <Text className="text-sm text-gray-800">{item}</Text>
+                                <Text className="text-sm text-gray-800">{item.OutcomeName}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
+
                 </FormCard>
                 <FormCard icon="3" title="Action Taken">
-                     <Text className="text-sm font-medium text-gray-700 mb-2">
-                       ✅ Immediate Action Taken (Check all that apply):
+                    <Text className="text-sm font-medium text-gray-700 mb-2">
+                        ✅ Immediate Action Taken (Check all that apply):
                     </Text>
                     <Chip
-                        items={[
-                            "VR session stopped",
-                            "Participant monitored for symptoms",
-                            "Physician notified",
-                            "Emergency care required",
-                        ]}
+                        items={aeImmediateAction.map((item) => ({
+                            label: item.ActionName,
+                            value: item.ActionId || ""
+                        }))}
                         value={actions}
                         onChange={setActions}
                         type="multiple"
                     />
 
+
                     <View className="flex-row gap-3 mt-2">
                         <DateField label="📅 Date physician notified" value={reportDate} onChange={setReportDate} />
-                        <View className="flex-1"><Field label="🧑‍⚕️ Physician name" placeholder="Dr. _____" /></View>
+                        <View className="flex-1"><Field label="🧑‍⚕️ Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} /></View>
                     </View>
                 </FormCard>
 
@@ -354,13 +562,13 @@ export default function AdverseEventForm() {
                             <DateField label="📅 Follow-up visit date" value={reportDate} onChange={setReportDate} />
                         </View>
                         <View className="flex-1">
-                            <Field label="🧾 signature of Investigator" placeholder="Sign/name" />
+                            <Field label="🧾 signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} />
                         </View>
                     </View>
 
                     <View className="flex-row gap-3 mt-2">
                         <View className="flex-1">
-                            <Field label="📝 Participant status during follow-up" placeholder="Notes on Clinical status..." multiline />
+                            <Field label="📝 Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} />
                         </View>
                         <View className="flex-1">
                             <DateField label="📅 Date" value={reportDate} onChange={setReportDate} />
@@ -394,4 +602,4 @@ export default function AdverseEventForm() {
             </BottomBar>
         </>
     );
-}
+}  

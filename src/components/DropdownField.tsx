@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { TouchableWithoutFeedback } from "react-native";
 
 type DropdownOption = { label: string; value: string };
 
@@ -51,7 +52,7 @@ export function DropdownField({
       {isVisible && (
          <View className="mt-1 bg-white border border-[#dce9e4] rounded-2xl shadow-lg max-h-60">
 
-
+          <TouchableWithoutFeedback> 
           <ScrollView showsVerticalScrollIndicator={false}>
             {options.map((option) => (
               <TouchableOpacity
@@ -67,6 +68,7 @@ export function DropdownField({
               </TouchableOpacity>
             ))}
           </ScrollView>
+          </TouchableWithoutFeedback>
         </View>
       )}
     </View>

@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Pressable, Text } from 'react-native';
 
+type ChipItem = string | { label: string; value: string };
+
 type Props = {
-  items: string[];
+  items: ChipItem[];
   value: string[];
   onChange: (next: string[]) => void;
   type?: "single" | "multiple";
@@ -22,20 +24,25 @@ export default function Chip({ items, value, onChange, type = "multiple" }: Prop
 
   return (
     <View className="flex-row flex-wrap gap-2">
-      {items.map(v => {
+      {items.map((item) => {
+        const label = typeof item === "string" ? item : item.label;
+        const v = typeof item === "string" ? item : item.value;
         const active = value.includes(v);
+
         return (
           <Pressable
             key={v}
-            className={`px-3 py-2 rounded-full border border-[#d7ebe3] ${active ? "bg-[#4FC264] border-[#4FC264]" : ""
-              }`}
+            className={`px-3 py-2 rounded-full border border-[#d7ebe3] ${
+              active ? "bg-[#4FC264] border-[#4FC264]" : ""
+            }`}
             onPress={() => toggle(v)}
           >
             <Text
-              className={`${active ? "text-white font-semibold" : "text-[#2c4a43]"
-                }`}
+              className={`${
+                active ? "text-white font-semibold" : "text-[#2c4a43]"
+              }`}
             >
-              {v}
+              {label}
             </Text>
           </Pressable>
         );

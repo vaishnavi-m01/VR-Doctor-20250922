@@ -6,46 +6,75 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../../Navigation/types';
 import { Btn } from '../../components/Button';
 import FormCard from '../../components/FormCard';
+import { apiService } from 'src/services';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
 interface UserProfile {
   name: string;
   email: string;
-  role: string;
-  organization: string;
+  role?: string;
+  organization?: string;
   phone?: string;
   avatar?: string;
 }
 
 export default function Profile() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  // const [profile, setProfile] = useState<UserProfile>({
+  //   name: 'Dr. Sarah Johnson',
+  //   email: 'sarah.johnson@hospital.com',
+  //   role: 'Principal Investigator',
+  //   organization: 'City General Hospital',
+  //   phone: '+1 (555) 123-4567',
+  //   avatar: undefined
+  // });
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@hospital.com',
-    role: 'Principal Investigator',
-    organization: 'City General Hospital',
-    phone: '+1 (555) 123-4567',
-    avatar: undefined
+    name: '',
+    email: '',
   });
-
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
   }, []);
 
+  // const loadUserProfile = async () => {
+  //   try {
+  //     // In a real app, this would fetch from API or local storage
+  //     const savedProfile = await AsyncStorage.getItem('user_profile');
+  //     if (savedProfile) {
+  //       setProfile(JSON.parse(savedProfile));
+  //     }
+  //   } catch (error) {
+  //     console.log('Error loading profile:', error);
+  //   }
+  // };
+
   const loadUserProfile = async () => {
     try {
-      // In a real app, this would fetch from API or local storage
-      const savedProfile = await AsyncStorage.getItem('user_profile');
-      if (savedProfile) {
-        setProfile(JSON.parse(savedProfile));
+      setIsLoading(true);
+
+
+      const response = await apiService.post<any>('/GetUsersMaster');
+      const users = response.data.ResponseData;
+
+      if (users && users.length > 0) {
+        const firstUser = users[0];
+        setProfile({
+          name: `${firstUser.FirstName} ${firstUser.LastName}`,
+          email: firstUser.Email,
+          role: '',
+          organization: firstUser.Address,
+        });
       }
     } catch (error) {
       console.log('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   const handleLogout = () => {
     Alert.alert(
@@ -69,7 +98,7 @@ export default function Profile() {
                 'user_profile',
                 'auth_token'
               ]);
-              
+
               // Navigate to login screen
               navigation.reset({
                 index: 0,
@@ -105,7 +134,7 @@ export default function Profile() {
           <Text className="text-lg font-bold text-green-600">
             Profile & Settings
           </Text>
-          <Pressable 
+          <Pressable
             onPress={() => navigation.goBack()}
             className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
           >
@@ -140,22 +169,22 @@ export default function Profile() {
               <Text className="text-gray-600">Full Name</Text>
               <Text className="font-medium text-gray-800">{profile.name}</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-600">Email</Text>
               <Text className="font-medium text-gray-800">{profile.email}</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-600">Phone</Text>
               <Text className="font-medium text-gray-800">{profile.phone || 'Not provided'}</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-600">Role</Text>
               <Text className="font-medium text-gray-800">{profile.role}</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3">
               <Text className="text-gray-600">Organization</Text>
               <Text className="font-medium text-gray-800">{profile.organization}</Text>
@@ -166,7 +195,7 @@ export default function Profile() {
         {/* Account Actions */}
         <FormCard icon="⚙️" title="Account Settings">
           <View className="space-y-3">
-            <Pressable 
+            <Pressable
               onPress={handleEditProfile}
               className="flex-row items-center justify-between py-3 px-2 rounded-lg hover:bg-gray-50"
             >
@@ -176,8 +205,8 @@ export default function Profile() {
               </View>
               <Text className="text-gray-400">›</Text>
             </Pressable>
-            
-            <Pressable 
+
+            <Pressable
               onPress={handleChangePassword}
               className="flex-row items-center justify-between py-3 px-2 rounded-lg hover:bg-gray-50"
             >
@@ -197,12 +226,12 @@ export default function Profile() {
               <Text className="text-gray-600">App Version</Text>
               <Text className="font-medium text-gray-800">1.0.0</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-600">Build Number</Text>
               <Text className="font-medium text-gray-800">2024.08.21</Text>
             </View>
-            
+
             <View className="flex-row items-center justify-between py-3">
               <Text className="text-gray-600">Last Updated</Text>
               <Text className="font-medium text-gray-800">August 21, 2024</Text>
@@ -212,8 +241,8 @@ export default function Profile() {
 
         {/* Logout Section */}
         <View className="mt-6">
-          <Btn 
-            variant="light" 
+          <Btn
+            variant="light"
             onPress={handleLogout}
             disabled={isLoading}
             className="bg-red-50 border-red-200"
