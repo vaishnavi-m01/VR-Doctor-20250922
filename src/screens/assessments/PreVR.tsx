@@ -41,6 +41,7 @@ export default function PreVR() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  
   const [error, setError] = useState<string | null>(null);
   
   // Dynamic questions and responses

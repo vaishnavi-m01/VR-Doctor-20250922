@@ -14,13 +14,18 @@ import DateField from '@components/DateField';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { RouteProp } from '@react-navigation/native';
+import {
 
+  FORM_PLACEHOLDERS,
+
+} from '../../constants/appConstants';
 
 
 
 export default function AdverseEventForm() {
     const [reportDate, setReportDate] = useState("");
     const [dateOfAE, setdateOfAE] = useState("");
+    const [timeOfAE, settimeOfAE] = useState("");
     const [participantIdField, setParticipantIdField] = useState("");
     const [reportedBy, setReportedBy] = useState("");
 
@@ -67,7 +72,6 @@ export default function AdverseEventForm() {
         }
     };
 
-
     return (
         <>
 
@@ -110,9 +114,12 @@ export default function AdverseEventForm() {
                 <FormCard icon="1" title="Adverse Event Details">
                     <View className="flex-row gap-3">
                         <DateField label="📌 Date of AE onset" value={dateOfAE} onChange={setdateOfAE} />
-                        <DateField label="🕒 Time of AE onset" value={dateOfAE} onChange={setdateOfAE} />
-
-
+                        <Field
+                            label="🕒 Time of AE onset"
+                            placeholder={FORM_PLACEHOLDERS.TIME}
+                            value={timeOfAE}
+                            onChangeText={settimeOfAE}
+                        />
                     </View>
                     <Field
                         label={`📝 Description (symptoms, severity)`}
