@@ -39,7 +39,7 @@ export default function PreAndPostVR() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [participantIdInput, setParticipantIdInput] = useState(`PID-${patientId}`);
+  const [participantIdInput, setParticipantIdInput] = useState(patientId.toString().startsWith('PID-') ? patientId.toString() : `PID-${patientId}`);
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -53,7 +53,7 @@ export default function PreAndPostVR() {
 
         const responsesRes = await apiService.post<{ ResponseData: Question[] }>("/GetParticipantPrePostVRSessions", {
           ParticipantId: participantIdInput,
-          StudyId: studyId ? `CS-${studyId.toString().padStart(4, '0')}` : "CS-0001",
+          StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
           SessionNo: sessionNo,
         });
 
@@ -166,7 +166,7 @@ export default function PreAndPostVR() {
 
       const payload = {
         ParticipantId: participantIdInput,
-        StudyId: studyId ? `CS-${studyId.toString().padStart(4, '0')}` : "CS-0001",
+        StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
         SessionNo: sessionNo,
         Status: 1,
         CreatedBy: "UH-1000",
@@ -225,7 +225,7 @@ export default function PreAndPostVR() {
       <View className="px-4 pt-4">
         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {participantIdInput}</Text>
-          <Text className="text-base font-semibold text-green-600">Study ID: {studyId ? `CS-${studyId.toString().padStart(4, '0')}` : 'N/A'}</Text>
+          <Text className="text-base font-semibold text-green-600">Study ID: {studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : 'N/A'}</Text>
           <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
         </View>
       </View>

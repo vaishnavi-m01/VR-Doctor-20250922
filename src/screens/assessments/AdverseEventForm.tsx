@@ -21,6 +21,8 @@ import { RouteProp } from '@react-navigation/native';
 export default function AdverseEventForm() {
     const [reportDate, setReportDate] = useState("");
     const [dateOfAE, setdateOfAE] = useState("");
+    const [participantIdField, setParticipantIdField] = useState("");
+    const [reportedBy, setReportedBy] = useState("");
 
     const [effect, setEffect] = useState<number | undefined>();
     const [clarity, setClarity] = useState<number | undefined>();
@@ -88,17 +90,19 @@ export default function AdverseEventForm() {
             <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
-                        <DateField label="📅 Date of Report" value={reportDate} onChange={setReportDate} />
-                        <View className="flex-1"><Field label="👤 Participant ID" placeholder="e.g., PT-0234" /></View>
+                        <DateField label="📅 Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
+                        <View className="flex-1"><Field label="👤 Participant ID (Optional)" placeholder="e.g., PT-0234" value={participantIdField} onChangeText={setParticipantIdField} /></View>
                     </View>
                     <Field
-                        label="👩 Reported By (Name & Role)"
+                        label="👩 Reported By (Name & Role) (Optional)"
                         placeholder="e.g., Dr. John (Investigator)"
                         multiline
+                        value={reportedBy}
+                        onChangeText={setReportedBy}
                     />
 
                     <Text className="text-[12px] text-gray-500">
-                        These fields mirror the form header (Date of Report, Participant ID, Reported By).
+                        These fields mirror the form header (Date of Report, Participant ID, Reported By). All fields are optional.
                     </Text>
 
                 </FormCard>

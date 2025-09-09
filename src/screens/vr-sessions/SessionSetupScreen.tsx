@@ -59,14 +59,14 @@ export default function SessionSetupScreen() {
                 </Pressable>
 
                 <Pressable
-                  onPress={() => setCat('Sound Therapy')}
-                  className={`p-3 rounded-xl border-2 items-center ${cat === 'Side Effects'
+                  onPress={() => setCat('Sound Healing')}
+                  className={`p-3 rounded-xl border-2 items-center ${cat === 'Sound Healing'
                     ? 'bg-red-50 border-red-500'
                     : 'bg-gray-50 border-gray-200'
                     }`}
                 >
                   <Text className="text-2xl mb-2">⛑️</Text>
-                  <Text className="font-bold text-sm text-center">Side Effects</Text>
+                  <Text className="font-bold text-sm text-center">Sound Healing</Text>
                   <Text className="text-xs text-gray-500 text-center">Manage symptoms</Text>
                 </Pressable>
               </View>

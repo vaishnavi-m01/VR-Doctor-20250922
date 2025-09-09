@@ -71,13 +71,18 @@ function Splash({ navigation }: { navigation: NativeStackNavigationProp<RootStac
   }, [navigation]);
 
   console.log('Rendering SplashScreen component');
-  return <SplashScreen />;
+  return (
+    <View style={{ flex: 1, backgroundColor: '#0e4336', justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ color: 'white', fontSize: 30, fontWeight: 'bold' }}>VR Doctor</Text>
+      <Text style={{ color: 'white', fontSize: 16, marginTop: 10 }}>Loading...</Text>
+    </View>
+  );
 }
 
 // Main App
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState<keyof RootStackParamList>('Splash');
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [fontsLoaded, setFontsLoaded] = useState(true); // Set to true for now to skip font loading
 
   // Load fonts in background
   useEffect(() => {

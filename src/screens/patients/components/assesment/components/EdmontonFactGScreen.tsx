@@ -549,43 +549,7 @@ export default function EdmontonFactGScreen() {
           title="FACT-G (Version 4)"
           desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much."
         >
-          <View className="flex-row items-center mb-4">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center mr-2">
-                <Text className="font-bold text-xl text-[#2E7D32]">FG</Text>
-              </View>
-              <View>
-                <Text className="font-bold text-lg text-[#333]">
-                  FACT-G Assessment
-                </Text>
-                <Text className="text-xs text-[#6b7a77]">
-                  "Considering the past 7 days, choose one number per line."
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Field label="Participant ID" placeholder={`${patientId}`} value={`${patientId}`} editable={false} />
-            </View>
-            <View className="flex-1">
-              <Field
-                label="Assessed On"
-                placeholder="YYYY-MM-DD"
-                value={assessedOn}
-                onChangeText={setAssessedOn}
-              />
-            </View>
-            <View className="flex-1">
-              <Field
-                label="Assessed By"
-                placeholder="Assessment Person"
-                value={assessedBy}
-                onChangeText={setAssessedBy}
-              />
-            </View>
-          </View>
+          
         </FormCard>
 
         {/* Loading State */}

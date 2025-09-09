@@ -166,7 +166,7 @@ export default function DistressThermometerScreen() {
 
       const reqObj = {
         ParticipantId: enteredPatientId,
-        StudyId: studyId ? `CS-${studyId.toString().padStart(4, '0')}` : "CS-0001",
+        StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
         CreatedBy: "UH-1000",
         CreatedDate: today,
         DistressData: distressData,
@@ -183,7 +183,7 @@ export default function DistressThermometerScreen() {
 
       const scoreObj = {
         ParticipantId: `${patientId}`,
-        StudyId: "CS-0001",
+        StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
         DistressThermometerScore: `${v}`,
         ModifiedBy: "USER001",
       };
@@ -244,7 +244,7 @@ export default function DistressThermometerScreen() {
           </Text>
 
           <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId ? `CS-${studyId.toString().padStart(4, '0')}` : 'CS-0001'}
+            Study ID: {studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : 'CS-0001'}
           </Text>
 
           <View className="flex-row items-center gap-3">

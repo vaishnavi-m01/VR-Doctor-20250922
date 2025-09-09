@@ -146,6 +146,19 @@ export default function StudyGroupAssignment() {
     );
   };
 
+  const toggleSelectAllUnassigned = () => {
+    const unassignedIds = unassigned.map(p => p.ParticipantId);
+    const allSelected = unassignedIds.every(id => selectedIds.includes(id));
+    
+    if (allSelected) {
+      // Deselect all unassigned participants
+      setSelectedIds(prev => prev.filter(id => !unassignedIds.includes(id)));
+    } else {
+      // Select all unassigned participants
+      setSelectedIds(prev => [...new Set([...prev, ...unassignedIds])]);
+    }
+  };
+
   async function decideGroups(ids: string[]): Promise<AssignDecision[]> {
     return ids.map((id) => {
       const n = parseInt(String(id).replace(/\D/g, ''), 10);
@@ -280,7 +293,7 @@ export default function StudyGroupAssignment() {
       <View className="px-6 pt-3 pb-2 flex-row gap-2">
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
           <Text className="text-xs text-gray-600">Unassigned</Text>
-          <Text className="font-extrabold">{participants.length}</Text>
+          <Text className="font-extrabold">{unassigned.length}</Text>
         </View>
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
           <Text className="text-xs text-gray-600">Control</Text>
@@ -297,15 +310,27 @@ export default function StudyGroupAssignment() {
         <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
-            <Text className="text-sm text-gray-600">({participants.length})</Text>
+            <View className="flex-row items-center gap-3">
+              <Text className="text-sm text-gray-600">({unassigned.length})</Text>
+              {unassigned.length > 0 && (
+                <Pressable
+                  onPress={toggleSelectAllUnassigned}
+                  className="px-3 py-1 rounded-lg bg-[#f0fdf7] border border-[#0ea06c]"
+                >
+                  <Text className="text-[#0ea06c] font-semibold text-xs">
+                    {unassigned.every(p => selectedIds.includes(p.ParticipantId)) ? 'Deselect All' : 'Select All'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
           </View>
           <ScrollView style={{ maxHeight: 300 }}>
-            {participants.length === 0 ? (
+            {unassigned.length === 0 ? (
               <View className="bg-gray-50 rounded-xl p-6 items-center">
-                <Text className="text-gray-500 text-center">No participants found</Text>
+                <Text className="text-gray-500 text-center">No unassigned participants found</Text>
               </View>
             ) : (
-              participants.map((p) => (
+              unassigned.map((p) => (
                 <Row
                   key={p.ParticipantId}
                   p={p}
