@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Btn } from "@components/Button";
 import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
+import { UserContext } from "src/store/context/UserContext";
 
 // Define expected API types
 type Question = {
@@ -40,6 +41,11 @@ export default function DistressThermometerScreen() {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [otherProblems, setOtherProblems] = useState<string>("");
   const navigation = useNavigation<any>();
+  const [distressId, setDistressId] = useState<string | null>(null);
+    const { userId, setUserId } = useContext(UserContext);
+  
+  
+  console.log("distressssId", distressId)
 
 
   const route = useRoute<RouteProp<RootStackParamList, "DistressThermometerScreen">>();
@@ -80,6 +86,9 @@ export default function DistressThermometerScreen() {
       const responseData = res.data?.ResponseData;
 
       if (Array.isArray(responseData) && responseData.length > 0) {
+
+        // const existing = responseData[0];
+        // setDistressId(existing.DistressId || null);
         // Group questions by category
         const grouped: Category[] = Object.values(
           responseData.reduce((acc: Record<string, Category>, item) => {
@@ -134,6 +143,7 @@ export default function DistressThermometerScreen() {
   };
 
   useEffect(() => {
+    setDistressId(null);
     getData();
   }, [enteredPatientId]);
 
@@ -141,7 +151,7 @@ export default function DistressThermometerScreen() {
     try {
       setLoading(true);
 
-      // Validate required fields
+      // ✅ Validate required fields
       if (!enteredPatientId) {
         Toast.show({
           type: "error",
@@ -153,7 +163,7 @@ export default function DistressThermometerScreen() {
         return;
       }
 
-      // Create DistressData array from selected problems
+      //  Prepare DistressData
       const distressData = categories.flatMap((cat) =>
         cat.questions.map((q) => ({
           DistressQuestionId: q.id,
@@ -161,16 +171,15 @@ export default function DistressThermometerScreen() {
         }))
       );
 
-      // Get current date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
 
       const reqObj = {
-        ParticipantId: enteredPatientId,
-        StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
+        ParticipantId: patientId,
+        StudyId: studyId,
         CreatedBy: "UH-1000",
         CreatedDate: today,
         DistressData: distressData,
-        // otherProblems:otherProblems
+        otherProblems: otherProblems,
       };
 
       console.log("Saving payload:", reqObj);
@@ -179,13 +188,18 @@ export default function DistressThermometerScreen() {
         "/AddUpdateParticipantDistressThermometerWeeklyQA",
         reqObj
       );
+
       console.log("Save success:", res.data);
 
       const scoreObj = {
         ParticipantId: `${patientId}`,
-        StudyId: studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : "CS-0001",
+        StudyId: studyId
+          ? studyId.toString().startsWith("CS-")
+            ? studyId.toString()
+            : `CS-${studyId.toString().padStart(4, "0")}`
+          : "CS-0001",
         DistressThermometerScore: `${v}`,
-        ModifiedBy: "USER001",
+        ModifiedBy: userId,
       };
 
       console.log("Saving Score payload:", scoreObj);
@@ -195,17 +209,25 @@ export default function DistressThermometerScreen() {
         scoreObj
       );
 
-      console.log("thermometerscore", res2)
+      console.log("thermometerscore", res2);
 
-
-      Toast.show({
+      // Toast.show({
+      //   type: "success",
+      //   text1: "Success",
+      //   text2: distressId ? "Updated successfully!" : "Added successfully!",
+      //   position: "top",
+      //   topOffset: 50,
+      //   onHide: () => navigation.goBack(),
+      // });
+       Toast.show({
         type: "success",
         text1: "Success",
-        text2: "Distress Thermometer saved successfully!",
+        text2: "Saved successfully!",
         position: "top",
         topOffset: 50,
         onHide: () => navigation.goBack(),
       });
+
 
     } catch (err) {
       console.error("Save error:", err);
@@ -220,6 +242,7 @@ export default function DistressThermometerScreen() {
       setLoading(false);
     }
   };
+
 
   const handleClear = () => {
     setV(0);

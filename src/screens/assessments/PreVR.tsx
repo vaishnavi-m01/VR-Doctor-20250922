@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
 
 interface AssessmentQuestion {
   AssessmentId: string;
@@ -59,6 +60,9 @@ export default function PreVR() {
   const route = useRoute<RouteProp<RootStackParamList, 'PostVRAssessment'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { patientId, age, studyId } = route.params;
+  const { userId, setUserId } = useContext(UserContext);
+
+
 
   const formatStudyId = (sid: string | number) => {
     const s = sid.toString();
@@ -202,14 +206,12 @@ export default function PreVR() {
             <React.Fragment key={v}>
               <Pressable
                 onPress={() => setResponse(questionId, v.toString(), false, index)}
-                className={`flex-1 py-3 items-center justify-center ${
-                  value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
-                }`}
+                className={`flex-1 py-3 items-center justify-center ${value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
+                  }`}
               >
                 <Text
-                  className={`font-medium text-sm ${
-                    value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
-                  }`}
+                  className={`font-medium text-sm ${value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
+                    }`}
                 >
                   {v}
                 </Text>
@@ -228,9 +230,8 @@ export default function PreVR() {
       <View className="flex-row gap-2">
         <Pressable
           onPress={() => setResponse(questionId, 'Yes', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-            value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-          }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+            }`}
         >
           <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
           <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
@@ -239,9 +240,8 @@ export default function PreVR() {
         </Pressable>
         <Pressable
           onPress={() => setResponse(questionId, 'No', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-            value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-          }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+            }`}
         >
           <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
           <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
@@ -259,14 +259,12 @@ export default function PreVR() {
             <React.Fragment key={option}>
               <Pressable
                 onPress={() => setResponse(questionId, option, false, index)}
-                className={`flex-1 py-3 items-center justify-center ${
-                  value === option ? 'bg-[#4FC264]' : 'bg-white'
-                }`}
+                className={`flex-1 py-3 items-center justify-center ${value === option ? 'bg-[#4FC264]' : 'bg-white'
+                  }`}
               >
                 <Text
-                  className={`font-medium text-xs text-center ${
-                    value === option ? 'text-white' : 'text-[#4b5f5a]'
-                  }`}
+                  className={`font-medium text-xs text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'
+                    }`}
                 >
                   {option}
                 </Text>
@@ -367,7 +365,7 @@ export default function PreVR() {
             StudyId: formattedStudyId,
             Status: 1,
             CreatedBy: 'UH-1000',
-            ModifiedBy: 'UH-1000',
+            ModifiedBy: userId,
           }))
         )
         .filter((item) => item.ScaleValue !== null || item.Notes !== null);
@@ -378,7 +376,7 @@ export default function PreVR() {
         QuestionData: questionData,
         Status: 1,
         CreatedBy: 'UH-1000',
-        ModifiedBy: 'UH-1000',
+        ModifiedBy: userId,
       };
 
       console.log('Saving Assessment Payload:', payload);

@@ -48,6 +48,7 @@ import VRPrePostList from '@screens/vr-sessions/vr-prepost_list';
 import AdverseEventReportsHistory from '@screens/assessments/AdverseEventReportsHistory';
 import StudyGroupAssignment from './src/screens/patients/StudyGroupAssignment';
 import InformedConsent from '@screens/assessments/InformedConsent';
+import { UserProvider } from 'src/store/context/UserContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -130,6 +131,7 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <SafeAreaView className="flex-1 bg-white">
+            <UserProvider>
             <NavigationContainer
               onStateChange={(state) => {
                 try {
@@ -330,6 +332,7 @@ export default function App() {
                 )}
               </View>
             </NavigationContainer>
+            </UserProvider>
             <Toast config={toastConfig} />
           </SafeAreaView>
         </SafeAreaProvider>

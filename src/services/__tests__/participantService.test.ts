@@ -1,4 +1,9 @@
+import { UserContext } from 'src/store/context/UserContext';
 import { participantService } from '../participantService';
+import { useContext } from 'react';
+    const { userId, setUserId } = useContext(UserContext);
+
+
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -30,7 +35,7 @@ describe('ParticipantService', () => {
         Status: 1,
         CreatedBy: '0',
         CreatedDate: '2025-08-05T09:14:49.000Z',
-        ModifiedBy: 'USER-001',
+        ModifiedBy: userId,
         ModifiedDate: '2025-08-07T15:07:47.000Z',
       },
     ];

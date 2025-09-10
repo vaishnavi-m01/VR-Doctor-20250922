@@ -117,9 +117,11 @@ const Login = () => {
                 await AsyncStorage.setItem("login_email", email);
                 await AsyncStorage.setItem("login_password", password);
 
-                if (user.UserID) {
+                if (user?.UserID) {
+                    setUserId(user.UserID.toString());
                     await AsyncStorage.setItem("userId", user.UserID.toString());
                 }
+
 
 
 
@@ -296,32 +298,36 @@ const Login = () => {
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={{
-                                width: '100%',
-                                height: '100%',
+                                width: "100%",
+                                height: "100%",
                                 borderRadius: 30,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
                                 paddingHorizontal: 24,
+                                justifyContent: "center",
+                                alignItems: "center",
                             }}
                         >
-                            {isLoading ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                    <Text style={{
-                                        fontFamily: 'Zen Kaku Gothic Antique-Medium',
-                                        color: 'white',
-                                        fontSize: 16,
-                                        flex: 1,
-                                        textAlign: 'center'
-                                    }}>
-                                        {BUTTON_TEXTS.LOGIN}
-                                    </Text>
-                                    <Text style={{ color: 'white', fontSize: 18, marginLeft: 8 }}>›</Text>
-                                </View>
-                            )}
+                            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", width: "100%" }}>
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <>
+                                        <Text
+                                            style={{
+                                                fontFamily: "Zen Kaku Gothic Antique-Medium",
+                                                color: "white",
+                                                fontSize: 16,
+                                                flex: 1,
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            {BUTTON_TEXTS.LOGIN}
+                                        </Text>
+                                        <Text style={{ color: "white", fontSize: 18, marginLeft: 8 }}>›</Text>
+                                    </>
+                                )}
+                            </View>
                         </LinearGradient>
+
                     </TouchableOpacity>
                 </ScrollView>
             </View>

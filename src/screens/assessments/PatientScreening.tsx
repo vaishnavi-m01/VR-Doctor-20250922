@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import Thermometer from '@components/Thermometer';
@@ -14,6 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { formatForUI } from 'src/utils/date';
+import { UserContext } from "../../store/context/UserContext"; 
+
 
 interface ClinicalChecklist {
   PMEMID?: string;
@@ -43,11 +45,13 @@ export default function PatientScreening() {
   console.log("clinicalCheckList", clinicalChecklist)
   const [conds, setConds] = useState<string[]>([]);
   console.log("condss", conds)
-  // validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
+  const [PVID, setPVID] = useState<string | null>(null);
+  const [PMSID, setPMSID] = useState<string | null>(null);
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
+  const { userId, setUserId } = useContext(UserContext);
+  console.log("userIdd",userId)
 
   useEffect(() => {
     apiService
@@ -94,6 +98,7 @@ export default function PatientScreening() {
         });
         const v = (vitalsRes.data as any).ResponseData?.[0];
         if (v) {
+          setPVID(v.PVID);
           setPulseRate(v.PulseRate || '');
           setBloodPressure(v.BP || '');
           setTemperature(v.Temperature || '');
@@ -107,10 +112,15 @@ export default function PatientScreening() {
         const s = (screeningRes.data as any).ResponseData?.[0];
         console.log("PatientScreening", s)
         if (s) {
+          setPMSID(s.PMSID || '');
           setDt(Number(s.DistressTherometerScore) || 0);
           setImplants(s.AnyElectranicImplantsLikeFacemaker || '');
           setProsthetics(s.AnyProstheticsAndOrthoticsDevice || '');
-          setConds(s.MedicalExperienceTypes || '');
+          setConds(
+            s.MedicalExperienceTypes
+              ? s.MedicalExperienceTypes.split(',').map(item => item.trim())
+              : []
+          );
         }
       } catch (err) {
         console.error('Fetch error:', err);
@@ -128,6 +138,7 @@ export default function PatientScreening() {
     try {
       // payload for vitals
       const vitalsPayload = {
+        PVID: PVID || null,
         ParticipantId: `${patientId}`,
         StudyId: `${studyId}`,
         PulseRate: pulseRate,
@@ -136,7 +147,7 @@ export default function PatientScreening() {
         BMI: bmi,
         SortKey: '0',
         Status: '1',
-        ModifiedBy: 'NURSE-001',
+        ModifiedBy: userId,
       };
 
       console.log('Vitals Payload:', vitalsPayload);
@@ -151,6 +162,8 @@ export default function PatientScreening() {
         .join(',');
 
       const ParticipantMedicalScreening = {
+
+        PMSID: PMSID || null,
         ParticipantId: `${patientId}`,
         StudyId: `${studyId}`,
         DistressTherometerScore: String(dt),
@@ -169,12 +182,13 @@ export default function PatientScreening() {
 
       Toast.show({
         type: 'success',
-        text1: 'Success',
+        text1: PMSID ? 'Updated Successfully' : 'Added Successfully',
         text2: 'Patient screening saved successfully!',
         onHide: () => navigation.goBack(),
         position: 'top',
         topOffset: 50,
       });
+
     } catch (err) {
       console.error('Save error:', err);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
 
 
 interface AssessmentQuestion {
@@ -58,6 +59,8 @@ export default function PostVRAssessment() {
   const route = useRoute<RouteProp<RootStackParamList, 'PostVRAssessment'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { patientId, age, studyId } = route.params;
+    const { userId, setUserId } = useContext(UserContext);
+  
 
   // Format studyId with CS- prefix and 4-digit padding
   const formatStudyId = (sid: string | number) => {
@@ -347,7 +350,7 @@ export default function PostVRAssessment() {
               StudyId: formattedStudyId,
               Status: 1,
               CreatedBy: 'UH-1000',
-              ModifiedBy: 'UH-1000',
+              ModifiedBy: userId,
             }))
             .filter((item) => item.ScaleValue !== null || item.Notes !== null)
         );
@@ -358,7 +361,7 @@ export default function PostVRAssessment() {
         QuestionData: questionData,
         Status: 1,
         CreatedBy: 'UH-1000',
-        ModifiedBy: 'UH-1000',
+        ModifiedBy: userId,
       };
 
       console.log('Saving Assessment Payload:', payload);

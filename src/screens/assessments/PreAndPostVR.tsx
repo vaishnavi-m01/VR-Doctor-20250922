@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
 
 type Question = {
   PPVRQMID: string;
@@ -47,6 +48,10 @@ export default function PreAndPostVR() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
+  const { userId, setUserId } = useContext(UserContext);
+
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,7 +178,7 @@ export default function PreAndPostVR() {
         SessionNo: sessionNo,
         Status: 1,
         CreatedBy: 'UH-1000',
-        ModifiedBy: 'UH-1000',
+        ModifiedBy: userId,
         QuestionData: questionData,
       };
 
@@ -257,9 +262,8 @@ export default function PreAndPostVR() {
                     <Pressable
                       key={opt}
                       onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                        responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                      }`}
+                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
                     >
                       <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                         {opt === 'Yes' ? '✅' : '❌'}
@@ -297,9 +301,8 @@ export default function PreAndPostVR() {
                     <Pressable
                       key={opt}
                       onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                        responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                      }`}
+                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
                     >
                       <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                         {opt === 'Yes' ? '✅' : '❌'}

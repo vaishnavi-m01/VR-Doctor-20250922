@@ -49,6 +49,16 @@ interface AeImmediateAction {
 
 }
 
+interface AddAdverseEventResponse {
+    addAdverseEvent: {
+        AEId: string;
+        SeverityOutcomeIds: string[];
+        ImmediateActionIds: string[];
+        LatestSeverityOutcomeId: number;
+        LatestImmediateActionId: number;
+    };
+}
+
 export default function AdverseEventForm() {
     const today = new Date().toISOString().split("T")[0];
 
@@ -77,20 +87,22 @@ export default function AdverseEventForm() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const route = useRoute<RouteProp<RootStackParamList, 'AdverseEventForm'>>();
     const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
-    console.log("PATIENTID", patientId)
 
     const [aeOutcome, setAeOutcome] = useState<AeOutcome[]>([]);
     const [outcome, setOutcome] = useState<string[]>([]);
+    console.log("outcome", outcome)
 
     const [aeImmediateAction, setAeImmediateAction] = useState<AeImmediateAction[]>([]);
     const [actions, setActions] = useState<string[]>([]);
 
     const [aeSeverity, setAeServerity] = useState<AeSeverity[]>([]);
     const [severity, setSeverity] = useState<string | null>(null);
+    console.log("severityid", severity)
     const [Description, setdescription] = useState<string | null>("");
     const [followUpParticipantStatus, setFollowUpParticipantStatus] = useState<string | null>("");
     const [investigatorSignature, setInvestigatorSignature] = useState<string | null>("");
-
+    const [AEId, setAEId] = useState<string | null>(null);
+    console.log("AEID", AEId)
 
 
 
@@ -144,101 +156,109 @@ export default function AdverseEventForm() {
 
 
 
-   const handleSave = async () => {
-    try {
-        // Optional: Add validation
-        if (!reportedBy.trim()) {
-            Toast.show({
-                type: "error",
-                text1: "Validation Error",
-                text2: "Reported By is required.",
-                position: "top",
-                topOffset: 50,
-            });
-            return;
-        }
+    const handleSave = async () => {
+        try {
 
-        if (!Description?.trim()) {
-            Toast.show({
-                type: "error",
-                text1: "Validation Error",
-                text2: "Description is required.",
-                position: "top",
-                topOffset: 50,
-            });
-            return;
-        }
+            if (
+                !reportedBy.trim() ||
+                !Description?.trim() ||
+                !dateOfAE ||
+                !reportDate ||
+                !physicianName ||
+                !investigatorSignature
+            ) {
+                Toast.show({
+                    type: "error",
+                    text1: "Validation Error",
+                    text2: "Please fill all required fields.",
+                    position: "top",
+                    topOffset: 50,
+                });
+                return;
+            }
 
-        const payload = {
-            ParticipantId: String(patientId),
-            StudyId: studyId,
-            DateOfReport: reportDate || new Date().toISOString(),
-            ReportedByName: reportedBy.split("(")[0]?.trim() || "",
-            ReportedByRole: reportedBy.match(/\((.*?)\)/)?.[1] || "",
-            OnsetDateTime: dateOfAE || new Date().toISOString(),
-            AEDescription: Description,
-            VRSessionInProgress: completed,
-            ContentType: vrContentType,
-            SessionInterrupted: guidance,
-            PhysicianNotifiedDateTime: physicianDateTime || reportDate || new Date().toISOString(),
-            PhysicianNotifiedName: physicianName,
-            VRRelated: aeRelated,
-            PreExistingContribution: conditionContribution,
-            FollowUpVisitDate: reportDate || new Date().toISOString(),
-            FollowUpPatientStatus: followUpParticipantStatus,
-            InvestigatorSignature: investigatorSignature,
-            InvestigatorSignDate: reportDate || new Date().toISOString(),
+            const payload = {
+                AEId: AEId || null,
+                ParticipantId: String(patientId),
+                StudyId: studyId,
+                DateOfReport: reportDate || new Date().toISOString(),
+                ReportedByName: reportedBy.split("(")[0]?.trim() || "",
+                ReportedByRole: reportedBy.match(/\((.*?)\)/)?.[1] || "",
+                OnsetDateTime: dateOfAE || new Date().toISOString(),
+                AEDescription: Description,
+                VRSessionInProgress: completed,
+                ContentType: vrContentType,
+                SessionInterrupted: guidance,
+                PhysicianNotifiedDateTime:
+                    physicianDateTime || reportDate || new Date().toISOString(),
+                PhysicianNotifiedName: physicianName,
+                VRRelated: aeRelated,
+                PreExistingContribution: conditionContribution,
+                FollowUpVisitDate: reportDate || new Date().toISOString(),
+                FollowUpPatientStatus: followUpParticipantStatus,
+                InvestigatorSignature: investigatorSignature,
+                InvestigatorSignDate: reportDate || new Date().toISOString(),
 
-            // ✅ Fixed mappings
-            SeverityOutcomeData: severity
-                ? outcome.map((outcomeId) => ({
-                    SeverityId: severity,
-                    OutcomeId: outcomeId || null,
-                }))
-                : [],
-            immediateActionsData: actions.map((actionId) => ({
-                ActionId: actionId || null,
-            })),
+                SeverityOutcomeData: severity
+                    ? outcome.map((outcomeId) => ({
+                        SeverityId: severity,
+                        OutcomeId: outcomeId || null,
+                    }))
+                    : [],
 
-            SortKey: 0,
-            Status: 1,
-            CreatedBy: "UH-1000",
-        };
+                immediateActionsData: actions.map((actionId) => ({
+                    ActionId: actionId || null,
+                })),
 
-        console.log("FINAL PAYLOAD", payload);
+                SortKey: 0,
+                Status: 1,
+                CreatedBy: "UH-1000",
+            };
 
-        const response = await apiService.post("/AddUpdateParticipantAdverseEvent", payload);
+            console.log("FINAL PAYLOAD", payload);
 
-        if (response.status === 200) {
-            Toast.show({
-                type: "success",
-                text1: "Success",
-                text2: "Participant updated successfully!",
-                position: "top",
-                topOffset: 50,
-                visibilityTime: 2000,
-                onHide: () => navigation.goBack(),
-            });
-        } else {
+            const response = await apiService.post<AddAdverseEventResponse>(
+                "/AddUpdateParticipantAdverseEvent",
+                payload
+            );
+
+            if (response.data?.addAdverseEvent?.AEId) {
+                setAEId(response.data?.addAdverseEvent?.AEId);
+                console.log("Saved AEId:", response.data.addAdverseEvent.AEId);
+            }
+
+            if (response.status === 200) {
+                Toast.show({
+                    type: "success",
+                    text1: AEId ? "Updated Successfully" : "Added Successfully",
+                    text2: AEId
+                        ? "Participant adverse event updated."
+                        : "Participant adverse event added.",
+                    position: "top",
+                    topOffset: 50,
+                    visibilityTime: 2000,
+                    onHide: () => navigation.goBack(),
+                });
+            } else {
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Something went wrong. Please try again.",
+                    position: "top",
+                    topOffset: 50,
+                });
+            }
+        } catch (error: any) {
+            console.error("Error saving participant:", error.message);
             Toast.show({
                 type: "error",
                 text1: "Error",
-                text2: "Something went wrong. Please try again.",
+                text2: "Failed to save participant.",
                 position: "top",
                 topOffset: 50,
             });
         }
-    } catch (error: any) {
-        console.error("Error saving participant:", error.message);
-        Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: "Failed to save participant.",
-            position: "top",
-            topOffset: 50,
-        });
-    }
-};
+    };
 
 
     useEffect(() => {
@@ -246,12 +266,12 @@ export default function AdverseEventForm() {
             try {
                 const res = await apiService.post<{ ResponseData: any[] }>(
                     "/GetParticipantAdverseEvent",
-                    { ParticipantId: `${patientId}`, StudyId: studyId }
+                    { ParticipantId: `${patientId}` }
                 );
 
                 if (res.data.ResponseData && res.data.ResponseData.length > 0) {
                     const ae = res.data.ResponseData[0];
-
+                    setAEId(ae.AEId || "");
                     setReportDate(ae.DateOfReport?.split("T")[0] || "");
                     setdateOfAE(ae.OnsetDateTime?.split("T")[0] || "");
                     settimeOfAE(ae.OnsetDateTime ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
@@ -285,7 +305,7 @@ export default function AdverseEventForm() {
         };
 
         fetchAeData();
-    }, [patientId, studyId]);
+    }, [patientId]);
 
     return (
         <>
@@ -460,7 +480,11 @@ export default function AdverseEventForm() {
                         {aeSeverity.map((item, index) => (
                             <TouchableOpacity
                                 key={item.SeverityId || index}
-                                onPress={() => setSeverity(item.SeverityId || "")}
+                                onPress={() => {
+                                    console.log("Selected SeverityId:", item.SeverityId);
+                                    setSeverity(item.SeverityId || "");
+                                }}
+
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dce9e4]"
                             >
                                 <View className="w-5 h-5 rounded-full border border-gray-400 items-center justify-center mr-2">
@@ -489,7 +513,10 @@ export default function AdverseEventForm() {
                             <TouchableOpacity
                                 key={item.OutcomeId || index}
                                 // onPress={() => toggleOutcome(item.OutcomeName)}
-                                onPress={() => toggleOutcome(item.OutcomeId || "")}
+                                onPress={() => {
+                                    console.log("Selected outcomeId:", item.OutcomeId);
+                                    toggleOutcome(item.OutcomeId || "")
+                                }}
 
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dbe8e3] bg-[#F6F7F7]"
                             >
@@ -516,9 +543,13 @@ export default function AdverseEventForm() {
                             value: item.ActionId || ""
                         }))}
                         value={actions}
-                        onChange={setActions}
+                        onChange={(newActions) => {
+                            console.log("Selected ActionIds:", newActions);
+                            setActions(newActions);
+                        }}
                         type="multiple"
                     />
+
 
 
                     <View className="flex-row gap-3 mt-2">
