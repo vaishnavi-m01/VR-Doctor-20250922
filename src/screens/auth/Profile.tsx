@@ -55,8 +55,20 @@ export default function Profile() {
     try {
       setIsLoading(true);
 
+      //  Get UserId from AsyncStorage
+      const userId = await AsyncStorage.getItem("userId");
 
-      const response = await apiService.post<any>('/GetUsersMaster');
+      if (!userId) {
+        console.warn("UserId not found in AsyncStorage");
+        setIsLoading(false);
+        return;
+      }
+
+      //  Call API with UserId in request body
+      const response = await apiService.post<any>('/GetUsersMaster', {
+        UserID: userId,
+      });
+
       const users = response.data.ResponseData;
 
       if (users && users.length > 0) {
@@ -64,7 +76,8 @@ export default function Profile() {
         setProfile({
           name: `${firstUser.FirstName} ${firstUser.LastName}`,
           email: firstUser.Email,
-          role: '',
+          phone: firstUser.PhoneNumber,
+          role: firstUser.RoleId,
           organization: firstUser.Address,
         });
       }
@@ -74,6 +87,7 @@ export default function Profile() {
       setIsLoading(false);
     }
   };
+
 
 
   const handleLogout = () => {

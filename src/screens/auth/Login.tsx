@@ -36,6 +36,7 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [userId, setUserId] = useState('');
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [toast, setToast] = useState<{
@@ -106,14 +107,21 @@ const Login = () => {
             });
 
             const user = response.data.loginUser?.[0];
+            console.log("userr", user)
 
             if (user) {
-                
+
                 await AsyncStorage.setItem("user", JSON.stringify(user));
 
                 //  Save email & password only after successful login
                 await AsyncStorage.setItem("login_email", email);
                 await AsyncStorage.setItem("login_password", password);
+
+                if (user.UserID) {
+                    await AsyncStorage.setItem("userId", user.UserID.toString());
+                }
+
+
 
                 setToast({
                     visible: true,
