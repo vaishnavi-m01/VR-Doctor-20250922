@@ -46,6 +46,11 @@ export interface ParticipantFilters {
   criteriaStatus?: string;
   groupType?: string;
   status?: number;
+  searchString?: string;
+  gender?: string;
+  ageFrom?: number;
+  ageTo?: number;
+  cancerDiagnosis?: string;
 }
 
 export interface ParticipantPaginationRequest {
@@ -116,13 +121,25 @@ export class ParticipantService {
     request: ParticipantPaginationRequest
   ): Promise<ApiResponse<ParticipantPaginationResponse> | null> {
     try {
-      // Build request body - use the exact format that works in Postman
-      const requestBody: any = {
-        StudyId: request.filters?.studyId || 'CS-0001',
-        CriteriaStatus: request.filters?.criteriaStatus || 'Excluded', // Changed to get more participants
-        GroupType: request.filters?.groupType || null, // Allow null to get unassigned
-        PageNo: request.page || 1
-      };
+      // Build request body with new parameter structure
+      const requestBody: any = {};
+      
+      // If no filters provided, send empty object to get all records
+      if (!request.filters || Object.keys(request.filters).length === 0) {
+        // Send empty object for all records
+      } else {
+        // Build request with provided filters
+        if (request.filters.studyId) requestBody.StudyId = request.filters.studyId;
+        if (request.filters.criteriaStatus) requestBody.CriteriaStatus = request.filters.criteriaStatus;
+        if (request.filters.groupType) requestBody.GroupType = request.filters.groupType;
+        if (request.filters.searchString) requestBody.SearchString = request.filters.searchString;
+        if (request.filters.gender) requestBody.Gender = request.filters.gender;
+        if (request.filters.ageFrom !== undefined) requestBody.AgeFrom = request.filters.ageFrom;
+        if (request.filters.ageTo !== undefined) requestBody.AgeTo = request.filters.ageTo;
+        if (request.filters.cancerDiagnosis) requestBody.CancerDiagnosis = request.filters.cancerDiagnosis;
+      }
+      
+      // Don't include page number to get all records
 
       const res = await apiService.post<any>(this.paginationEndpoint, requestBody);
 

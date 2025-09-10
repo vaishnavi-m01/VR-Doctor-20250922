@@ -23,7 +23,6 @@ import EvilIcons from '@expo/vector-icons/EvilIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { apiService } from 'src/services';
-import Pagination from '../../components/Pagination';
 
 
 export interface Patient {
@@ -101,9 +100,6 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-  // pagination states
-  const [page, setPage] = useState(1);
-  const perPage = 10;
 
 
   // Load data once on mount
@@ -205,34 +201,38 @@ export default function ParticipantAssessmentSplit() {
     try {
       setLoading(true);
 
-      const requestBody: any = {
-        StudyId: "CS-0001",
-        CriteriaStatus: "Included",
-        GroupType: "Trial",
-        PageNo: 1,
-      };
+      const requestBody: any = {};
 
       const trimmedSearch = search.trim();
       const lowerSearch = trimmedSearch.toLowerCase();
 
       if (trimmedSearch !== "") {
+        // Add basic filters
+        requestBody.StudyId = "CS-0001";
+        requestBody.CriteriaStatus = "Included";
+        requestBody.GroupType = "Trial";
 
         if (["male", "female", "other"].includes(lowerSearch)) {
           requestBody.Gender = lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1);
         }
-
         else if (/^PID-\d+$/i.test(trimmedSearch)) {
+          // Exact PID match (e.g., "PID-25")
           requestBody.SearchString = trimmedSearch;
         }
-
-        else if (!isNaN(Number(trimmedSearch))) {
+        else if (/^\d+$/i.test(trimmedSearch)) {
+          // Number only - search for PID containing this number (e.g., "25" -> search for PID containing "25")
+          requestBody.SearchString = `PID-${trimmedSearch}`;
+        }
+        else if (!isNaN(Number(trimmedSearch)) && trimmedSearch.length > 2) {
+          // Age search only for numbers longer than 2 digits
           requestBody.AgeFrom = Number(trimmedSearch);
           requestBody.AgeTo = Number(trimmedSearch);
         }
-
         else {
           requestBody.CancerDiagnosis = trimmedSearch;
         }
+      } else {
+        // Send empty object to get all records
       }
 
       const response = await apiService.post<any>(
@@ -268,11 +268,6 @@ export default function ParticipantAssessmentSplit() {
 
   const sel = participants.find((p) => p.ParticipantId === selId);
 
-  // Slice participants for current page
-  const paginatedParticipants = participants.slice(
-    (page - 1) * perPage,
-    page * perPage
-  );
 
 
   const renderTabContent = () => {
@@ -366,8 +361,8 @@ export default function ParticipantAssessmentSplit() {
           <ScrollView className="flex-1 p-3" contentContainerStyle={{ paddingBottom: 10 }}>
             {loading ? (
               <ActivityIndicator color="#0ea06c" />
-            ) : paginatedParticipants.length > 0 ? (
-              paginatedParticipants.map((p) => (
+            ) : participants.length > 0 ? (
+              participants.map((p) => (
                 <ListItem
                   key={p.ParticipantId}
                   item={{
@@ -387,17 +382,6 @@ export default function ParticipantAssessmentSplit() {
             )}
 
           </ScrollView>
-          {!loading && participants.length > perPage && (
-            <View className="pb-20">
-              <Pagination
-                value={page}
-                onChange={(pg) => setPage(pg)}
-                totalItems={participants.length}
-                perPage={perPage}
-              />
-
-            </View>
-          )}
 
         </View>
 

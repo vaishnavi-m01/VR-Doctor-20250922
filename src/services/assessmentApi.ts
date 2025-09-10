@@ -45,6 +45,20 @@ export interface PostVRData {
   additionalComments?: string;
 }
 
+export interface FactGWeeklyData {
+  PFGQWKID: string;
+  StudyId: string;
+  ParticipantId: string;
+  FactGCategoryId: string;
+  FactGQuestionId: string;
+  CreatedDate: string;
+  ExtractedDate: string;
+  DayOfWeek: string;
+  DayNumber: number;
+  WeekOfMonth: number;
+  WeekOfYear: number;
+}
+
 export interface SocioDemographicData {
   participantId: number;
   studyId: string;
@@ -252,6 +266,19 @@ export class AssessmentApiService {
 
   static async deleteParticipant(id: number): Promise<void> {
     await apiClient.delete(`/participants/${id}`);
+  }
+
+  // Get Fact-G weekly questions data
+  static async getParticipantFactGQuestionsWeeklyWeeks(participantId: string): Promise<FactGWeeklyData[]> {
+    try {
+      const response = await apiClient.post<{ ResponseData: FactGWeeklyData[] }>('/GetParticipantFactGQuestionsWeeklyWeeks', {
+        ParticipantId: participantId
+      });
+      return response.data.ResponseData || [];
+    } catch (error) {
+      console.error('Error fetching Fact-G weekly questions:', error);
+      throw error;
+    }
   }
 }
 

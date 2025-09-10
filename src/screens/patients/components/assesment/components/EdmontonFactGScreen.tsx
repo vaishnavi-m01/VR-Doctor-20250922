@@ -8,6 +8,7 @@ import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
 import { API_CONFIG } from "../../../../../config/environment";
+import AssessmentApiService from "../../../../../services/assessmentApi";
 import Toast from 'react-native-toast-message';
 
 interface FactGQuestion {
@@ -95,8 +96,10 @@ export default function EdmontonFactGScreen() {
   const [error, setError] = useState<string | null>(null);
   const [assessedOn, setAssessedOn] = useState(new Date().toISOString().split('T')[0]);
   const [assessedBy, setAssessedBy] = useState("UH-1000");
-  const [selectedWeek, setSelectedWeek] = useState("week1");
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [hasSelectedDate, setHasSelectedDate] = useState(false);
 
   const score: ScoreResults = useMemo(() => computeScores(answers, subscales), [answers, subscales]);
 
@@ -128,22 +131,97 @@ export default function EdmontonFactGScreen() {
   function handleClear() {
     setAnswers({});
     setAssessedBy("UH-1000");
-    setSelectedWeek('week1');
-    setShowWeekDropdown(false);
+    setSelectedDate("");
+    setShowDateDropdown(false);
+    setHasSelectedDate(false);
   }
 
+  // Function to format date from YYYY-MM-DD to dd-mm-YYYY
+  const formatDate = (dateString: string): string => {
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
+  };
 
+  // Function to convert date from dd-mm-YYYY to YYYY-MM-DD for API calls
+  const convertDateForAPI = (dateString: string): string => {
+    const [day, month, year] = dateString.split('-');
+    return `${year}-${month}-${day}`;
+  };
 
-  const fetchFactG = async () => {
+  // Function to fetch available dates for Week1
+  const fetchAvailableDates = async () => {
+    try {
+      setLoading(true);
+      const participantId = `PID-${patientId}`;
+      console.log('Fetching dates for participant:', participantId);
+      
+      const weeklyData = await AssessmentApiService.getParticipantFactGQuestionsWeeklyWeeks(participantId);
+      console.log('API Response:', weeklyData);
+      
+      // Extract unique dates and format them (only first occurrence of each date)
+      const uniqueDates = [...new Set(weeklyData.map(item => item.CreatedDate))];
+      const formattedDates = uniqueDates.map(date => formatDate(date));
+      
+      console.log('Unique dates:', uniqueDates);
+      console.log('Formatted dates:', formattedDates);
+      
+      setAvailableDates(formattedDates);
+      
+      // Don't set a default date - let user select
+      if (formattedDates.length === 0) {
+        // Fallback: Add some sample dates for testing
+        const sampleDates = ['04-09-2025', '05-09-2025', '06-09-2025'];
+        setAvailableDates(sampleDates);
+        console.log('Using sample dates:', sampleDates);
+      }
+      
+      console.log('Available dates loaded:', formattedDates);
+    } catch (error) {
+      console.error('Error fetching available dates:', error);
+      
+      // Fallback: Add some sample dates for testing
+      const sampleDates = ['04-09-2025', '05-09-2025', '06-09-2025'];
+      setAvailableDates(sampleDates);
+      console.log('Using sample dates due to error:', sampleDates);
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to fetch available dates, using sample dates'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch available dates when component loads
+  useEffect(() => {
+    fetchAvailableDates();
+  }, [patientId]);
+
+  const fetchFactG = async (dateToUse?: string) => {
     try {
       setLoading(true);
       setError(null);
 
+      // Use the provided date or current selectedDate, but ensure we have a valid date
+      const dateForAPI = dateToUse || selectedDate;
+      if (!dateForAPI) {
+        throw new Error("No date selected");
+      }
+      
+      const apiDate = dateForAPI.includes('-') && dateForAPI.split('-')[0].length === 2 
+        ? convertDateForAPI(dateForAPI) 
+        : dateForAPI;
+      
+      console.log('🔄 Fetching Fact-G data for date:', dateForAPI, '-> API date:', apiDate);
+
       const response = await apiService.post<FactGResponse>(
         "/getParticipantFactGQuestionWeekly",
         {
-          ParticipantId: `${patientId}`,
-          WeekNo: parseInt(selectedWeek.replace('week', ''))
+          StudyId: "CS-0001",
+          ParticipantId: `PID-${patientId}`,
+          CreatedDate: apiDate
         }
       );
 
@@ -154,6 +232,7 @@ export default function EdmontonFactGScreen() {
       }
 
       const { ResponseData } = response.data;
+      console.log(`Total items received: ${ResponseData.length}`);
 
       if (!ResponseData || ResponseData.length === 0) {
         setError("No FACT-G questions found for this participant and week.");
@@ -161,27 +240,37 @@ export default function EdmontonFactGScreen() {
         return;
       }
 
-      // Group questions by category
+      // Group questions by category (only first occurrence of each question)
       const grouped: Record<string, Subscale> = {};
+      const processedQuestions = new Set<string>(); // Track processed questions to avoid duplicates
 
       ResponseData.forEach((q) => {
-        const categoryName = q.FactGCategoryName;
-        if (!grouped[categoryName]) {
-          grouped[categoryName] = {
-            key: categoryName,
-            label: categoryName,
-            shortCode: categoryCodeMapping[categoryName] || categoryName.charAt(0),
-            items: [],
-          };
+        const questionKey = `${q.FactGQuestionId}_${q.FactGCategoryId}`;
+        
+        // Only process if we haven't seen this question before
+        if (!processedQuestions.has(questionKey)) {
+          processedQuestions.add(questionKey);
+          
+          const categoryName = q.FactGCategoryName;
+          if (!grouped[categoryName]) {
+            grouped[categoryName] = {
+              key: categoryName,
+              label: categoryName,
+              shortCode: categoryCodeMapping[categoryName] || categoryName.charAt(0),
+              items: [],
+            };
+          }
+          grouped[categoryName].items.push({
+            code: q.FactGQuestionId,
+            FactGCategoryId: q.FactGCategoryId,
+            text: q.FactGQuestion,
+            value: q.ScaleValue || undefined,
+            TypeOfQuestion: q.TypeOfQuestion,
+          });
         }
-        grouped[categoryName].items.push({
-          code: q.FactGQuestionId,
-          FactGCategoryId: q.FactGCategoryId,
-          text: q.FactGQuestion,
-          value: q.ScaleValue || undefined,
-          TypeOfQuestion: q.TypeOfQuestion,
-        });
       });
+
+      console.log(`Unique questions processed: ${processedQuestions.size} (filtered out ${ResponseData.length - processedQuestions.size} duplicates)`);
 
       // Sort categories in the desired order
       const categoryOrder = [
@@ -229,8 +318,11 @@ export default function EdmontonFactGScreen() {
   };
 
   useEffect(() => {
-    fetchFactG();
-  }, [selectedWeek]);
+    // Only fetch when we have a patientId and a selectedDate
+    if (patientId && hasSelectedDate && selectedDate) {
+      fetchFactG();
+    }
+  }, [patientId, selectedDate, hasSelectedDate]);
 
   const handleSave = async () => {
     try {
@@ -287,7 +379,7 @@ export default function EdmontonFactGScreen() {
           FactGQuestionId: code,
           ScaleValue: String(answers[code]),
           FlagStatus: "Yes",
-          WeekNo: parseInt(selectedWeek.replace('week', '')),
+          WeekNo: 1, // Default to week 1 since we removed week selection
         };
 
         console.log(`Question ${code}:`, factGItem);
@@ -323,7 +415,7 @@ export default function EdmontonFactGScreen() {
       const payload = {
         StudyId: studyId ? `${studyId.toString().padStart(4, '0')}` : "CS-0001",
         ParticipantId: `${patientId}`,
-        SessionNo: `SessionNo-${parseInt(selectedWeek.replace('week', ''))}`,
+        SessionNo: `SessionNo-1`, // Default to session 1 since we removed week selection
         FactGData: factGData,
         FinalScore: score.TOTAL,
         CreatedBy: "UH-1000",
@@ -333,7 +425,7 @@ export default function EdmontonFactGScreen() {
       console.log("=== DEBUG INFO ===");
       console.log("Patient ID:", patientId);
       console.log("Study ID:", studyId);
-      console.log("Selected Week:", selectedWeek);
+      console.log("Using default week 1");
       console.log("Total Questions:", totalQuestions);
       console.log("Answered Questions:", answeredQuestions);
       console.log("FactGData Items:", factGData.length);
@@ -500,78 +592,103 @@ export default function EdmontonFactGScreen() {
               Age: {age || "Not specified"}
             </Text>
 
-            {/* Week Dropdown */}
-            <View className="w-32">
-              <Pressable
-                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowWeekDropdown(!showWeekDropdown)}
-                style={{
-                  backgroundColor: '#f8f9fa',
-                  borderColor: '#e5e7eb',
-                  borderRadius: 8,
-                }}
-              >
-                <Text className="text-sm text-gray-700">
-                  {selectedWeek === "week1" ? "Week 1" :
-                    selectedWeek === "week2" ? "Week 2" :
-                      selectedWeek === "week3" ? "Week 3" :
-                        selectedWeek === "week4" ? "Week 4" : "Week 1"}
-                </Text>
-                <Text className="text-gray-500 text-xs">▼</Text>
-              </Pressable>
-            </View>
+        {/* Date Dropdown */}
+        <View className="w-32">
+          <Pressable
+            className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+            onPress={() => setShowDateDropdown(!showDateDropdown)}
+            style={{
+              backgroundColor: '#eff6ff',
+              borderColor: '#bfdbfe',
+              borderRadius: 8,
+            }}
+          >
+            <Text className="text-sm text-blue-700 font-medium">
+              {selectedDate || "Select Date"}
+            </Text>
+            <Text className="text-blue-500 text-xs">▼</Text>
+          </Pressable>
+        </View>
           </View>
         </View>
 
-        {/* Dropdown Menu */}
-        {showWeekDropdown && (
-          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
-            {["week1", "week2", "week3", "week4"].map((week, index) => (
-              <Pressable
-                key={week}
-                className={`px-3 py-2 ${index < 3 ? 'border-b border-gray-100' : ''}`}
-                onPress={() => {
-                  setSelectedWeek(week);
-                  setShowWeekDropdown(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">Week {index + 1}</Text>
-              </Pressable>
-            ))}
+        {/* Date Dropdown Menu */}
+        {showDateDropdown && (
+          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32">
+            {availableDates.length > 0 ? (
+              availableDates.map((date, index) => (
+                <Pressable
+                  key={date}
+                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  onPress={() => {
+                    console.log('📅 Date selected:', date);
+                    setSelectedDate(date);
+                    setHasSelectedDate(true);
+                    setShowDateDropdown(false);
+                    // Fetch data for the selected date
+                    fetchFactG(date);
+                  }}
+                >
+                  <Text className="text-sm text-gray-700">{date}</Text>
+                </Pressable>
+              ))
+            ) : (
+              <View className="px-3 py-2">
+                <Text className="text-sm text-gray-500">No dates available</Text>
+              </View>
+            )}
           </View>
         )}
       </View>
 
       <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
-        {/* Main FACT-G Card */}
-        <FormCard
-          icon="FG"
-          title="FACT-G (Version 4)"
-          desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much."
-        >
-          
-        </FormCard>
+        {/* Debug Info */}
+        <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+          <Text className="text-xs text-yellow-800">
+            Debug: showDateDropdown={showDateDropdown.toString()}, 
+            availableDates.length={availableDates.length}, selectedDate={selectedDate}, hasSelectedDate={hasSelectedDate.toString()}
+          </Text>
+          <Text className="text-xs text-yellow-800 mt-1">
+            Available dates: {availableDates.join(', ')}
+          </Text>
+        </View>
 
-        {/* Loading State */}
-        {loading && (
-          <View className="bg-white rounded-lg p-8 shadow-md mb-4 items-center">
-            <ActivityIndicator size="large" color="#2E7D32" />
-            <Text className="text-gray-500 mt-2">Loading FACT-G questions...</Text>
+        {/* Show message when no date is selected */}
+        {!hasSelectedDate && (
+          <View className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <Text className="text-blue-800 text-center">
+              Please select a date from the dropdown above to load FACT-G questions
+            </Text>
           </View>
         )}
 
-        {/* Error State */}
-        {error && (
-          <View className="bg-red-50 rounded-lg p-4 shadow-md mb-4">
-            <Text className="text-red-600 text-center font-semibold">{error}</Text>
-            <Pressable onPress={fetchFactG} className="mt-2">
-              <Text className="text-blue-600 text-center font-semibold">Try Again</Text>
-            </Pressable>
-          </View>
-        )}
+        {/* Main FACT-G Card - only show when date is selected */}
+        {hasSelectedDate && (
+          <FormCard
+            icon="FG"
+            title="FACT-G (Version 4)"
+            desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much."
+          >
+            {/* Loading State */}
+            {loading && (
+              <View className="bg-white rounded-lg p-8 shadow-md mb-4 items-center">
+                <ActivityIndicator size="large" color="#2E7D32" />
+                <Text className="text-gray-500 mt-2">Loading FACT-G questions...</Text>
+              </View>
+            )}
 
-        {/* Question Categories */}
-        {!loading && !error && subscales.map((scale) => (
+            {/* Error State */}
+            {error && (
+              <View className="bg-red-50 rounded-lg p-4 shadow-md mb-4">
+                <Text className="text-red-600 text-center font-semibold">{error}</Text>
+                <Pressable onPress={() => fetchFactG()} className="mt-2">
+                  <Text className="text-blue-600 text-center font-semibold">Try Again</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Question Categories */}
+            {!loading && !error && subscales.map((scale) => (
           <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
             {scale.items.map((item, index) => (
               <View key={item.code}>
@@ -591,9 +708,11 @@ export default function EdmontonFactGScreen() {
             ))}
           </FormCard>
         ))}
+          </FormCard>
+        )}
 
-        {/* Rating Scale Reference */}
-        {!loading && !error && subscales.length > 0 && (
+        {/* Rating Scale Reference - only show when date is selected */}
+        {hasSelectedDate && !loading && !error && subscales.length > 0 && (
           <View className="bg-blue-50 rounded-lg p-4 shadow-md mb-4">
             <Text className="font-semibold text-sm text-blue-800 mb-2">Rating Scale:</Text>
             <Text className="text-xs text-blue-700">

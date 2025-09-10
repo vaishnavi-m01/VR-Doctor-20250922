@@ -21,22 +21,15 @@ export default function PatientDatabaseScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Use the new pagination hook
+  // Use the participants hook without pagination
   const {
     participants,
     loading,
     error,
     total,
-    currentPage,
-    pageSize,
-    totalPages,
-    hasNextPage,
-    hasPreviousPage,
-    fetchParticipantsPagination,
+    fetchParticipants,
     refreshParticipants,
     clearError,
-    goToPage,
-    changePageSize,
   } = useParticipants();
 
   // Handle search with debouncing
@@ -50,11 +43,29 @@ export default function PatientDatabaseScreen() {
     
     // Set new timeout for search
     const timeout = setTimeout(() => {
-      fetchParticipantsPagination({
-        page: 1, // Reset to first page when searching
-        pageSize,
-        searchTerm: query,
-      });
+      // Convert search term to filters and fetch all participants
+      let filters = {};
+      if (query.trim()) {
+        const searchTerm = query.trim();
+        const lowerSearch = searchTerm.toLowerCase();
+        
+        if (['male', 'female', 'other'].includes(lowerSearch)) {
+          filters = { gender: lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1) };
+        } else if (/^PID-\d+$/i.test(searchTerm)) {
+          // Exact PID match (e.g., "PID-25")
+          filters = { searchString: searchTerm };
+        } else if (/^\d+$/i.test(searchTerm)) {
+          // Number only - search for PID containing this number (e.g., "25" -> search for PID containing "25")
+          filters = { searchString: `PID-${searchTerm}` };
+        } else if (!isNaN(Number(searchTerm)) && searchTerm.length > 2) {
+          // Age search only for numbers longer than 2 digits
+          filters = { ageFrom: Number(searchTerm), ageTo: Number(searchTerm) };
+        } else {
+          filters = { cancerDiagnosis: searchTerm };
+        }
+      }
+      
+      fetchParticipants(Object.keys(filters).length > 0 ? filters : undefined);
     }, 500);
     
     setSearchTimeout(timeout);
@@ -220,7 +231,7 @@ export default function PatientDatabaseScreen() {
           ) : (
             <View className="gap-3">
               <Text className="font-bold text-gray-800 mb-2">
-                📊 Showing {participants.length} participants (page {currentPage} of {totalPages})
+                📊 Showing {participants.length} participants
               </Text>
               
               {filteredParticipants.map((participant: any, index: number) => (
@@ -231,47 +242,6 @@ export default function PatientDatabaseScreen() {
                   onStart={() => handleParticipantSelect(participant)}
                 />
               ))}
-              
-              {/* Pagination Info */}
-              {totalPages > 1 && (
-                <View className="flex-row items-center justify-center space-x-4 py-4">
-                  <Pressable 
-                    onPress={() => goToPage(1)}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-blue-500'}`}
-                  >
-                    <Text className={`text-sm ${currentPage === 1 ? 'text-gray-500' : 'text-white'}`}>First</Text>
-                  </Pressable>
-                  
-                  <Pressable 
-                    onPress={() => goToPage(currentPage - 1)}
-                    disabled={!hasPreviousPage}
-                    className={`px-3 py-2 rounded ${!hasPreviousPage ? 'bg-gray-300' : 'bg-blue-500'}`}
-                  >
-                    <Text className={`text-sm ${!hasPreviousPage ? 'text-gray-500' : 'text-white'}`}>Previous</Text>
-                  </Pressable>
-                  
-                  <Text className="text-sm text-gray-600">
-                    {currentPage} of {totalPages}
-                  </Text>
-                  
-                  <Pressable 
-                    onPress={() => goToPage(currentPage + 1)}
-                    disabled={!hasNextPage}
-                    className={`px-3 py-2 rounded ${!hasNextPage ? 'bg-gray-300' : 'bg-blue-500'}`}
-                  >
-                    <Text className={`text-sm ${!hasNextPage ? 'text-gray-500' : 'text-white'}`}>Next</Text>
-                  </Pressable>
-                  
-                  <Pressable 
-                    onPress={() => goToPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 rounded ${currentPage === totalPages ? 'bg-gray-300' : 'bg-blue-500'}`}
-                  >
-                    <Text className={`text-sm ${currentPage === totalPages ? 'text-gray-500' : 'text-white'}`}>Last</Text>
-                  </Pressable>
-                </View>
-              )}
             </View>
           )}
         </Card>
@@ -279,7 +249,7 @@ export default function PatientDatabaseScreen() {
 
       <BottomBar>
         <Text className="text-white text-sm">
-          Total: {total} | Included: {includedCount} | Excluded: {excludedCount} | Page: {currentPage}/{totalPages}
+          Total: {total} | Included: {includedCount} | Excluded: {excludedCount}
         </Text>
       </BottomBar>
     </View>
