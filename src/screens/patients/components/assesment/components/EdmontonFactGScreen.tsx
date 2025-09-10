@@ -3,26 +3,19 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-nati
 import FormCard from "../../../../../components/FormCard";
 import BottomBar from "../../../../../components/BottomBar";
 import { Btn } from "../../../../../components/Button";
-import { Field } from "../../../../../components/Field";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
-import { API_CONFIG } from "../../../../../config/environment";
 import AssessmentApiService from "../../../../../services/assessmentApi";
-import Toast from 'react-native-toast-message';
+import Toast from "react-native-toast-message";
 
 interface FactGQuestion {
   FactGCategoryId: string;
   FactGCategoryName: string;
   FactGQuestionId: string;
   FactGQuestion: string;
-  TypeOfQuestion: string; // "+" or "-"
-  PFGQWKID: string | null;
-  StudyId: string | null;
-  ParticipantId: string | null;
+  TypeOfQuestion: string;
   ScaleValue: string | null;
-  "STR_TO_DATE(PFGQWK.CreatedDate, '%Y-%m-%d')": string | null;
-  FlagStatus: string | null;
 }
 
 interface FactGResponse {
@@ -50,7 +43,6 @@ interface ScoreResults {
   TOTAL: number;
 }
 
-// Helper to calculate subscale score with proper handling of positive/negative questions
 const calculateSubscaleScore = (
   answers: Record<string, number | null>,
   items: { code: string; TypeOfQuestion?: string }[]
@@ -58,25 +50,18 @@ const calculateSubscaleScore = (
   return items.reduce((sum, item) => {
     const value = answers[item.code];
     if (value !== null && value !== undefined) {
-      // For negative questions (-), reverse the score (4 - value)
-      // For positive questions (+), use the value as is
-      const score = item.TypeOfQuestion === "-" ? (4 - value) : value;
+      const score = item.TypeOfQuestion === "-" ? 4 - value : value;
       return sum + score;
     }
     return sum;
   }, 0);
 };
 
-// Compute all scores with proper positive/negative question handling
-const computeScores = (
-  answers: Record<string, number | null>,
-  subscales: Subscale[]
-): ScoreResults => {
-
-  const PWB_subscale = subscales.find(s => s.key === "Physical well-being");
-  const SWB_subscale = subscales.find(s => s.key === "Social/Family well-being");
-  const EWB_subscale = subscales.find(s => s.key === "Emotional well-being");
-  const FWB_subscale = subscales.find(s => s.key === "Functional well-being");
+const computeScores = (answers: Record<string, number | null>, subscales: Subscale[]): ScoreResults => {
+  const PWB_subscale = subscales.find((s) => s.key === "Physical well-being");
+  const SWB_subscale = subscales.find((s) => s.key === "Social/Family well-being");
+  const EWB_subscale = subscales.find((s) => s.key === "Emotional well-being");
+  const FWB_subscale = subscales.find((s) => s.key === "Functional well-being");
 
   const PWB = PWB_subscale ? calculateSubscaleScore(answers, PWB_subscale.items) : 0;
   const SWB = SWB_subscale ? calculateSubscaleScore(answers, SWB_subscale.items) : 0;
@@ -90,227 +75,175 @@ const computeScores = (
 export default function EdmontonFactGScreen() {
   const [answers, setAnswers] = useState<Record<string, number | null>>({});
   const [subscales, setSubscales] = useState<Subscale[]>([]);
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assessedOn, setAssessedOn] = useState(new Date().toISOString().split('T')[0]);
-  const [assessedBy, setAssessedBy] = useState("UH-1000");
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [hasSelectedDate, setHasSelectedDate] = useState(false);
-
-  const score: ScoreResults = useMemo(() => computeScores(answers, subscales), [answers, subscales]);
 
   const route = useRoute<RouteProp<RootStackParamList, "EdmontonFactGScreen">>();
   const navigation = useNavigation();
   const { patientId, age, studyId } = route.params as {
     patientId: number;
     age: number;
-    studyId: number
+    studyId: number;
   };
 
-  // Category code mapping for display
+  const score: ScoreResults = useMemo(() => computeScores(answers, subscales), [answers, subscales]);
+
   const categoryCodeMapping: Record<string, string> = {
     "Physical well-being": "P",
     "Social/Family well-being": "S",
     "Emotional well-being": "E",
-    "Functional well-being": "F"
+    "Functional well-being": "F",
   };
 
-  function setAnswer(code: string, value: number) {
-    // console.log(`Setting answer for ${code} to ${value} (type: ${typeof value})`);
-    setAnswers((prev) => {
-      const newAnswers = { ...prev, [code]: value };
-      // console.log(`Updated answers for ${code}:`, newAnswers[code]);
-      return newAnswers;
-    });
-  }
+  const setAnswer = (code: string, value: number) => {
+    setAnswers((prev) => ({ ...prev, [code]: value }));
+  };
 
-  function handleClear() {
+  const handleClear = () => {
     setAnswers({});
-    setAssessedBy("UH-1000");
     setSelectedDate("");
-    setShowDateDropdown(false);
     setHasSelectedDate(false);
-  }
+    setShowDateDropdown(false);
+    setSubscales([]);
+    setError(null);
+  };
 
-  // Function to format date from YYYY-MM-DD to dd-mm-YYYY
   const formatDate = (dateString: string): string => {
-    const [year, month, day] = dateString.split('-');
+    const [year, month, day] = dateString.split("-");
     return `${day}-${month}-${year}`;
   };
 
-  // Function to convert date from dd-mm-YYYY to YYYY-MM-DD for API calls
   const convertDateForAPI = (dateString: string): string => {
-    const [day, month, year] = dateString.split('-');
+    const [day, month, year] = dateString.split("-");
     return `${year}-${month}-${day}`;
   };
 
-  // Function to fetch available dates for Week1
   const fetchAvailableDates = async () => {
     try {
       setLoading(true);
-      const participantId = `PID-${patientId}`;
-      console.log('Fetching dates for participant:', participantId);
-      
+      const participantId = `${patientId}`;
       const weeklyData = await AssessmentApiService.getParticipantFactGQuestionsWeeklyWeeks(participantId);
-      console.log('API Response:', weeklyData);
-      
-      // Extract unique dates and format them (only first occurrence of each date)
-      const uniqueDates = [...new Set(weeklyData.map(item => item.CreatedDate))];
-      const formattedDates = uniqueDates.map(date => formatDate(date));
-      
-      console.log('Unique dates:', uniqueDates);
-      console.log('Formatted dates:', formattedDates);
-      
-      setAvailableDates(formattedDates);
-      
-      // Don't set a default date - let user select
-      if (formattedDates.length === 0) {
-        // Fallback: Add some sample dates for testing
-        const sampleDates = ['04-09-2025', '05-09-2025', '06-09-2025'];
-        setAvailableDates(sampleDates);
-        console.log('Using sample dates:', sampleDates);
+
+      const uniqueDatesSet = new Set<string>();
+      for (const item of weeklyData) {
+        if (item.CreatedDate) uniqueDatesSet.add(item.CreatedDate);
       }
-      
-      console.log('Available dates loaded:', formattedDates);
-    } catch (error) {
-      console.error('Error fetching available dates:', error);
-      
-      // Fallback: Add some sample dates for testing
-      const sampleDates = ['04-09-2025', '05-09-2025', '06-09-2025'];
+      const uniqueDates = Array.from(uniqueDatesSet);
+      const formattedDates = uniqueDates.map(formatDate);
+
+      setAvailableDates(formattedDates);
+
+      if (formattedDates.length === 0) {
+        const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
+        setAvailableDates(sampleDates);
+      }
+    } catch {
+      const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
       setAvailableDates(sampleDates);
-      console.log('Using sample dates due to error:', sampleDates);
-      
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch available dates, using sample dates'
+        type: "error",
+        text1: "Error",
+        text2: "Failed to fetch available dates, using sample dates",
       });
     } finally {
       setLoading(false);
     }
   };
-
-  // Fetch available dates when component loads
-  useEffect(() => {
-    fetchAvailableDates();
-  }, [patientId]);
 
   const fetchFactG = async (dateToUse?: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Use the provided date or current selectedDate, but ensure we have a valid date
-      const dateForAPI = dateToUse || selectedDate;
-      if (!dateForAPI) {
-        throw new Error("No date selected");
-      }
-      
-      const apiDate = dateForAPI.includes('-') && dateForAPI.split('-')[0].length === 2 
-        ? convertDateForAPI(dateForAPI) 
-        : dateForAPI;
-      
-      console.log('🔄 Fetching Fact-G data for date:', dateForAPI, '-> API date:', apiDate);
+      const dateForApiRaw = dateToUse || selectedDate;
+      if (!dateForApiRaw) throw new Error("No date selected");
 
-      const response = await apiService.post<FactGResponse>(
-        "/getParticipantFactGQuestionWeekly",
-        {
-          StudyId: "CS-0001",
-          ParticipantId: `PID-${patientId}`,
-          CreatedDate: apiDate
-        }
-      );
+      const apiDate =
+        dateForApiRaw.includes("-") && dateForApiRaw.split("-")[0].length === 2
+          ? convertDateForAPI(dateForApiRaw)
+          : dateForApiRaw;
 
-      console.log("FactG API Response:", response.data);
+      const response = await apiService.post<FactGResponse>("/getParticipantFactGQuestionWeekly", {
+        StudyId: studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001",
+        ParticipantId: `${patientId}`,
+        CreatedDate: apiDate,
+      });
 
-      if (!response.data) {
-        throw new Error("No response data received");
-      }
+      const questions = response.data?.ResponseData ?? [];
 
-      const { ResponseData } = response.data;
-      console.log(`Total items received: ${ResponseData.length}`);
-
-      if (!ResponseData || ResponseData.length === 0) {
-        setError("No FACT-G questions found for this participant and week.");
+      if (questions.length === 0) {
+        setError("No FACT-G questions found for selected date.");
         setSubscales([]);
+        setAnswers({});
         return;
       }
 
-      // Group questions by category (only first occurrence of each question)
-      const grouped: Record<string, Subscale> = {};
-      const processedQuestions = new Set<string>(); // Track processed questions to avoid duplicates
-
-      ResponseData.forEach((q) => {
-        const questionKey = `${q.FactGQuestionId}_${q.FactGCategoryId}`;
-        
-        // Only process if we haven't seen this question before
-        if (!processedQuestions.has(questionKey)) {
-          processedQuestions.add(questionKey);
-          
-          const categoryName = q.FactGCategoryName;
-          if (!grouped[categoryName]) {
-            grouped[categoryName] = {
-              key: categoryName,
-              label: categoryName,
-              shortCode: categoryCodeMapping[categoryName] || categoryName.charAt(0),
-              items: [],
-            };
-          }
-          grouped[categoryName].items.push({
-            code: q.FactGQuestionId,
-            FactGCategoryId: q.FactGCategoryId,
-            text: q.FactGQuestion,
-            value: q.ScaleValue || undefined,
-            TypeOfQuestion: q.TypeOfQuestion,
-          });
+      const uniqueQuestionsMap = new Map<string, FactGQuestion>();
+      for (const q of questions) {
+        if (!uniqueQuestionsMap.has(q.FactGQuestionId)) {
+          uniqueQuestionsMap.set(q.FactGQuestionId, q);
         }
+      }
+
+      const grouped: Record<string, Subscale> = {};
+      uniqueQuestionsMap.forEach((q) => {
+        const catName = q.FactGCategoryName;
+        if (!grouped[catName]) {
+          grouped[catName] = {
+            key: catName,
+            label: catName,
+            shortCode: categoryCodeMapping[catName] || catName.charAt(0),
+            items: [],
+          };
+        }
+        grouped[catName].items.push({
+          code: q.FactGQuestionId,
+          text: q.FactGQuestion,
+          FactGCategoryId: q.FactGCategoryId,
+          TypeOfQuestion: q.TypeOfQuestion,
+          value: q.ScaleValue || undefined,
+        });
       });
 
-      console.log(`Unique questions processed: ${processedQuestions.size} (filtered out ${ResponseData.length - processedQuestions.size} duplicates)`);
-
-      // Sort categories in the desired order
       const categoryOrder = [
         "Physical well-being",
         "Social/Family well-being",
         "Emotional well-being",
-        "Functional well-being"
+        "Functional well-being",
       ];
 
       const orderedSubscales = categoryOrder
-        .filter(catName => grouped[catName])
-        .map(catName => {
-          // Sort questions within each category by question ID
+        .filter((catName) => grouped[catName])
+        .map((catName) => {
           grouped[catName].items.sort((a, b) => a.code.localeCompare(b.code));
           return grouped[catName];
         });
 
       setSubscales(orderedSubscales);
 
-      // Set existing responses from API
-      const existingAnswers: Record<string, number | null> = {};
-      ResponseData.forEach(q => {
-        if (q.FactGQuestionId && q.ScaleValue !== null) {
-          const value = parseInt(q.ScaleValue);
-          existingAnswers[q.FactGQuestionId] = value;
-          console.log(`Setting existing answer for ${q.FactGQuestionId}: ${value} (type: ${typeof value})`);
-        }
-      });
-      console.log("All existing answers:", existingAnswers);
-      setAnswers(existingAnswers);
+      // Initialize answers with null if ScaleValue is null, otherwise parse int value
+    const existingAnswers: Record<string, number | null> = {};
+    questions.forEach((q) => {
+      if (q.FactGQuestionId) {
+        const parsedVal = q.ScaleValue !== null ? parseInt(q.ScaleValue, 10) : null;
+        existingAnswers[q.FactGQuestionId] = isNaN(parsedVal!) ? null : parsedVal;
+      }
+    });
+    setAnswers(existingAnswers);
 
-    } catch (error) {
-      console.error("Error fetching FactG:", error);
+    } catch (err) {
       setError("Failed to load FACT-G questions. Please try again.");
+      setSubscales([]);
+      setAnswers({});
       Toast.show({
         type: "error",
         text1: "Error",
         text2: "Failed to load FACT-G assessment data",
-        position: "top",
-        topOffset: 50,
       });
     } finally {
       setLoading(false);
@@ -318,254 +251,112 @@ export default function EdmontonFactGScreen() {
   };
 
   useEffect(() => {
-    // Only fetch when we have a patientId and a selectedDate
+    if (patientId) fetchAvailableDates();
+  }, [patientId]);
+
+  useEffect(() => {
     if (patientId && hasSelectedDate && selectedDate) {
-      fetchFactG();
+      fetchFactG(selectedDate);
     }
   }, [patientId, selectedDate, hasSelectedDate]);
 
   const handleSave = async () => {
     try {
       setSaving(true);
-
-      // Validate required fields
-      if (!assessedBy.trim()) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Assessment person is required",
-          position: "top",
-          topOffset: 50,
-        });
+      if (!hasSelectedDate || !selectedDate) {
+        Toast.show({ type: "error", text1: "Error", text2: "Please select a date before saving." });
+        setSaving(false);
         return;
       }
-
-      // Check if all questions are answered
-      const totalQuestions = subscales.reduce((sum, scale) => sum + scale.items.length, 0);
-      const answeredQuestions = Object.keys(answers).length;
+      
+      const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
+      const answeredQuestions = Object.keys(answers).filter((k) => answers[k] !== null).length;
 
       if (answeredQuestions < totalQuestions) {
         Toast.show({
           type: "error",
           text1: "Warning",
-          text2: `Please answer all questions (${answeredQuestions}/${totalQuestions} answered)`,
-          position: "top",
-          topOffset: 50,
+          text2: `Please answer all questions (${answeredQuestions}/${totalQuestions} answered).`,
         });
+        setSaving(false);
         return;
       }
 
-      // Check if FactGData will be empty
-      if (Object.keys(answers).length === 0) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "No answers to save. Please answer at least one question.",
-          position: "top",
-          topOffset: 50,
-        });
+      if (answeredQuestions === 0) {
+        Toast.show({ type: "error", text1: "Error", text2: "No answers to save. Please answer at least one question." });
+        setSaving(false);
         return;
       }
 
-      // Create FactGData array with the new structure - using same format as test
-      const factGData = Object.keys(answers).map((code) => {
-        const foundItem = subscales
-          .flatMap((s) => s.items)
-          .find((item) => item.code === code);
-
-        // Use the same structure as the working test
-        const factGItem = {
-          FactGCategoryId: foundItem?.FactGCategoryId || "FGC_0001", // Default fallback
+      const factGData = Object.entries(answers).map(([code, val]) => {
+        const found = subscales.flatMap((s) => s.items).find((i) => i.code === code);
+        return {
+          FactGCategoryId: found?.FactGCategoryId || "FGC_0001",
           FactGQuestionId: code,
-          ScaleValue: String(answers[code]),
+          ScaleValue: val !== null ? String(val) : "0",
           FlagStatus: "Yes",
-          WeekNo: 1, // Default to week 1 since we removed week selection
+          WeekNo: 1,
         };
-
-        console.log(`Question ${code}:`, factGItem);
-
-        return factGItem;
       });
 
-      // Don't filter out items, just log warnings
-      factGData.forEach(item => {
-        if (!item.FactGCategoryId) {
-          console.warn(`Missing FactGCategoryId for question ${item.FactGQuestionId}`);
-        }
-        if (!item.ScaleValue) {
-          console.warn(`Missing ScaleValue for question ${item.FactGQuestionId}`);
-        }
-      });
-
-      // Ensure we have at least one answer
-      if (factGData.length === 0) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Please answer at least one question before saving.",
-          position: "top",
-          topOffset: 50,
-        });
-        return;
-      }
-
-      // Get current date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
+      const createdDate =
+        selectedDate.includes("-") && selectedDate.split("-")[0].length === 2
+          ? convertDateForAPI(selectedDate)
+          : selectedDate;
 
       const payload = {
-        StudyId: studyId ? `${studyId.toString().padStart(4, '0')}` : "CS-0001",
+        StudyId: studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001",
         ParticipantId: `${patientId}`,
-        SessionNo: `SessionNo-1`, // Default to session 1 since we removed week selection
+        SessionNo: "SessionNo-1",
         FactGData: factGData,
         FinalScore: score.TOTAL,
         CreatedBy: "UH-1000",
-        CreatedDate: today,
+        CreatedDate: createdDate,
       };
 
-      console.log("=== DEBUG INFO ===");
-      console.log("Patient ID:", patientId);
-      console.log("Study ID:", studyId);
-      console.log("Using default week 1");
-      console.log("Total Questions:", totalQuestions);
-      console.log("Answered Questions:", answeredQuestions);
-      console.log("FactGData Items:", factGData.length);
-      console.log("FactG Sending Payload:", JSON.stringify(payload, null, 2));
-      console.log("API Endpoint:", "/AddParticipantFactGQuestionsWeekly");
+      console.log("Saving FACT-G payload:", JSON.stringify(payload, null, 2)); // <-- Add this
 
-      // Compare with test payload structure
-      const testPayload = {
-        StudyId: "CS-0001",
-        ParticipantId: `${patientId}`,
-        SessionNo: "SessionNo-1",
-        FactGData: [
-          {
-            FactGCategoryId: "FGC_0001",
-            FactGQuestionId: "FGQ_0001",
-            ScaleValue: "3",
-            FlagStatus: "Yes",
-            WeekNo: 1
-          }
-        ],
-        CreatedBy: "UH-1000",
-        CreatedDate: new Date().toISOString().split('T')[0]
-      };
-      console.log("Test Payload Structure:", JSON.stringify(testPayload, null, 2));
-      console.log("==================");
+      const response = await apiService.post("/AddParticipantFactGQuestionsWeekly", payload);
 
-      try {
-        const response = await apiService.post(
-          "/AddParticipantFactGQuestionsWeekly",
-          payload
-        );
-
-        console.log("API Response:", response);
-
-        if (response.status === 200 || response.status === 201) {
-          Toast.show({
-            type: "success",
-            text1: "Success",
-            text2: "FACT-G responses saved successfully!",
-            position: "top",
-            topOffset: 50,
-            onHide: () => navigation.goBack(),
-          });
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Error",
-            text2: `Server returned status ${response.status}. Please try again.`,
-            position: "top",
-            topOffset: 50,
-          });
-        }
-      } catch (apiError) {
-        console.error("API call failed:", apiError);
-
-        // Try with full URL as fallback
-        try {
-          console.log("Trying with full URL as fallback...");
-          const fallbackResponse = await fetch(`${API_CONFIG.BASE_URL}/AddParticipantFactGQuestionsWeekly`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const fallbackData = await fallbackResponse.json();
-          console.log("Fallback response:", fallbackData);
-
-          if (fallbackResponse.ok) {
-            Toast.show({
-              type: "success",
-              text1: "Success",
-              text2: "FACT-G responses saved successfully!",
-              position: "top",
-              topOffset: 50,
-            });
-          } else {
-            throw new Error(`Fallback failed: ${fallbackResponse.status}`);
-          }
-        } catch (fallbackError) {
-          console.error("Fallback also failed:", fallbackError);
-          throw apiError; // Re-throw original error
-        }
+      if (response.status === 200 || response.status === 201) {
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "FACT-G responses saved successfully!",
+          onHide: () => navigation.goBack(),
+        });
+      } else {
+        throw new Error(`Server returned status ${response.status}`);
       }
     } catch (error: any) {
-      console.error("Error saving FACT-G:", error);
-      console.error("Error details:", {
-        message: error.message,
-        status: error.status,
-        response: error.response?.data,
-        stack: error.stack
-      });
-
-      let errorMessage = "Failed to save FACT-G responses.";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: errorMessage,
-        position: "top",
-        topOffset: 50,
+        text1: "Error saving FACT-G",
+        text2: error.message || "Failed to save FACT-G responses.",
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const RatingButtons = ({ questionCode, currentValue }: { questionCode: string; currentValue: number | null }) => {
-    console.log(`RatingButtons for ${questionCode}: currentValue = ${currentValue} (type: ${typeof currentValue})`);
 
+  const RatingButtons = ({ questionCode, currentValue }: { questionCode: string; currentValue: number | null }) => {
     return (
       <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
         <View className="flex-row">
-          {[0, 1, 2, 3, 4].map((value, index) => {
-            const isSelected = currentValue === value;
-            console.log(`Button ${value} for ${questionCode}: isSelected = ${isSelected}, currentValue = ${currentValue}, value = ${value}`);
+          {[0, 1, 2, 3, 4].map((value) => {
+            const isSelected = currentValue === value; // currentValue is a number or null
             return (
               <React.Fragment key={value}>
                 <Pressable
-                  onPress={() => {
-                    console.log(`Pressed button ${value} for ${questionCode}`);
-                    setAnswer(questionCode, value);
-                  }}
-                  className={`w-12 py-2 items-center justify-center ${isSelected ? "bg-[#7ED321]" : "bg-white"
-                    }`}
+                  onPress={() => setAnswer(questionCode, value)}
+                  className={`w-12 py-2 items-center justify-center ${isSelected ? "bg-[#7ED321]" : "bg-white"}`}
                 >
-                  <Text
-                    className={`font-medium text-sm ${isSelected ? "text-white" : "text-[#4b5f5a]"
-                      }`}
-                  >
+                  <Text className={`font-medium text-sm ${isSelected ? "text-white" : "text-[#4b5f5a]"}`}>
                     {value}
                   </Text>
                 </Pressable>
-                {index < 4 && <View className="w-px bg-[#e6eeeb]" />}
+                {value < 4 && <View className="w-px bg-[#e6eeeb]" />}
               </React.Fragment>
             );
           })}
@@ -574,58 +365,41 @@ export default function EdmontonFactGScreen() {
     );
   };
 
+
   return (
     <>
-      {/* Header */}
       <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">
-            Participant ID: {patientId}
-          </Text>
-
+        <View className="bg-white border-b border-gray-200 rounded-xl p-8 flex-row justify-between items-center shadow-sm">
+          <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
           <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId ? `${studyId.toString().padStart(4, '0')}` : 'CS-0001'}
+            Study ID: {studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001"}
           </Text>
-
           <View className="flex-row items-center gap-3">
-            <Text className="text-base font-semibold text-gray-700">
-              Age: {age || "Not specified"}
-            </Text>
-
-        {/* Date Dropdown */}
-        <View className="w-32">
-          <Pressable
-            className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-            onPress={() => setShowDateDropdown(!showDateDropdown)}
-            style={{
-              backgroundColor: '#eff6ff',
-              borderColor: '#bfdbfe',
-              borderRadius: 8,
-            }}
-          >
-            <Text className="text-sm text-blue-700 font-medium">
-              {selectedDate || "Select Date"}
-            </Text>
-            <Text className="text-blue-500 text-xs">▼</Text>
-          </Pressable>
-        </View>
+            <Text className="text-base font-semibold text-gray-700">Age: {age || "Not specified"}</Text>
+            <View className="w-32">
+              <Pressable
+                className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                onPress={() => setShowDateDropdown(!showDateDropdown)}
+                style={{ backgroundColor: "#eff6ff", borderColor: "#bfdbfe", borderRadius: 8 }}
+              >
+                <Text className="text-sm text-blue-700 font-medium">{selectedDate || "Select Date"}</Text>
+                <Text className="text-blue-500 text-xs">▼</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
-        {/* Date Dropdown Menu */}
         {showDateDropdown && (
           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32">
             {availableDates.length > 0 ? (
               availableDates.map((date, index) => (
                 <Pressable
                   key={date}
-                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  className={`px-3 py-2 ${index < availableDates.length - 1 ? "border-b border-gray-100" : ""}`}
                   onPress={() => {
-                    console.log('📅 Date selected:', date);
                     setSelectedDate(date);
                     setHasSelectedDate(true);
                     setShowDateDropdown(false);
-                    // Fetch data for the selected date
                     fetchFactG(date);
                   }}
                 >
@@ -642,34 +416,8 @@ export default function EdmontonFactGScreen() {
       </View>
 
       <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
-        {/* Debug Info */}
-        <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-          <Text className="text-xs text-yellow-800">
-            Debug: showDateDropdown={showDateDropdown.toString()}, 
-            availableDates.length={availableDates.length}, selectedDate={selectedDate}, hasSelectedDate={hasSelectedDate.toString()}
-          </Text>
-          <Text className="text-xs text-yellow-800 mt-1">
-            Available dates: {availableDates.join(', ')}
-          </Text>
-        </View>
-
-        {/* Show message when no date is selected */}
-        {!hasSelectedDate && (
-          <View className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <Text className="text-blue-800 text-center">
-              Please select a date from the dropdown above to load FACT-G questions
-            </Text>
-          </View>
-        )}
-
-        {/* Main FACT-G Card - only show when date is selected */}
         {hasSelectedDate && (
-          <FormCard
-            icon="FG"
-            title="FACT-G (Version 4)"
-            desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much."
-          >
-            {/* Loading State */}
+          <FormCard icon="FG" title="FACT-G (Version 4)" desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.">
             {loading && (
               <View className="bg-white rounded-lg p-8 shadow-md mb-4 items-center">
                 <ActivityIndicator size="large" color="#2E7D32" />
@@ -677,71 +425,53 @@ export default function EdmontonFactGScreen() {
               </View>
             )}
 
-            {/* Error State */}
             {error && (
               <View className="bg-red-50 rounded-lg p-4 shadow-md mb-4">
                 <Text className="text-red-600 text-center font-semibold">{error}</Text>
-                <Pressable onPress={() => fetchFactG()} className="mt-2">
+                <Pressable onPress={() => fetchFactG(selectedDate)} className="mt-2">
                   <Text className="text-blue-600 text-center font-semibold">Try Again</Text>
                 </Pressable>
               </View>
             )}
 
-            {/* Question Categories */}
-            {!loading && !error && subscales.map((scale) => (
-          <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
-            {scale.items.map((item, index) => (
-              <View key={item.code}>
-                <View className="flex-row items-center gap-3 mb-2">
-                  <Text className="w-16 text-ink font-bold">{item.code}</Text>
-                  <Text className="flex-1 text-sm">{item.text}</Text>
-                  <RatingButtons
-                    questionCode={item.code}
-                   currentValue={answers[item.code] !== undefined ? answers[item.code] : null}
-
-                  />
-                </View>
-                {index < scale.items.length - 1 && (
-                  <View className="border-b border-gray-100 my-2" />
-                )}
-              </View>
-            ))}
-          </FormCard>
-        ))}
+            {!loading &&
+              !error &&
+              subscales.map((scale) => (
+                <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
+                  {scale.items.map((item, index) => (
+                    <View key={item.code}>
+                      <View className="flex-row items-center gap-3 mb-2">
+                        <Text className="w-16 text-ink font-bold">{item.code}</Text>
+                        <Text className="flex-1 text-sm">{item.text}</Text>
+                        <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
+                      </View>
+                      {index < scale.items.length - 1 && <View className="border-b border-gray-100 my-2" />}
+                    </View>
+                  ))}
+                </FormCard>
+              ))}
           </FormCard>
         )}
 
-        {/* Rating Scale Reference - only show when date is selected */}
         {hasSelectedDate && !loading && !error && subscales.length > 0 && (
           <View className="bg-blue-50 rounded-lg p-4 shadow-md mb-4">
             <Text className="font-semibold text-sm text-blue-800 mb-2">Rating Scale:</Text>
             <Text className="text-xs text-blue-700">
-              0 = Not at all  •  1 = A little bit  •  2 = Somewhat  •  3 = Quite a bit  •  4 = Very much
+              0 = Not at all &nbsp;•&nbsp; 1 = A little bit &nbsp;•&nbsp; 2 = Somewhat &nbsp;•&nbsp; 3 = Quite a bit &nbsp;•&nbsp; 4 =
+              Very much
             </Text>
           </View>
         )}
 
-        {/* Extra space to ensure content is not hidden by BottomBar */}
         <View style={{ height: 150 }} />
       </ScrollView>
 
-      {/* Bottom Bar with Scores */}
       <BottomBar>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-          PWB {score.PWB}
-        </Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-          SWB {score.SWB}
-        </Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-          EWB {score.EWB}
-        </Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-          FWB {score.FWB}
-        </Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#134b3b] text-white font-extrabold">
-          TOTAL {score.TOTAL}
-        </Text>
+        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">PWB {score.PWB}</Text>
+        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">SWB {score.SWB}</Text>
+        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">EWB {score.EWB}</Text>
+        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">FWB {score.FWB}</Text>
+        <Text className="px-3 py-2 rounded-xl bg-[#134b3b] text-white font-extrabold">TOTAL {score.TOTAL}</Text>
 
         <Btn variant="light" onPress={handleClear}>
           Clear
