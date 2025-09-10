@@ -234,6 +234,7 @@ export default function EdmontonFactGScreen() {
         existingAnswers[q.FactGQuestionId] = isNaN(parsedVal!) ? null : parsedVal;
       }
     });
+
     setAnswers(existingAnswers);
 
     } catch (err) {
@@ -364,7 +365,6 @@ export default function EdmontonFactGScreen() {
       </View>
     );
   };
-
 
   return (
     <>
