@@ -443,6 +443,9 @@ export default function InformedConsentForm({
                         </Text>
                     </View>
                 </FormCard>
+
+                {/* Extra space to ensure content is not hidden by BottomBar */}
+                <View style={{ height: 100 }} />
             </ScrollView>
 
             <BottomBar>

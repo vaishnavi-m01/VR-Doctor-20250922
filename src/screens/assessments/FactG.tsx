@@ -30,28 +30,97 @@ export default function FactG(){
         </View>
       </FormCard>
 
-      {subscales.map(sc => (
-        <FormCard key={sc.key} icon={sc.key[0]} title={sc.label}>
-          {sc.items.map(it => (
-            <View key={it.code} className="flex-row items-center gap-3 mb-2">
-              <Text className="w-16 text-ink font-bold">{it.code}</Text>
-              <Text className="flex-1 text-sm">{it.text}</Text>
-              <PillGroup values={[0,1,2,3,4]} value={answers[it.code] ?? undefined} onChange={(v)=>set(it.code, Number(v))} />
-              {it.optional && <Text className="text-xs text-muted ml-2">Optional</Text>}
+      {/* Improved UI with side letters in same column */}
+      <FormCard icon="📋" title="FACT-G Assessment Questions" desc="Rate each statement from 0 (Not at all) to 4 (Very much)">
+        <View className="space-y-4">
+          {/* Header row with consistent spacing */}
+          <View className="flex-row items-center gap-3 mb-3 pb-2 border-b border-gray-200">
+            <View className="w-12 items-center">
+              <Text className="text-xs font-bold text-gray-600 uppercase">Code</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-bold text-gray-600 uppercase">Question</Text>
+            </View>
+            <View className="w-40">
+              <Text className="text-xs font-bold text-gray-600 uppercase text-center">Rating (0-4)</Text>
+            </View>
+          </View>
+
+          {subscales.map((sc, scaleIndex) => (
+            <View key={sc.key} className="space-y-3">
+              {/* Scale header */}
+              <View className="flex-row items-center gap-3 py-2 bg-gray-50 rounded-lg px-3">
+                <View className="w-12 items-center">
+                  <View className="w-8 h-8 bg-[#0ea06c] rounded-full items-center justify-center">
+                    <Text className="text-white font-bold text-sm">{sc.key[0]}</Text>
+                  </View>
+                </View>
+                <View className="flex-1">
+                  <Text className="font-bold text-[#0ea06c] text-sm">{sc.label}</Text>
+                  <Text className="text-xs text-gray-500">Range: {sc.range[0]}-{sc.range[1]}</Text>
+                </View>
+                <View className="w-40"></View>
+              </View>
+
+              {/* Questions for this scale */}
+              {sc.items.map((it, itemIndex) => (
+                <View key={it.code} className="flex-row items-center gap-3 py-2 px-3 bg-white rounded-lg border border-gray-100">
+                  <View className="w-12 items-center">
+                    <Text className="text-sm font-bold text-[#0ea06c]">{it.code}</Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm text-gray-700 leading-5">{it.text}</Text>
+                    {it.optional && (
+                      <Text className="text-xs text-orange-500 font-medium mt-1">Optional</Text>
+                    )}
+                  </View>
+                  <View className="w-40">
+                    <PillGroup 
+                      values={[0,1,2,3,4]} 
+                      value={answers[it.code] ?? undefined} 
+                      onChange={(v)=>set(it.code, Number(v))} 
+                    />
+                  </View>
+                </View>
+              ))}
             </View>
           ))}
-        </FormCard>
-      ))}
+        </View>
+      </FormCard>
     </ScrollView>
 
     <BottomBar>
-      <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">PWB {score.PWB}</Text>
-      <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">SWB {score.SWB}</Text>
-      <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">EWB {score.EWB}</Text>
-      <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">FWB {score.FWB}</Text>
-      <Text className="px-3 py-2 rounded-xl bg-[#134b3b] text-white font-extrabold">TOTAL {score.TOTAL}</Text>
-      <Btn variant="light" onPress={()=>{}}>Clear</Btn>
-      <Btn onPress={()=>{}}>Save</Btn>
+      <View className="flex-row items-center gap-2 flex-wrap">
+        {/* Score indicators */}
+        <View className="flex-row items-center gap-2">
+          <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+            <Text className="text-white font-bold text-xs">PWB</Text>
+            <Text className="text-white font-extrabold text-sm">{score.PWB}</Text>
+          </View>
+          <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+            <Text className="text-white font-bold text-xs">SWB</Text>
+            <Text className="text-white font-extrabold text-sm">{score.SWB}</Text>
+          </View>
+          <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+            <Text className="text-white font-bold text-xs">EWB</Text>
+            <Text className="text-white font-extrabold text-sm">{score.EWB}</Text>
+          </View>
+          <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+            <Text className="text-white font-bold text-xs">FWB</Text>
+            <Text className="text-white font-extrabold text-sm">{score.FWB}</Text>
+          </View>
+          <View className="px-3 py-2 rounded-lg bg-[#134b3b] border-2 border-[#0ea06c]">
+            <Text className="text-white font-bold text-xs">TOTAL</Text>
+            <Text className="text-white font-extrabold text-base">{score.TOTAL}</Text>
+          </View>
+        </View>
+        
+        {/* Action buttons */}
+        <View className="flex-row gap-2">
+          <Btn variant="light" onPress={()=>{}}>Clear</Btn>
+          <Btn onPress={()=>{}}>Save</Btn>
+        </View>
+      </View>
     </BottomBar>
     </>
   );

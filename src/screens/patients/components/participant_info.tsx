@@ -15,14 +15,7 @@ export default function ParticipantInfo({ patientId = 1, age = 0, studyId = 1 }:
 
   return (
     <ScrollView className="flex-1 p-4">
-        <AssessItem
-        icon="📝"
-        title="Informed Consent Form"
-        subtitle="Study details, participant information, acknowledgements, and signatures"
-        onPress={() => navigation.navigate("InformedConsent", { patientId,age,studyId })}
-        className="bg-[#F6F7F7] border-[#F6F7F7]"
-      />
-
+        
       <AssessItem
         icon="📋"
         title="Socio Demographic Form"
@@ -38,6 +31,14 @@ export default function ParticipantInfo({ patientId = 1, age = 0, studyId = 1 }:
         onPress={() => navigation.navigate("PatientScreening", { patientId, age: age || 0, studyId: studyId || 1 })}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
+
+      <AssessItem
+              icon="📝"
+              title="Informed Consent Form"
+              subtitle="Study details, participant information, acknowledgements, and signatures"
+              onPress={() => navigation.navigate("InformedConsent", { patientId,age,studyId })}
+              className="bg-[#F6F7F7] border-[#F6F7F7]"
+            />
 
       <AssessItem
         icon="📊"

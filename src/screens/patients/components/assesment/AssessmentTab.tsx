@@ -16,9 +16,10 @@ interface AssessmentTabProps {
   patientId: number;
   age: number;
   studyId:number;
+  groupType?: string; // "Study" or "Controlled" or null
 }
 
-const AssessmentTab = ({ patientId, age,studyId }: AssessmentTabProps) => {
+const AssessmentTab = ({ patientId, age, studyId, groupType }: AssessmentTabProps) => {
   const navigation = useNavigation<AssessmentTabNavigationProp>();
 
   // State for orientation assessment items
@@ -58,16 +59,19 @@ const AssessmentTab = ({ patientId, age,studyId }: AssessmentTabProps) => {
         onPress={() => navigation.navigate("EdmontonFactGScreen", { patientId, age,studyId })}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
-      <AssessItem
-        icon="📋"
-        title="Study Observation Form"
-        subtitle="Record session observations and participant responses"
-        onPress={() =>
-          // navigation.navigate('StudyObservation_List',{patientId,age})
-          navigation.navigate("StudyObservation", { patientId, age,studyId })
-        }
-        className="bg-[#F6F7F7] border-[#F6F7F7]"
-      />
+      {/* Only show Study Observation Form for Study group participants */}
+      {groupType === 'Study' && (
+        <AssessItem
+          icon="📋"
+          title="Study Observation Form"
+          subtitle="Record session observations and participant responses"
+          onPress={() =>
+            // navigation.navigate('StudyObservation_List',{patientId,age})
+            navigation.navigate("StudyObservation", { patientId, age,studyId })
+          }
+          className="bg-[#F6F7F7] border-[#F6F7F7]"
+        />
+      )}
       <AssessItem
         icon="📝"
         title="Exit Interview optional"

@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Image, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -36,6 +37,7 @@ export interface Patient {
   stage: string;
   name?: string;
   weightKg?: number;
+  groupType?: string; // "Study" or "Controlled" or null
 }
 
 export default function ParticipantAssessmentSplit() {
@@ -43,9 +45,11 @@ export default function ParticipantAssessmentSplit() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [participants, setParticipants] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selId, setSelId] = useState<number | null>(null); // holds ParticipantId
   const [tab, setTab] = useState('assessment');
   const [searchText, setSearchText] = useState("");
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const hasLoadedDataRef = useRef<boolean>(false); // Track if data has been loaded
 
   // Constants for AsyncStorage keys
@@ -178,24 +182,41 @@ export default function ParticipantAssessmentSplit() {
 
 
 
-  // Save selected participant when it changes
+  // Save selected participant when it changes and handle tab switching
   useEffect(() => {
     if (selId !== null) {
       console.log(`💾 Saving participant selection: ${selId}`);
       saveSelectedParticipant(selId);
+      
+      // If current tab is VR Session or Orientation but participant is not in Study group, switch to assessment
+      if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
+        console.log(`🔄 Switching from ${tab === ' VR' ? 'VR Session' : 'Orientation'} to Assessment tab - participant not in Study group`);
+        setTab('assessment');
+      }
+      
+      // If current tab is Assessment but participant has null GroupType, switch to dashboard
+      if (tab === 'assessment' && sel?.groupType === null) {
+        console.log(`🔄 Switching from Assessment to Dashboard tab - participant has null GroupType`);
+        setTab('dash');
+      }
     }
-  }, [selId]);
+  }, [selId, sel?.groupType, tab]);
 
   // Save selected tab when it changes
   useEffect(() => {
     saveSelectedTab(tab);
   }, [tab]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchParticipants();
-    }, [])
-  );
+  // Manual refresh function for pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchParticipants(searchText);
+      setLastRefreshTime(new Date());
+    } finally {
+      setRefreshing(false);
+    }
+  }, [searchText]);
 
   const fetchParticipants = async (search: string = "") => {
     try {
@@ -241,19 +262,24 @@ export default function ParticipantAssessmentSplit() {
       );
 
       if (response.data?.ResponseData) {
-        const parsed: Patient[] = response.data.ResponseData.map((item: any) => ({
-          id: item.ParticipantId,
-          ParticipantId: item.ParticipantId,
-          studyId: item.StudyId,
-          age: Number(item.Age) ?? 0,
-          status: item.CriteriaStatus?.toLowerCase() || "pending",
-          gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
-          cancerType: item.CancerDiagnosis || "N/A",
-          stage: item.StageOfCancer || "N/A",
-          name: item.Name ?? undefined,
-        }));
+        const parsed: Patient[] = response.data.ResponseData.map((item: any) => {
+          console.log(`📊 Mapping participant ${item.ParticipantId} - GroupType: "${item.GroupType}"`);
+          return {
+            id: item.ParticipantId,
+            ParticipantId: item.ParticipantId,
+            studyId: item.StudyId,
+            age: Number(item.Age) ?? 0,
+            status: item.CriteriaStatus?.toLowerCase() || "pending",
+            gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
+            cancerType: item.CancerDiagnosis || "N/A",
+            stage: item.StageOfCancer || "N/A",
+            name: item.Name ?? undefined,
+            groupType: item.GroupType || null, // Map GroupType from API response
+          };
+        });
 
         setParticipants(parsed);
+        setLastRefreshTime(new Date());
         return parsed; // Return the participants data
       }
       return []; // Return empty array if no data
@@ -267,6 +293,11 @@ export default function ParticipantAssessmentSplit() {
 
 
   const sel = participants.find((p) => p.ParticipantId === selId);
+  
+  // Debug logging for GroupType
+  if (sel) {
+    console.log(`🔍 Selected participant ${sel.ParticipantId} - GroupType: ${sel.groupType || 'null'}`);
+  }
 
 
 
@@ -284,13 +315,13 @@ export default function ParticipantAssessmentSplit() {
       case 'orie':
         return <OrientationTab patientId={patientId} age={age} studyId={studyId} />;
       case 'assessment':
-        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} />;
+        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} groupType={sel?.groupType} />;
       case ' VR':
         return <VRTab patientId={patientId} age={age} studyId={studyId} />;
       case 'notification':
         return null;
       default:
-        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} />;
+        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} groupType={sel?.groupType} />;
     }
   };
 
@@ -308,9 +339,25 @@ export default function ParticipantAssessmentSplit() {
                 {/* <Text className="text-[#21c57e]">●</Text> */}
                 <Image source={require("../../../assets/patientList.png")} ></Image>
               </View>
+              <TouchableOpacity 
+                onPress={onRefresh}
+                className="p-2 rounded-lg bg-gray-100"
+                disabled={refreshing}
+              >
+                <MaterialCommunityIcons 
+                  name="refresh" 
+                  size={20} 
+                  color={refreshing ? "#999" : "#0ea06c"} 
+                />
+              </TouchableOpacity>
             </View>
             <Text className="text-xs text-[#6b7a77]">
               List of Participants ({participants.length})
+              {lastRefreshTime && (
+                <Text className="text-[#999]">
+                  {' • Last updated: ' + lastRefreshTime.toLocaleTimeString()}
+                </Text>
+              )}
             </Text>
 
             <View className="flex-row items-center space-x-2 mt-3">
@@ -358,7 +405,18 @@ export default function ParticipantAssessmentSplit() {
             </Pressable>
           </View>
 
-          <ScrollView className="flex-1 p-3" contentContainerStyle={{ paddingBottom: 10 }}>
+          <ScrollView 
+            className="flex-1 p-3" 
+            contentContainerStyle={{ paddingBottom: 10 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#0ea06c']}
+                tintColor="#0ea06c"
+              />
+            }
+          >
             {loading ? (
               <ActivityIndicator color="#0ea06c" />
             ) : participants.length > 0 ? (
@@ -402,18 +460,29 @@ export default function ParticipantAssessmentSplit() {
           </View>
 
           <View className="px-6">
-            <TabPills
-              tabs={[
+            {(() => {
+              const tabs = [
                 { key: 'dash', label: 'Dashboard' },
                 { key: 'info', label: 'Participant Register' },
-                { key: 'orie', label: 'Orientation' },
-                { key: 'assessment', label: 'Assessment' },
-                { key: ' VR', label: ' VR Session' },
+                // Only show Orientation tab if participant is in "Study" group
+                ...(sel?.groupType === 'Study' ? [{ key: 'orie', label: 'Orientation' }] : []),
+                // Only show Assessment tab if participant is not null (Study or Controlled)
+                ...(sel?.groupType !== null ? [{ key: 'assessment', label: 'Assessment' }] : []),
+                // Only show VR Session tab if participant is in "Study" group
+                ...(sel?.groupType === 'Study' ? [{ key: ' VR', label: ' VR Session' }] : []),
                 { key: 'notification', label: 'Notification' },
-              ]}
-              active={tab}
-              onChange={setTab}
-            />
+              ];
+              
+              console.log(`🎯 Rendering tabs for participant ${sel?.ParticipantId} (GroupType: ${sel?.groupType || 'null'}):`, tabs.map(t => t.label));
+              
+              return (
+                <TabPills
+                  tabs={tabs}
+                  active={tab}
+                  onChange={setTab}
+                />
+              );
+            })()}
           </View>
 
           {renderTabContent()}

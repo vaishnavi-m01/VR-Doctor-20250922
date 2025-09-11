@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
-import FormCard from "../../../../../components/FormCard";
 import BottomBar from "../../../../../components/BottomBar";
 import { Btn } from "../../../../../components/Button";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
@@ -129,20 +128,34 @@ export default function EdmontonFactGScreen() {
       const participantId = `${patientId}`;
       const weeklyData = await AssessmentApiService.getParticipantFactGQuestionsWeeklyWeeks(participantId);
 
+      console.log("📅 Raw API response:", weeklyData);
+
       const uniqueDatesSet = new Set<string>();
       for (const item of weeklyData) {
-        if (item.CreatedDate) uniqueDatesSet.add(item.CreatedDate);
+        // Try different possible date field names
+        const dateValue = item.CreatedDate || item.createdDate || item.date || item.Date || item.CREATED_DATE;
+        if (dateValue) {
+          console.log("📅 Found date:", dateValue, "from item:", item);
+          uniqueDatesSet.add(dateValue);
+        } else {
+          console.log("📅 No date found in item:", item);
+        }
       }
       const uniqueDates = Array.from(uniqueDatesSet);
       const formattedDates = uniqueDates.map(formatDate);
 
+      console.log("📅 Unique dates from API:", uniqueDates);
+      console.log("📅 Formatted dates:", formattedDates);
+
       setAvailableDates(formattedDates);
 
       if (formattedDates.length === 0) {
+        console.log("📅 No dates found, using sample dates");
         const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
         setAvailableDates(sampleDates);
       }
-    } catch {
+    } catch (error) {
+      console.error("📅 Error fetching dates:", error);
       const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
       setAvailableDates(sampleDates);
       Toast.show({
@@ -351,7 +364,7 @@ export default function EdmontonFactGScreen() {
               <React.Fragment key={value}>
                 <Pressable
                   onPress={() => setAnswer(questionCode, value)}
-                  className={`w-12 py-2 items-center justify-center ${isSelected ? "bg-[#7ED321]" : "bg-white"}`}
+                  className={`w-10 py-2 items-center justify-center ${isSelected ? "bg-[#7ED321]" : "bg-white"}`}
                 >
                   <Text className={`font-medium text-sm ${isSelected ? "text-white" : "text-[#4b5f5a]"}`}>
                     {value}
@@ -368,8 +381,8 @@ export default function EdmontonFactGScreen() {
 
   return (
     <>
-      <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-8 flex-row justify-between items-center shadow-sm">
+      <View className="pt-4">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-8 mx-4 flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
           <Text className="text-base font-semibold text-green-600">
             Study ID: {studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001"}
@@ -415,9 +428,19 @@ export default function EdmontonFactGScreen() {
         )}
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 bg-bg pb-[400px]">
         {hasSelectedDate && (
-          <FormCard icon="FG" title="FACT-G (Version 4)" desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.">
+          <View className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card mb-3 mt-4">
+            <View className="flex-row items-start gap-3 p-3">
+              <View className="w-12 h-12 rounded-xl bg-[#eaf7f2] items-center justify-center">
+                <Text className="text-ink font-extrabold">FG</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold mb-1">FACT-G (Version 4)</Text>
+                <Text className="text-xs text-muted mb-2">Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.</Text>
+              </View>
+            </View>
+            <View className="px-3">
             {loading && (
               <View className="bg-white rounded-lg p-8 shadow-md mb-4 items-center">
                 <ActivityIndicator size="large" color="#2E7D32" />
@@ -434,23 +457,56 @@ export default function EdmontonFactGScreen() {
               </View>
             )}
 
-            {!loading &&
-              !error &&
-              subscales.map((scale) => (
-                <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
-                  {scale.items.map((item, index) => (
-                    <View key={item.code}>
-                      <View className="flex-row items-center gap-3 mb-2">
-                        <Text className="w-16 text-ink font-bold">{item.code}</Text>
-                        <Text className="flex-1 text-sm">{item.text}</Text>
-                        <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
+            {!loading && !error && (
+              <View className="space-y-4">
+                {/* Header row with consistent spacing */}
+                <View className="flex-row items-center gap-3 mb-3 pb-2 border-b border-gray-200">
+                  <View className="w-16 items-center">
+                    <Text className="text-xs font-bold text-gray-600 uppercase">Code</Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-xs font-bold text-gray-600 uppercase">Question</Text>
+                  </View>
+                  <View className="w-60">
+                    <Text className="text-xs font-bold text-gray-600 uppercase text-center">Rating (0-4)</Text>
+                  </View>
+                </View>
+
+                {subscales.map((scale, scaleIndex) => (
+                  <View key={scale.key} className="space-y-3">
+                    {/* Scale header */}
+                    <View className="flex-row items-center gap-3 py-2 bg-gray-50 rounded-lg">
+                      <View className="w-16 items-start">
+                        <View className="w-8 h-8 bg-[#0ea06c] rounded-full items-center justify-center">
+                          <Text className="text-white font-bold text-sm">{scale.shortCode}</Text>
+                        </View>
                       </View>
-                      {index < scale.items.length - 1 && <View className="border-b border-gray-100 my-2" />}
+                      <View className="flex-1">
+                        <Text className="font-bold text-[#0ea06c] text-sm">{scale.label}</Text>
+                      </View>
+                      <View className="w-60"></View>
                     </View>
-                  ))}
-                </FormCard>
-              ))}
-          </FormCard>
+
+                    {/* Questions for this scale */}
+                    {scale.items.map((item, itemIndex) => (
+                      <View key={item.code} className="flex-row items-center gap-3 py-2 bg-white rounded-lg border border-gray-100">
+                        <View className="w-16 items-start">
+                          <Text className="text-sm font-bold text-[#0ea06c]" numberOfLines={1}>{item.code}</Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-sm text-gray-700 leading-5">{item.text}</Text>
+                        </View>
+                        <View className="w-60">
+                          <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            )}
+            </View>
+          </View>
         )}
 
         {hasSelectedDate && !loading && !error && subscales.length > 0 && (
@@ -467,25 +523,48 @@ export default function EdmontonFactGScreen() {
       </ScrollView>
 
       <BottomBar>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">PWB {score.PWB}</Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">SWB {score.SWB}</Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">EWB {score.EWB}</Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">FWB {score.FWB}</Text>
-        <Text className="px-3 py-2 rounded-xl bg-[#134b3b] text-white font-extrabold">TOTAL {score.TOTAL}</Text>
-
-        <Btn variant="light" onPress={handleClear}>
-          Clear
-        </Btn>
-        <Btn onPress={handleSave} disabled={saving || loading}>
-          {saving ? (
-            <View className="flex-row items-center">
-              <ActivityIndicator size="small" color="white" className="mr-2" />
-              <Text className="text-white">Saving...</Text>
+        <View className="flex-row items-center gap-2 flex-wrap">
+          {/* Score indicators */}
+          <View className="flex-row items-center gap-2">
+            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+              <Text className="text-white font-bold text-xs">PWB</Text>
+              <Text className="text-white font-extrabold text-sm">{score.PWB}</Text>
             </View>
-          ) : (
-            "Save"
-          )}
-        </Btn>
+            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+              <Text className="text-white font-bold text-xs">SWB</Text>
+              <Text className="text-white font-extrabold text-sm">{score.SWB}</Text>
+            </View>
+            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+              <Text className="text-white font-bold text-xs">EWB</Text>
+              <Text className="text-white font-extrabold text-sm">{score.EWB}</Text>
+            </View>
+            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
+              <Text className="text-white font-bold text-xs">FWB</Text>
+              <Text className="text-white font-extrabold text-sm">{score.FWB}</Text>
+            </View>
+            <View className="px-3 py-2 rounded-lg bg-[#134b3b] border-2 border-[#0ea06c]">
+              <Text className="text-white font-bold text-xs">TOTAL</Text>
+              <Text className="text-white font-extrabold text-base">{score.TOTAL}</Text>
+            </View>
+          </View>
+          
+          {/* Action buttons */}
+          <View className="flex-row gap-2">
+            <Btn variant="light" onPress={handleClear}>
+              Clear
+            </Btn>
+            <Btn onPress={handleSave} disabled={saving || loading}>
+              {saving ? (
+                <View className="flex-row items-center">
+                  <ActivityIndicator size="small" color="white" className="mr-2" />
+                  <Text className="text-white">Saving...</Text>
+                </View>
+              ) : (
+                "Save"
+              )}
+            </Btn>
+          </View>
+        </View>
       </BottomBar>
     </>
   );

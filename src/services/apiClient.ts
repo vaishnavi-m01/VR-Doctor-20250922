@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { store } from '../store';
 import { addNotification } from '../store/slices/uiSlice';
+import { API_CONFIG } from '../config/environment';
 
 // API Response interfaces
 export interface ApiResponse<T = any> {
@@ -30,8 +31,8 @@ export interface AssessmentResponse {
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'https://your-api-base-url.com/api', // Replace with your actual API base URL
-  timeout: 10000,
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
