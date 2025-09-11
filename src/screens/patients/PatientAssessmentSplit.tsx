@@ -180,27 +180,27 @@ export default function ParticipantAssessmentSplit() {
     }, [])
   );
 
+const sel = participants.find((p) => p.ParticipantId === selId);
 
 
   // Save selected participant when it changes and handle tab switching
-  useEffect(() => {
-    if (selId !== null) {
-      console.log(`💾 Saving participant selection: ${selId}`);
-      saveSelectedParticipant(selId);
-      
-      // If current tab is VR Session or Orientation but participant is not in Study group, switch to assessment
-      if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
-        console.log(`🔄 Switching from ${tab === ' VR' ? 'VR Session' : 'Orientation'} to Assessment tab - participant not in Study group`);
-        setTab('assessment');
-      }
-      
-      // If current tab is Assessment but participant has null GroupType, switch to dashboard
-      if (tab === 'assessment' && sel?.groupType === null) {
-        console.log(`🔄 Switching from Assessment to Dashboard tab - participant has null GroupType`);
-        setTab('dash');
-      }
+useEffect(() => {
+  if (selId !== null) {
+    console.log(`💾 Saving participant selection: ${selId}`);
+    saveSelectedParticipant(selId);
+    
+    if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
+      console.log(`🔄 Switching tab`);
+      setTab('assessment');
     }
-  }, [selId, sel?.groupType, tab]);
+    
+    if (tab === 'assessment' && sel?.groupType === null) {
+      console.log(`🔄 Switching tab`);
+      setTab('dash');
+    }
+  }
+}, [selId, sel?.groupType, tab]);
+
 
   // Save selected tab when it changes
   useEffect(() => {
@@ -292,7 +292,6 @@ export default function ParticipantAssessmentSplit() {
   };
 
 
-  const sel = participants.find((p) => p.ParticipantId === selId);
   
   // Debug logging for GroupType
   if (sel) {
