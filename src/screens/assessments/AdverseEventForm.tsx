@@ -271,10 +271,15 @@ export default function AdverseEventForm() {
 
                 if (res.data.ResponseData && res.data.ResponseData.length > 0) {
                     const ae = res.data.ResponseData[0];
+
                     setAEId(ae.AEId || "");
                     setReportDate(ae.DateOfReport?.split("T")[0] || "");
                     setdateOfAE(ae.OnsetDateTime?.split("T")[0] || "");
-                    settimeOfAE(ae.OnsetDateTime ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
+                    settimeOfAE(
+                        ae.OnsetDateTime
+                            ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : ""
+                    );
                     setParticipantIdField(ae.ParticipantId || "");
                     setReportedBy(
                         ae.ReportedByRole
@@ -291,6 +296,23 @@ export default function AdverseEventForm() {
                     setConditionContribution(ae.PreExistingContribution || "");
                     setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
                     setInvestigatorSignature(ae.InvestigatorSignature || "");
+
+                    // -----------------------------
+                    // Set severity, outcome, and actions from response
+                    // -----------------------------
+                    if (ae.SeverityOutcomeData && ae.SeverityOutcomeData.length > 0) {
+                        // Assuming only one severity can be selected
+                        setSeverity(ae.SeverityOutcomeData[0].SeverityId || "");
+
+                        // Map outcome IDs
+                        const outcomeIds = ae.SeverityOutcomeData.map((o: any) => o.OutcomeId || "");
+                        setOutcome(outcomeIds);
+                    }
+
+                    if (ae.ImmediateActionData && ae.ImmediateActionData.length > 0) {
+                        const actionIds = ae.ImmediateActionData.map((a: any) => a.ActionId || "");
+                        setActions(actionIds);
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching AE data:", err);
@@ -306,6 +328,7 @@ export default function AdverseEventForm() {
 
         fetchAeData();
     }, [patientId]);
+
 
     return (
         <>

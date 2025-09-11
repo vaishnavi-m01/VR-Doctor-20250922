@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,12 @@ import BottomBar from '../../components/BottomBar';
 import { Btn } from '../../components/Button';
 import FormCard from '../../components/FormCard';
 import Header from '../../components/Header';
+import { apiService } from 'src/services';
+import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
+import { formatDate } from 'src/utils/formUtils';
+import { formatDateDDMMYYYY, formatForUI } from 'src/utils/date';
+
 
 interface InformedConsentFormProps {
     patientId?: number;
@@ -23,21 +29,33 @@ interface InformedConsentFormProps {
     studyId?: number;
 }
 
+interface setInformedConsent {
+    ICMID?: string;
+    StudyId?: string;
+    QuestionName?: string;
+    SortKey?: number;
+    Status?: number;
+}
+
+
+
+
+
 export default function InformedConsentForm({
-   
+
 }: InformedConsentFormProps) {
     const navigation =
         useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-          const route = useRoute<RouteProp<RootStackParamList, 'InformedConsent'>>();
-        
-          const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
+    const route = useRoute<RouteProp<RootStackParamList, 'InformedConsent'>>();
+
+    const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
 
 
     /* ---------------------- Study Details ---------------------- */
     const [studyTitle, setStudyTitle] = useState(
         'An exploratory study to assess the effectiveness of Virtual Reality assisted Guided Imagery on QoL of cancer patients undergoing chemo-radiation treatment'
     );
-    const [studyNumber, setStudyNumber] = useState('Auto / Enter study number');
+    const [studyNumber, setStudyNumber] = useState('');
 
     /* ------------------ Participant Information ---------------- */
     const [participantInitials, setParticipantInitials] = useState('');
@@ -48,14 +66,32 @@ export default function InformedConsentForm({
     const [occupation, setOccupation] = useState('');
     const [annualIncome, setAnnualIncome] = useState('');
     const [address, setAddress] = useState('');
+    const { userId } = useContext(UserContext);
+    const [PICDID, setPICDID] = useState<string | null>(null);
+    const [subjectSignaturePad, setSubjectSignaturePad] = useState('');
+    const [coPISignaturePad, setCoPISignaturePad] = useState('');
+    const [witnessSignaturePad, setWitnessSignaturePad] = useState('');
+
+
+
+
+
+    const [informedConsent, setInformedConsent] = useState<setInformedConsent[]>([]);
+
+
+
+
 
     /* ---------------- Consent Acknowledgements ----------------- */
-    const [acks, setAcks] = useState({
-        i: false,
-        ii: false,
-        iii: false,
-        iv: false,
-    });
+    // const [acks, setAcks] = useState({
+    //     i: false,
+    //     ii: false,
+    //     iii: false,
+    //     iv: false,
+    // });
+
+    const [acks, setAcks] = useState<Record<string, boolean>>({});
+
     const [agree, setAgree] = useState(false);
 
     /* ---------------------- Signatures ------------------------- */
@@ -72,31 +108,25 @@ export default function InformedConsentForm({
     const setSig = (k: keyof typeof signatures, v: string) =>
         setSignatures((p) => ({ ...p, [k]: v }));
 
-    const toggleAck = (k: keyof typeof acks) =>
-        setAcks((p) => ({ ...p, [k]: !p[k] }));
+    const toggleAck = (id: string) => {
+        setAcks((prev) => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
+    };
 
-    const statements: Array<{ key: keyof typeof acks; text: string }> = [
-        {
-            key: 'i',
-            text:
-                'I have been explained the purpose and procedures of the study, and had the opportunity to ask questions.',
-        },
-        {
-            key: 'ii',
-            text:
-                'I understand my participation is voluntary and I may withdraw at any time without affecting my care or legal rights.',
-        },
-        {
-            key: 'iii',
-            text:
-                'I agree that the Sponsor, Ethics Committee, regulators, and authorized personnel may access my health records for the study; my identity will not be revealed in released information.',
-        },
-        {
-            key: 'iv',
-            text:
-                'I understand my medical record information is essential to evaluate study results and will be kept confidential.',
-        },
-    ];
+
+
+
+    useEffect(() => {
+        apiService
+            .post<{ ResponseData: setInformedConsent[] }>("/GetInformedConsentMaster")
+            .then((res) => {
+                setInformedConsent(res.data.ResponseData);
+            })
+            .catch((err) => console.error(err));
+    }, []);
+
 
     /* ---------------------- Actions ---------------------------- */
     const allInitialed = useMemo(
@@ -112,57 +142,181 @@ export default function InformedConsentForm({
         Alert.alert('Preview', 'Open a preview screen or PDF (hook here).');
     };
 
-    const handleClear = () => {
-        setAcks({ i: false, ii: false, iii: false, iv: false });
-        setAgree(false);
-        setSignatures({
-            subjectName: '',
-            subjectDate: '',
-            coPIName: '',
-            coPIDate: '',
-            investigatorName: '',
-            witnessName: '',
-            witnessDate: '',
-        });
-    };
+    // const handleClear = () => {
+    //     setAcks({ i: false, ii: false, iii: false, iv: false });
+    //     setAgree(false);
+    //     setSignatures({
+    //         subjectName: '',
+    //         subjectDate: '',
+    //         coPIName: '',
+    //         coPIDate: '',
+    //         investigatorName: '',
+    //         witnessName: '',
+    //         witnessDate: '',
+    //     });
+    // };
 
-    const handleSubmit = () => {
+
+
+
+
+
+
+
+
+    const handleSubmit = async () => {
         if (!allInitialed) {
-            Alert.alert(
-                'Incomplete',
-                'Please initial all statements and check the agreement.'
-            );
+            Toast.show({
+                type: "error",
+                text1: "Incomplete",
+                text2: "Please initial all statements and check the agreement.",
+            });
             return;
         }
 
-        // Fake submit
-        console.log('SUBMIT', {
-            studyDetails: { studyTitle, studyNumber },
-            participantInfo: {
-                participantInitials,
-                participantName,
-                dateOfBirth,
-                ageInput,
-                qualification,
-                occupation,
-                annualIncome,
-                address,
-            },
-            acknowledgements: acks,
-            agree,
-            signatures,
-            patientId,
-            studyId,
-        });
 
-        Alert.alert('Submitted', 'Consent captured successfully.', [
-            {
-                text: 'OK',
-                onPress: () =>
-                    navigation.navigate('ParticipantInfo', { patientId, age, studyId }),
-            },
-        ]);
+        try {
+            const requestBody = {
+                PICDID: PICDID || '',
+                StudyId: studyId,
+                ParticipantId: patientId,
+                // QuestionId: Object.keys(acks)
+                //     .filter((qid) => acks[qid])
+                //     .join(","),
+               QuestionId: informedConsent[0]?.ICMID,
+
+
+                Response: 1,
+
+                SubjectSignatoryName: signatures.subjectName,
+                SubjectSignature: subjectSignaturePad,
+                SubjectSignatureDate: formatDate(signatures.subjectDate),
+
+                CoPrincipalInvestigatorSignatoryName: signatures.coPIName,
+                CoPrincipalInvestigatorSignature: coPISignaturePad,
+                CoPrincipalInvestigatorDate: formatDate(signatures.coPIDate),
+
+                StudyInvestigatorName: signatures.investigatorName,
+                WitnessSignature: witnessSignaturePad,
+                WitnessName: signatures.witnessName,
+                WitnessDate: formatDate(signatures.witnessDate),
+
+                Status: 1,
+                CreatedBy: userId,
+            };
+
+
+
+            console.log("Submitting consent payload:", requestBody);
+
+            const response = await apiService.post(
+                "/AddUpdateParticipantInformedConsent",
+                requestBody
+            );
+
+            if (response.data) {
+                Toast.show({
+                    type: "success",
+                    text1: "Consent Saved",
+                    text2: "Consent form submitted successfully",
+                    onHide: () => navigation.goBack(),
+                });
+
+
+            } else {
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to save consent form",
+                });
+            }
+        } catch (error) {
+            console.error("❌ Error saving consent form:", error);
+            Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Something went wrong. Please try again.",
+            });
+        }
     };
+
+
+    useEffect(() => {
+        const fetchConsent = async () => {
+            try {
+                const consentRes = await apiService.post<any>(
+                    "/GetParticipantInformedConsent",
+                    {
+                        ParticipantId: patientId,
+                        StudyId: studyId,
+                    }
+                );
+
+                console.log("Consent API response:", consentRes.data);
+
+                const c = consentRes.data.ResponseData?.[0];
+                if (!c) {
+                    console.warn("No consent data returned");
+                    return;
+                }
+
+                setPICDID(c.PICDID || null);
+
+                const qids = Array.isArray(c.QuestionId) ? c.QuestionId : [c.QuestionId];
+                const savedAcks: Record<string, boolean> = {};
+                qids.forEach((qid) => {
+                    if (qid) savedAcks[qid] = true;
+                });
+                setAcks(savedAcks);
+
+                setAgree(c.Response === 1);
+
+
+
+                setSignatures({
+                    subjectName: c.SubjectSignatoryName || "",
+                    subjectDate: c.SubjectSignatureDate ? formatDateDDMMYYYY(c.SubjectSignatureDate) : "",
+                    coPIName: c.CoPrincipalInvestigatorSignatoryName || "",
+                    coPIDate: c.CoPrincipalInvestigatorDate ? formatDateDDMMYYYY(c.CoPrincipalInvestigatorDate) : "",
+                    investigatorName: c.StudyInvestigatorName || "",
+                    witnessName: c.WitnessName || "",
+                    witnessDate: c.WitnessDate ? formatDateDDMMYYYY(c.WitnessDate) : "",
+                });
+
+
+
+                // Signature Area states 
+                setSubjectSignaturePad(c.SubjectSignature || "");
+                setCoPISignaturePad(c.CoPrincipalInvestigatorSignature || "");
+                setWitnessSignaturePad(c.WitnessSignature || "");
+
+                // Participant information
+                setParticipantInitials(c.ParticipantInitials || "");
+                setParticipantName(c.ParticipantName || "");
+                setDateOfBirth(c.DateOfBirth ? formatDate(c.DateOfBirth) : "");
+                setAgeInput(c.Age ? String(c.Age) : "");
+                setQualification(c.Qualification || "");
+                setOccupation(c.Occupation || "");
+                setAnnualIncome(c.AnnualIncome || "");
+                setAddress(c.Address || "");
+
+                // Study details
+                setStudyTitle(c.StudyTitle || studyTitle);
+                setStudyNumber(c.StudyNumber || studyNumber);
+
+            } catch (err) {
+                console.error("❌ Error fetching consent:", err);
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to load consent data",
+                });
+            }
+        };
+
+        fetchConsent();
+    }, []);
+
 
     /* ============================ UI ============================ */
     return (
@@ -330,9 +484,9 @@ export default function InformedConsentForm({
                 </FormCard>
 
                 {/* Acknowledgements */}
-                <FormCard icon='C' title="Consent Acknowledgements (Initial each)">
-                    {statements.map((s, idx) => (
-                        <View key={s.key} className="mb-3">
+                <FormCard icon="C" title="Consent Acknowledgements (Initial each)">
+                    {informedConsent.map((s, idx) => (
+                        <View key={s.ICMID} className="mb-3">
                             <View className="bg-white border border-[#e6eeeb] rounded-2xl p-3">
                                 <View className="flex-row items-start">
                                     {/* Left roman bubble */}
@@ -347,23 +501,23 @@ export default function InformedConsentForm({
                                     {/* Text */}
                                     <View className="flex-1 pr-3">
                                         <Text className="text-[15px] leading-6 text-[#0b1f1c]">
-                                            {s.text}
+                                            {s.QuestionName}
                                         </Text>
                                     </View>
 
                                     {/* Initial box (right) */}
                                     <Pressable
-                                        onPress={() => toggleAck(s.key)}
-                                        className={`h-10 px-4 rounded-lg border-2 border-dashed items-center justify-center ${acks[s.key]
+                                        onPress={() => toggleAck(s.ICMID)}
+                                        className={`h-10 px-4 rounded-lg border-2 border-dashed items-center justify-center ${acks[s.ICMID]
                                             ? 'border-[#0ea06c] bg-[#0ea06c]/10'
                                             : 'border-[#cfe0db]'
                                             }`}
                                     >
                                         <Text
-                                            className={`text-[12px] font-semibold ${acks[s.key] ? 'text-[#0ea06c]' : 'text-[#6b7a77]'
+                                            className={`text-[12px] font-semibold ${acks[s.ICMID] ? 'text-[#0ea06c]' : 'text-[#6b7a77]'
                                                 }`}
                                         >
-                                            {acks[s.key] ? '✓ Initialed' : 'Initial'}
+                                            {acks[s.ICMID] ? '✓ Initialed' : 'Initial'}
                                         </Text>
                                     </Pressable>
                                 </View>
@@ -398,17 +552,23 @@ export default function InformedConsentForm({
                                 nameLabel="Signatory’s Name"
                                 nameValue={signatures.subjectName}
                                 onChangeName={(v) => setSig('subjectName', v)}
+                                signatureValue={subjectSignaturePad}          // new prop
+                                onChangeSignature={setSubjectSignaturePad}    // new prop
                                 dateValue={signatures.subjectDate}
                                 onChangeDate={(v) => setSig('subjectDate', v)}
                             />
+
                             <SignatureBlock
                                 title="Co-Principal Investigator Signature"
                                 nameLabel="Co-PI Name"
                                 nameValue={signatures.coPIName}
                                 onChangeName={(v) => setSig('coPIName', v)}
+                                signatureValue={coPISignaturePad}            // new prop
+                                onChangeSignature={setCoPISignaturePad}      // new prop
                                 dateValue={signatures.coPIDate}
                                 onChangeDate={(v) => setSig('coPIDate', v)}
                             />
+
                         </View>
 
                         <View className="flex-row space-x-4">
@@ -432,9 +592,12 @@ export default function InformedConsentForm({
                                 nameLabel="Name of the Witness"
                                 nameValue={signatures.witnessName}
                                 onChangeName={(v) => setSig('witnessName', v)}
+                                signatureValue={witnessSignaturePad}
+                                onChangeSignature={setWitnessSignaturePad}
                                 dateValue={signatures.witnessDate}
                                 onChangeDate={(v) => setSig('witnessDate', v)}
                             />
+
                         </View>
 
                         <Text className="text-[12px] text-[#6b7a77] italic">
@@ -501,6 +664,8 @@ function SignatureBlock({
     onChangeName,
     dateValue,
     onChangeDate,
+    signatureValue,
+    onChangeSignature,
 }: {
     title: string;
     nameLabel: string;
@@ -508,22 +673,32 @@ function SignatureBlock({
     onChangeName: (v: string) => void;
     dateValue: string;
     onChangeDate: (v: string) => void;
+    signatureValue: string;               // new
+    onChangeSignature: (v: string) => void; // new
 }) {
     return (
         <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
-            {/* Block title */}
-            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-3">
-                {title}
-            </Text>
+            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-3">{title}</Text>
 
-            {/* Signature pad placeholder */}
-            <View className="border-2 border-dashed border-[#cfe0db] rounded-lg min-h-[96px] items-center justify-center mb-3 bg-[#fafdfb]">
-                <Text className="text-[#90a29d] text-[12px]">Signature Area</Text>
+            {/* Signature pad */}
+            <View className="border-2 border-dashed border-[#cfe0db] rounded-lg min-h-[96px] mb-3 bg-[#fafdfb]">
+                <TextInput
+                    value={signatureValue}             // separate state
+                    onChangeText={onChangeSignature}   // separate setter
+                    placeholder="Signature Area"
+                    placeholderTextColor="#90a29d"
+                    style={{
+                        flex: 1,
+                        textAlign: 'center',
+                        padding: 10,
+                        fontSize: 16,
+                        color: '#0b1f1c',
+                    }}
+                />
             </View>
 
-            {/* Name + Date row */}
+            {/* Name + Date */}
             <View className="flex-row space-x-3">
-                {/* Name field */}
                 <View className="flex-[1.4]">
                     <Text className="text-[12px] text-[#6b7a77] mb-1">{nameLabel}</Text>
                     <InputShell>
@@ -537,8 +712,6 @@ function SignatureBlock({
                     </InputShell>
                 </View>
 
-
-                {/* Date field */}
                 <View className="flex-[0.8]">
                     <Text className="text-[12px] text-[#6b7a77] mb-1">Date</Text>
                     <InputShell>
@@ -554,11 +727,7 @@ function SignatureBlock({
                         </View>
                     </InputShell>
                 </View>
-
-
             </View>
         </View>
     );
-
 }
-
