@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import FormCard from "../../../../../components/FormCard";
 import BottomBar from "../../../../../components/BottomBar";
 import { Btn } from "../../../../../components/Button";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
-import AssessmentApiService from "../../../../../services/assessmentApi";
 import Toast from "react-native-toast-message";
 
 interface FactGQuestion {
@@ -19,6 +19,14 @@ interface FactGQuestion {
 
 interface FactGResponse {
   ResponseData: FactGQuestion[];
+}
+
+interface WeeklyDateItem {
+  CreatedDate: string;
+}
+
+interface WeeklyDatesResponse {
+  ResponseData: WeeklyDateItem[];
 }
 
 interface Subscale {
@@ -80,7 +88,7 @@ export default function EdmontonFactGScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const [hasSelectedDate, setHasSelectedDate] = useState(false);
+  const [isDefaultForm, setIsDefaultForm] = useState(true);
 
   const route = useRoute<RouteProp<RootStackParamList, "EdmontonFactGScreen">>();
   const navigation = useNavigation();
@@ -106,10 +114,11 @@ export default function EdmontonFactGScreen() {
   const handleClear = () => {
     setAnswers({});
     setSelectedDate("");
-    setHasSelectedDate(false);
     setShowDateDropdown(false);
     setSubscales([]);
     setError(null);
+    setIsDefaultForm(true);
+    fetchFactG(null);
   };
 
   const formatDate = (dateString: string): string => {
@@ -124,104 +133,117 @@ export default function EdmontonFactGScreen() {
 
   const fetchAvailableDates = async () => {
     try {
-      setLoading(true);
       const participantId = `${patientId}`;
-      const weeklyData = await AssessmentApiService.getParticipantFactGQuestionsWeeklyWeeks(participantId);
+      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
 
-      console.log("📅 Raw API response:", weeklyData);
-
-      const uniqueDatesSet = new Set<string>();
-      for (const item of weeklyData) {
-        // Try different possible date field names
-        const dateValue = item.CreatedDate || item.createdDate || item.date || item.Date || item.CREATED_DATE;
-        if (dateValue) {
-          console.log("📅 Found date:", dateValue, "from item:", item);
-          uniqueDatesSet.add(dateValue);
-        } else {
-          console.log("📅 No date found in item:", item);
+      const response = await apiService.post<WeeklyDatesResponse>(
+        "/GetParticipantFactGQuestionsWeeklyWeeks",
+        {
+          ParticipantId: participantId,
+          StudyId: studyIdFormatted,
         }
-      }
-      const uniqueDates = Array.from(uniqueDatesSet);
-      const formattedDates = uniqueDates.map(formatDate);
+      );
 
-      console.log("📅 Unique dates from API:", uniqueDates);
-      console.log("📅 Formatted dates:", formattedDates);
+      const weeklyData = response.data?.ResponseData ?? [];
+      const uniqueDatesSet = new Set(weeklyData.map((item) => item.CreatedDate));
+      const formattedDates = Array.from(uniqueDatesSet).map(formatDate);
 
-      setAvailableDates(formattedDates);
+      const sortedDates = formattedDates.sort((a, b) => {
+        const dateA = new Date(convertDateForAPI(a));
+        const dateB = new Date(convertDateForAPI(b));
+        return dateB.getTime() - dateA.getTime();
+      });
 
-      if (formattedDates.length === 0) {
-        console.log("📅 No dates found, using sample dates");
-        const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
-        setAvailableDates(sampleDates);
-      }
+      setAvailableDates(sortedDates);
+
     } catch (error) {
-      console.error("📅 Error fetching dates:", error);
-      const sampleDates = ["04-09-2025", "05-09-2025", "06-09-2025"];
-      setAvailableDates(sampleDates);
+      console.error("Failed to fetch available dates:", error);
+      setAvailableDates([]);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to fetch available dates, using sample dates",
+        text2: "Failed to fetch available dates",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const fetchFactG = async (dateToUse?: string) => {
+  const fetchFactG = async (dateToUse?: string | null) => {
     try {
       setLoading(true);
       setError(null);
 
-      const dateForApiRaw = dateToUse || selectedDate;
-      if (!dateForApiRaw) throw new Error("No date selected");
+      setSubscales([]);
+      setAnswers({});
 
-      const apiDate =
-        dateForApiRaw.includes("-") && dateForApiRaw.split("-")[0].length === 2
-          ? convertDateForAPI(dateForApiRaw)
-          : dateForApiRaw;
+      let apiDate: string | null = null;
+      if (dateToUse) {
+        if (dateToUse.includes("-") && dateToUse.split("-")[0].length === 2) {
+          apiDate = convertDateForAPI(dateToUse);
+        } else {
+          apiDate = dateToUse;
+        }
+      }
 
-      const response = await apiService.post<FactGResponse>("/getParticipantFactGQuestionWeekly", {
-        StudyId: studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001",
-        ParticipantId: `${patientId}`,
-        CreatedDate: apiDate,
-      });
+      const participantId = `${patientId}`;
+      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+
+      const payload: any = {
+        StudyId: studyIdFormatted,
+        ParticipantId: participantId,
+      };
+
+      if (apiDate) {
+        payload.CreatedDate = apiDate;
+        setIsDefaultForm(false);
+      } else {
+        setIsDefaultForm(true);
+      }
+
+      const response = await apiService.post<FactGResponse>(
+        "/getParticipantFactGQuestionWeekly",
+        payload
+      );
 
       const questions = response.data?.ResponseData ?? [];
 
       if (questions.length === 0) {
-        setError("No FACT-G questions found for selected date.");
+        setError(
+          apiDate
+            ? "No FACT-G questions found for selected date."
+            : "No FACT-G questions found. Please try again."
+        );
         setSubscales([]);
         setAnswers({});
         return;
       }
 
-      const uniqueQuestionsMap = new Map<string, FactGQuestion>();
-      for (const q of questions) {
-        if (!uniqueQuestionsMap.has(q.FactGQuestionId)) {
-          uniqueQuestionsMap.set(q.FactGQuestionId, q);
-        }
-      }
+      // Improved grouping avoiding duplicate question codes
+  const grouped: Record<string, Subscale> = {};
 
-      const grouped: Record<string, Subscale> = {};
-      uniqueQuestionsMap.forEach((q) => {
-        const catName = q.FactGCategoryName;
-        if (!grouped[catName]) {
-          grouped[catName] = {
-            key: catName,
-            label: catName,
-            shortCode: categoryCodeMapping[catName] || catName.charAt(0),
-            items: [],
-          };
-        }
-        grouped[catName].items.push({
-          code: q.FactGQuestionId,
-          text: q.FactGQuestion,
-          FactGCategoryId: q.FactGCategoryId,
-          TypeOfQuestion: q.TypeOfQuestion,
-          value: q.ScaleValue || undefined,
-        });
+  questions.forEach((q) => {
+    const catName = q.FactGCategoryName;
+    if (!grouped[catName]) {
+      grouped[catName] = {
+        key: catName,
+        label: catName,
+        shortCode: categoryCodeMapping[catName] || catName.charAt(0),
+        items: [],
+      };
+    }
+
+    // Check if question code already added for this category
+    const alreadyExists = grouped[catName].items.some((item) => item.code === q.FactGQuestionId);
+    if (!alreadyExists) {
+      grouped[catName].items.push({
+        code: q.FactGQuestionId,
+        text: q.FactGQuestion,
+        FactGCategoryId: q.FactGCategoryId,
+        TypeOfQuestion: q.TypeOfQuestion,
+        value: q.ScaleValue || undefined,
       });
+    }
+  });
+
 
       const categoryOrder = [
         "Physical well-being",
@@ -239,18 +261,26 @@ export default function EdmontonFactGScreen() {
 
       setSubscales(orderedSubscales);
 
-      // Initialize answers with null if ScaleValue is null, otherwise parse int value
-    const existingAnswers: Record<string, number | null> = {};
+
+  const existingAnswers: Record<string, number | null> = {};
     questions.forEach((q) => {
       if (q.FactGQuestionId) {
-        const parsedVal = q.ScaleValue !== null ? parseInt(q.ScaleValue, 10) : null;
-        existingAnswers[q.FactGQuestionId] = isNaN(parsedVal!) ? null : parsedVal;
+        if (!dateToUse) {
+          existingAnswers[q.FactGQuestionId] = null;  // force empty for new form
+        } else {
+          if (q.ScaleValue !== null && q.ScaleValue !== undefined) {
+            const val = parseInt(q.ScaleValue, 10);
+            existingAnswers[q.FactGQuestionId] = isNaN(val) ? null : val;
+          } else {
+            existingAnswers[q.FactGQuestionId] = null;
+          }
+        }
       }
     });
 
     setAnswers(existingAnswers);
-
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Failed to fetch FACT-G questions:", err);
       setError("Failed to load FACT-G questions. Please try again.");
       setSubscales([]);
       setAnswers({});
@@ -265,24 +295,34 @@ export default function EdmontonFactGScreen() {
   };
 
   useEffect(() => {
-    if (patientId) fetchAvailableDates();
+    if (patientId) {
+      fetchAvailableDates();
+      fetchFactG(null);
+      setSelectedDate("");
+      setIsDefaultForm(true);
+    }
   }, [patientId]);
 
   useEffect(() => {
-    if (patientId && hasSelectedDate && selectedDate) {
+    if (patientId && selectedDate) {
       fetchFactG(selectedDate);
+    } else if (patientId && !selectedDate) {
+      fetchFactG(null);
     }
-  }, [patientId, selectedDate, hasSelectedDate]);
+  }, [selectedDate, patientId]);
+
+  const formatTodayDateForAPI = (): string => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      if (!hasSelectedDate || !selectedDate) {
-        Toast.show({ type: "error", text1: "Error", text2: "Please select a date before saving." });
-        setSaving(false);
-        return;
-      }
-      
+
       const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
       const answeredQuestions = Object.keys(answers).filter((k) => answers[k] !== null).length;
 
@@ -295,9 +335,12 @@ export default function EdmontonFactGScreen() {
         setSaving(false);
         return;
       }
-
       if (answeredQuestions === 0) {
-        Toast.show({ type: "error", text1: "Error", text2: "No answers to save. Please answer at least one question." });
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "No answers to save. Please answer at least one question.",
+        });
         setSaving(false);
         return;
       }
@@ -313,14 +356,22 @@ export default function EdmontonFactGScreen() {
         };
       });
 
-      const createdDate =
-        selectedDate.includes("-") && selectedDate.split("-")[0].length === 2
-          ? convertDateForAPI(selectedDate)
-          : selectedDate;
+      let createdDate: string | null = null;
+      if (selectedDate) {
+        createdDate =
+          selectedDate.includes("-") && selectedDate.split("-")[0].length === 2
+            ? convertDateForAPI(selectedDate)
+            : selectedDate;
+      } else {
+        createdDate = formatTodayDateForAPI();
+      }
+
+      const participantId = `${patientId}`;
+      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
 
       const payload = {
-        StudyId: studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001",
-        ParticipantId: `${patientId}`,
+        StudyId: studyIdFormatted,
+        ParticipantId: participantId,
         SessionNo: "SessionNo-1",
         FactGData: factGData,
         FinalScore: score.TOTAL,
@@ -328,21 +379,20 @@ export default function EdmontonFactGScreen() {
         CreatedDate: createdDate,
       };
 
-      console.log("Saving FACT-G payload:", JSON.stringify(payload, null, 2)); // <-- Add this
-
       const response = await apiService.post("/AddParticipantFactGQuestionsWeekly", payload);
-
       if (response.status === 200 || response.status === 201) {
         Toast.show({
           type: "success",
           text1: "Success",
-          text2: "FACT-G responses saved successfully!",
+          text2: "Created successfully!",
           onHide: () => navigation.goBack(),
         });
+        await fetchAvailableDates();
       } else {
         throw new Error(`Server returned status ${response.status}`);
       }
     } catch (error: any) {
+      console.error("Save error:", error);
       Toast.show({
         type: "error",
         text1: "Error saving FACT-G",
@@ -353,24 +403,35 @@ export default function EdmontonFactGScreen() {
     }
   };
 
-
-  const RatingButtons = ({ questionCode, currentValue }: { questionCode: string; currentValue: number | null }) => {
+  const RatingButtons = ({
+    questionCode,
+    currentValue,
+  }: {
+    questionCode: string;
+    currentValue: number | null;
+  }) => {
     return (
-      <View className="bg-white border border-[#e6eeeb] rounded-xl shadow-sm overflow-hidden">
-        <View className="flex-row">
+      <View
+        style={{ backgroundColor: "white", borderColor: "#e6eeeb", borderWidth: 1, borderRadius: 12, overflow: "hidden" }}
+      >
+        <View style={{ flexDirection: "row" }}>
           {[0, 1, 2, 3, 4].map((value) => {
-            const isSelected = currentValue === value; // currentValue is a number or null
+            const isSelected = currentValue === value;
             return (
               <React.Fragment key={value}>
                 <Pressable
                   onPress={() => setAnswer(questionCode, value)}
-                  className={`w-10 py-2 items-center justify-center ${isSelected ? "bg-[#7ED321]" : "bg-white"}`}
+                  style={{
+                    width: 48,
+                    paddingVertical: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: isSelected ? "#7ED321" : "white",
+                  }}
                 >
-                  <Text className={`font-medium text-sm ${isSelected ? "text-white" : "text-[#4b5f5a]"}`}>
-                    {value}
-                  </Text>
+                  <Text style={{ fontWeight: "500", fontSize: 14, color: isSelected ? "white" : "#4b5f5a" }}>{value}</Text>
                 </Pressable>
-                {value < 4 && <View className="w-px bg-[#e6eeeb]" />}
+                {value < 4 && <View style={{ width: 1, backgroundColor: "#e6eeeb" }} />}
               </React.Fragment>
             );
           })}
@@ -381,140 +442,160 @@ export default function EdmontonFactGScreen() {
 
   return (
     <>
-      <View className="pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-8 mx-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
-          <Text className="text-base font-semibold text-green-600">
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View
+          style={{
+            backgroundColor: "white",
+            borderBottomColor: "#e5e7eb",
+            borderBottomWidth: 1,
+            borderRadius: 12,
+            padding: 32,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+          }}
+        >
+          <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>Participant ID: {patientId}</Text>
+          <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
             Study ID: {studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001"}
           </Text>
-          <View className="flex-row items-center gap-3">
-            <Text className="text-base font-semibold text-gray-700">Age: {age || "Not specified"}</Text>
-            <View className="w-32">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>Age: {age || "Not specified"}</Text>
+
+            <View style={{ width: 128, position: "relative" }}>
               <Pressable
-                className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                style={{
+                  backgroundColor: "#eff6ff",
+                  borderColor: "#bfdbfe",
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
                 onPress={() => setShowDateDropdown(!showDateDropdown)}
-                style={{ backgroundColor: "#eff6ff", borderColor: "#bfdbfe", borderRadius: 8 }}
               >
-                <Text className="text-sm text-blue-700 font-medium">{selectedDate || "Select Date"}</Text>
-                <Text className="text-blue-500 text-xs">▼</Text>
+                <Text style={{ color: "#3b82f6", fontWeight: "600", fontSize: 14 }}>
+                  {selectedDate || (isDefaultForm ? "Select Date" : "Select Date")}
+                </Text>
+                <Text style={{ color: "#2563eb", fontSize: 12 }}>▼</Text>
               </Pressable>
+
+              {showDateDropdown && (
+                <View
+                  style={{
+                    backgroundColor: "white",
+                    borderColor: "#e5e7eb",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 4 },
+                    zIndex: 9999,
+                    marginTop: 4,
+                    width: "100%",
+                    maxHeight: 200,
+                  }}
+                >
+                  <Pressable
+                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderBottomColor: "#e5e7eb", borderBottomWidth: 1 }}
+                    onPress={() => {
+                      setSelectedDate("");
+                      setShowDateDropdown(false);
+                      setIsDefaultForm(true);
+                      setSubscales([]);
+                      setAnswers({});
+                      fetchFactG(null);
+                    }}
+                  >
+                    <Text style={{ color: "#374151", fontWeight: "600", fontSize: 14 }}>New Form</Text>
+                  </Pressable>
+
+                  <ScrollView>
+                    {availableDates.length > 0 ? (
+                      availableDates.map((date, index) => (
+                        <Pressable
+                          key={date}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderBottomColor: index < availableDates.length - 1 ? "#e5e7eb" : undefined,
+                            borderBottomWidth: index < availableDates.length - 1 ? 1 : 0,
+                          }}
+                          onPress={() => {
+                            setSelectedDate(date);
+                            setShowDateDropdown(false);
+                            setIsDefaultForm(false);
+                          }}
+                        >
+                          <Text style={{ color: "#374151", fontSize: 14 }}>{date}</Text>
+                        </Pressable>
+                      ))
+                    ) : (
+                      <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                        <Text style={{ color: "#9ca3af", fontSize: 14 }}>No saved dates</Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                </View>
+              )}
             </View>
           </View>
         </View>
-
-        {showDateDropdown && (
-          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32">
-            {availableDates.length > 0 ? (
-              availableDates.map((date, index) => (
-                <Pressable
-                  key={date}
-                  className={`px-3 py-2 ${index < availableDates.length - 1 ? "border-b border-gray-100" : ""}`}
-                  onPress={() => {
-                    setSelectedDate(date);
-                    setHasSelectedDate(true);
-                    setShowDateDropdown(false);
-                    fetchFactG(date);
-                  }}
-                >
-                  <Text className="text-sm text-gray-700">{date}</Text>
-                </Pressable>
-              ))
-            ) : (
-              <View className="px-3 py-2">
-                <Text className="text-sm text-gray-500">No dates available</Text>
-              </View>
-            )}
-          </View>
-        )}
       </View>
 
-      <ScrollView className="flex-1 bg-bg pb-[400px]">
-        {hasSelectedDate && (
-          <View className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card mb-3 mt-4">
-            <View className="flex-row items-start gap-3 p-3">
-              <View className="w-12 h-12 rounded-xl bg-[#eaf7f2] items-center justify-center">
-                <Text className="text-ink font-extrabold">FG</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-semibold mb-1">FACT-G (Version 4)</Text>
-                <Text className="text-xs text-muted mb-2">Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.</Text>
-              </View>
+      <ScrollView style={{ flex: 1, padding: 16, paddingBottom: 400 }}>
+        <FormCard
+          icon="FG"
+          title={`FACT-G (Version 4) ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}
+          desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much."
+        >
+          {loading && (
+            <View style={{ backgroundColor: "white", borderRadius: 12, padding: 32, marginBottom: 16, alignItems: "center" }}>
+              <ActivityIndicator size="large" color="#2E7D32" />
+              <Text style={{ marginTop: 8, color: "#6b7280" }}>Loading FACT-G questions...</Text>
             </View>
-            <View className="px-3">
-            {loading && (
-              <View className="bg-white rounded-lg p-8 shadow-md mb-4 items-center">
-                <ActivityIndicator size="large" color="#2E7D32" />
-                <Text className="text-gray-500 mt-2">Loading FACT-G questions...</Text>
-              </View>
-            )}
+          )}
 
-            {error && (
-              <View className="bg-red-50 rounded-lg p-4 shadow-md mb-4">
-                <Text className="text-red-600 text-center font-semibold">{error}</Text>
-                <Pressable onPress={() => fetchFactG(selectedDate)} className="mt-2">
-                  <Text className="text-blue-600 text-center font-semibold">Try Again</Text>
-                </Pressable>
-              </View>
-            )}
+          {error && (
+            <View style={{ backgroundColor: "#fee2e2", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <Text style={{ color: "#b91c1c", textAlign: "center", fontWeight: "600" }}>{error}</Text>
+              <Pressable onPress={() => fetchFactG(selectedDate || null)} style={{ marginTop: 8 }}>
+                <Text style={{ color: "#2563eb", textAlign: "center", fontWeight: "600" }}>Try Again</Text>
+              </Pressable>
+            </View>
+          )}
 
-            {!loading && !error && (
-              <View className="space-y-4">
-                {/* Header row with consistent spacing */}
-                <View className="flex-row items-center gap-3 mb-3 pb-2 border-b border-gray-200">
-                  <View className="w-16 items-center">
-                    <Text className="text-xs font-bold text-gray-600 uppercase">Code</Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-xs font-bold text-gray-600 uppercase">Question</Text>
-                  </View>
-                  <View className="w-60">
-                    <Text className="text-xs font-bold text-gray-600 uppercase text-center">Rating (0-4)</Text>
-                  </View>
-                </View>
-
-                {subscales.map((scale, scaleIndex) => (
-                  <View key={scale.key} className="space-y-3">
-                    {/* Scale header */}
-                    <View className="flex-row items-center gap-3 py-2 bg-gray-50 rounded-lg">
-                      <View className="w-16 items-start">
-                        <View className="w-8 h-8 bg-[#0ea06c] rounded-full items-center justify-center">
-                          <Text className="text-white font-bold text-sm">{scale.shortCode}</Text>
-                        </View>
-                      </View>
-                      <View className="flex-1">
-                        <Text className="font-bold text-[#0ea06c] text-sm">{scale.label}</Text>
-                      </View>
-                      <View className="w-60"></View>
+          {!loading &&
+            !error &&
+            subscales.map((scale) => (
+              <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
+                {scale.items.map((item, index) => (
+                  <View key={item.code}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                      <Text style={{ width: 64, fontWeight: "700", color: "#1f2937" }}>{item.code}</Text>
+                      <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
+                      <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>
-
-                    {/* Questions for this scale */}
-                    {scale.items.map((item, itemIndex) => (
-                      <View key={item.code} className="flex-row items-center gap-3 py-2 bg-white rounded-lg border border-gray-100">
-                        <View className="w-16 items-start">
-                          <Text className="text-sm font-bold text-[#0ea06c]" numberOfLines={1}>{item.code}</Text>
-                        </View>
-                        <View className="flex-1">
-                          <Text className="text-sm text-gray-700 leading-5">{item.text}</Text>
-                        </View>
-                        <View className="w-60">
-                          <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
-                        </View>
-                      </View>
-                    ))}
+                    {index < scale.items.length - 1 && <View style={{ borderBottomColor: "#e5e7eb", borderBottomWidth: 1, marginVertical: 8 }} />}
                   </View>
                 ))}
-              </View>
-            )}
-            </View>
-          </View>
-        )}
+              </FormCard>
+            ))}
+        </FormCard>
 
-        {hasSelectedDate && !loading && !error && subscales.length > 0 && (
-          <View className="bg-blue-50 rounded-lg p-4 shadow-md mb-4">
-            <Text className="font-semibold text-sm text-blue-800 mb-2">Rating Scale:</Text>
-            <Text className="text-xs text-blue-700">
-              0 = Not at all &nbsp;•&nbsp; 1 = A little bit &nbsp;•&nbsp; 2 = Somewhat &nbsp;•&nbsp; 3 = Quite a bit &nbsp;•&nbsp; 4 =
-              Very much
+        {!loading && !error && subscales.length > 0 && (
+          <View style={{ backgroundColor: "#dbeafe", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <Text style={{ fontWeight: "600", fontSize: 14, color: "#1e40af", marginBottom: 8 }}>Rating Scale:</Text>
+            <Text style={{ fontSize: 12, color: "#1e40af" }}>
+              0 = Not at all &nbsp;•&nbsp; 1 = A little bit &nbsp;•&nbsp; 2 = Somewhat &nbsp;•&nbsp; 3 = Quite a bit &nbsp;•&nbsp; 4 = Very much
             </Text>
           </View>
         )}
@@ -523,48 +604,35 @@ export default function EdmontonFactGScreen() {
       </ScrollView>
 
       <BottomBar>
-        <View className="flex-row items-center gap-2 flex-wrap">
-          {/* Score indicators */}
-          <View className="flex-row items-center gap-2">
-            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
-              <Text className="text-white font-bold text-xs">PWB</Text>
-              <Text className="text-white font-extrabold text-sm">{score.PWB}</Text>
+        <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "700" }}>
+          PWB {score.PWB}
+        </Text>
+        <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "700" }}>
+          SWB {score.SWB}
+        </Text>
+        <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "700" }}>
+          EWB {score.EWB}
+        </Text>
+        <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "700" }}>
+          FWB {score.FWB}
+        </Text>
+        <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "800" }}>
+          TOTAL {score.TOTAL}
+        </Text>
+
+        <Btn variant="light" onPress={handleClear}>
+          Clear
+        </Btn>
+        <Btn onPress={handleSave} disabled={saving || loading}>
+          {saving ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+              <Text style={{ color: "white" }}>Saving...</Text>
             </View>
-            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
-              <Text className="text-white font-bold text-xs">SWB</Text>
-              <Text className="text-white font-extrabold text-sm">{score.SWB}</Text>
-            </View>
-            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
-              <Text className="text-white font-bold text-xs">EWB</Text>
-              <Text className="text-white font-extrabold text-sm">{score.EWB}</Text>
-            </View>
-            <View className="px-3 py-2 rounded-lg bg-[#0ea06c]">
-              <Text className="text-white font-bold text-xs">FWB</Text>
-              <Text className="text-white font-extrabold text-sm">{score.FWB}</Text>
-            </View>
-            <View className="px-3 py-2 rounded-lg bg-[#134b3b] border-2 border-[#0ea06c]">
-              <Text className="text-white font-bold text-xs">TOTAL</Text>
-              <Text className="text-white font-extrabold text-base">{score.TOTAL}</Text>
-            </View>
-          </View>
-          
-          {/* Action buttons */}
-          <View className="flex-row gap-2">
-            <Btn variant="light" onPress={handleClear}>
-              Clear
-            </Btn>
-            <Btn onPress={handleSave} disabled={saving || loading}>
-              {saving ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="white" className="mr-2" />
-                  <Text className="text-white">Saving...</Text>
-                </View>
-              ) : (
-                "Save"
-              )}
-            </Btn>
-          </View>
-        </View>
+          ) : (
+            "Save"
+          )}
+        </Btn>
       </BottomBar>
     </>
   );

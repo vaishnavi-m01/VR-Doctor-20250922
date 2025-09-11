@@ -6,9 +6,9 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
-import { Image, TouchableOpacity } from 'react-native';
+import { Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,8 +22,9 @@ import Dashboard from './components/Dashboard';
 import { RootStackParamList } from '../../Navigation/types';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import axios from 'axios';
 import { apiService } from 'src/services';
+import AdvancedFilterModal, { AdvancedFilters } from '@components/AdvancedFilterModal';
+import { RefreshControl } from 'react-native';
 
 
 export interface Patient {
@@ -37,26 +38,76 @@ export interface Patient {
   stage: string;
   name?: string;
   weightKg?: number;
-  groupType?: string; // "Study" or "Controlled" or null
+  groupType?: string;
 }
 
 export default function ParticipantAssessmentSplit() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [participants, setParticipants] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selId, setSelId] = useState<number | null>(null); // holds ParticipantId
   const [tab, setTab] = useState('assessment');
-  const [searchText, setSearchText] = useState("");
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
-  const hasLoadedDataRef = useRef<boolean>(false); // Track if data has been loaded
+  const hasLoadedDataRef = useRef<boolean>(false);
 
-  // Constants for AsyncStorage keys
+  const [searchText, setSearchText] = useState('');
+  const [appliedSearchText, setAppliedSearchText] = useState('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+
+  // Advanced filter state
+  const [advFilters, setAdvFilters] = useState<AdvancedFilters>({
+    criteriaStatus: '',
+    gender: '',
+    ageFrom: '',
+    ageTo: '',
+    groupType: '',
+  });
+
   const SELECTED_PARTICIPANT_KEY = 'selectedParticipantId';
   const SELECTED_TAB_KEY = 'selectedTab';
 
-  // Function to save selected participant ID to AsyncStorage
+  // Advanced filter handlers
+  const handleCriteriaStatusChange = (status: string) => {
+    setAdvFilters(prev => ({ ...prev, criteriaStatus: prev.criteriaStatus === status ? '' : status }));
+  };
+
+  const handleGenderChange = (gender: string) => {
+    setAdvFilters(prev => ({ ...prev, gender }));
+  };
+
+  const handleGroupTypeChange = (groupType: string) => {
+    setAdvFilters(prev => ({ ...prev, groupType }));
+  };
+
+  const handleAgeChange = (field: 'ageFrom' | 'ageTo', value: string) => {
+    if (/^\d{0,3}$/.test(value)) {
+      setAdvFilters(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+// Clear filters: reset advFilters, searchText, appliedSearchText and fetch all participants
+const handleClearFilters = async () => {
+  setAdvFilters({
+    criteriaStatus: '',
+    gender: '',
+    ageFrom: '',
+    ageTo: '',
+    groupType: '',
+  });
+  setSearchText('');
+  setAppliedSearchText('');
+  await fetchParticipants('');
+};
+
+// Modal done handler: close modal and refetch participants with current filters/search
+const handleAdvancedDone = async () => {
+  setShowAdvancedSearch(false);
+  await fetchParticipants(appliedSearchText);
+};
+
+
+  // Save selected participant ID to AsyncStorage
   const saveSelectedParticipant = async (participantId: number | null) => {
     try {
       if (participantId !== null) {
@@ -71,7 +122,7 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-  // Function to load selected participant ID from AsyncStorage
+  // Load selected participant ID from AsyncStorage
   const loadSelectedParticipant = async () => {
     try {
       const savedParticipantId = await AsyncStorage.getItem(SELECTED_PARTICIPANT_KEY);
@@ -84,7 +135,7 @@ export default function ParticipantAssessmentSplit() {
     return null;
   };
 
-  // Function to save selected tab to AsyncStorage
+  // Save selected tab to AsyncStorage
   const saveSelectedTab = async (tabName: string) => {
     try {
       await AsyncStorage.setItem(SELECTED_TAB_KEY, tabName);
@@ -93,7 +144,7 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-  // Function to load selected tab from AsyncStorage
+  // Load selected tab from AsyncStorage
   const loadSelectedTab = async () => {
     try {
       const savedTab = await AsyncStorage.getItem(SELECTED_TAB_KEY);
@@ -104,108 +155,178 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
+  // Enhanced fetch function with advanced filters updated for CriteriaStatus
+  const fetchParticipants = async (search: string = '') => {
+    try {
+      setLoading(true);
+      const trimmedSearch = search.trim().toLowerCase();
+      const requestBody: any = {};
 
+      if (advFilters.criteriaStatus) {
+        requestBody.CriteriaStatus = advFilters.criteriaStatus;
+      }
+      if (advFilters.groupType) {
+        requestBody.GroupType = advFilters.groupType;
+      }
+      if (advFilters.gender) {
+        requestBody.Gender = advFilters.gender;
+      }
+      const ageFromNum = Number(advFilters.ageFrom);
+      if (!isNaN(ageFromNum) && advFilters.ageFrom !== '') {
+        requestBody.AgeFrom = ageFromNum;
+      }
+      const ageToNum = Number(advFilters.ageTo);
+      if (!isNaN(ageToNum) && advFilters.ageTo !== '') {
+        requestBody.AgeTo = ageToNum;
+      }
+      if (trimmedSearch !== '') {
+        if ((trimmedSearch === 'male' || trimmedSearch === 'female') && !advFilters.gender) {
+          requestBody.Gender = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
+        } else if (/^pid-\d+$/i.test(trimmedSearch)) {
+          requestBody.SearchString = trimmedSearch.toUpperCase();
+        } else if (/^\d+$/i.test(trimmedSearch)) {
+          requestBody.SearchString = `PID-${trimmedSearch}`;
+        } else if (
+          !isNaN(Number(trimmedSearch)) &&
+          Number(trimmedSearch) >= 1 &&
+          Number(trimmedSearch) <= 120 &&
+          !advFilters.ageFrom &&
+          !advFilters.ageTo
+        ) {
+          requestBody.AgeFrom = Number(trimmedSearch);
+          requestBody.AgeTo = Number(trimmedSearch);
+        } else {
+          requestBody.SearchString = trimmedSearch;
+        }
+      }
+
+      Object.keys(requestBody).forEach(key => {
+        const val = requestBody[key];
+        if (val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) {
+          delete requestBody[key];
+        }
+      });
+      console.log('API Request Body:', requestBody);
+      const response = await apiService.post<any>(
+        "/GetParticipantsPaginationFilterSearch",
+        requestBody
+      );
+      if (response.data?.ResponseData) {
+        const parsed: Patient[] = response.data.ResponseData.map((item: any) => ({
+          id: item.ParticipantId,
+          ParticipantId: item.ParticipantId,
+          studyId: item.StudyId,
+          age: Number(item.Age) || 0,
+          status: item.CriteriaStatus?.toLowerCase() || "pending",
+          gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
+          cancerType: item.CancerDiagnosis || "N/A",
+          stage: item.StageOfCancer || "N/A",
+          name: item.Name ?? undefined,
+          groupType: item.GroupType || null,
+        }));
+        setParticipants(parsed);
+        if (selId === null && parsed.length > 0) {
+          setSelId(parsed[0].ParticipantId);
+          await saveSelectedParticipant(parsed[0].ParticipantId);
+        } else if (selId !== null) {
+          const existsSelected = parsed.some(p => p.ParticipantId === selId);
+          if (!existsSelected && parsed.length > 0) {
+            setSelId(parsed[0].ParticipantId);
+            await saveSelectedParticipant(parsed[0].ParticipantId);
+          }
+        }
+        return parsed;
+      }
+      setParticipants([]);
+      setSelId(null);
+      return [];
+    } catch (error) {
+      console.error("Failed to fetch participants:", error);
+      setParticipants([]);
+      setSelId(null);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Client-side filter function
+  const filterParticipants = (list: Patient[], query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(p => {
+      const pidStr = p.ParticipantId.toString().toLowerCase();
+      const genderStr = p.gender.toLowerCase();
+      const cancerTypeStr = p.cancerType.toLowerCase();
+      const nameStr = p.name?.toLowerCase() || '';
+      return (
+        pidStr.includes(q) ||
+        genderStr.includes(q) ||
+        cancerTypeStr.includes(q) ||
+        nameStr.includes(q)
+      );
+    });
+  };
 
   // Load data once on mount
   useEffect(() => {
     const loadData = async () => {
       if (!hasLoadedDataRef.current) {
         console.log(`📥 Loading participants data`);
-        const fetchedParticipants = await fetchParticipants();
+        const fetchedParticipants = await fetchParticipants('');
         hasLoadedDataRef.current = true;
-
-        // After loading data, restore selection
         const savedParticipantId = await loadSelectedParticipant();
         const savedTab = await loadSelectedTab();
-
         console.log(`🔄 Restoring selection: ${savedParticipantId}`);
         if (savedParticipantId !== null && fetchedParticipants.length > 0) {
-          // Check if saved participant exists in fetched data
           const participantExists = fetchedParticipants.some(p => p.ParticipantId === savedParticipantId);
           if (participantExists) {
             setSelId(savedParticipantId);
           } else {
-            // If saved participant doesn't exist, select first one
             setSelId(fetchedParticipants[0].ParticipantId);
             await saveSelectedParticipant(fetchedParticipants[0].ParticipantId);
           }
         } else if (fetchedParticipants.length > 0) {
-          // No saved selection, select first participant
           setSelId(fetchedParticipants[0].ParticipantId);
           await saveSelectedParticipant(fetchedParticipants[0].ParticipantId);
         }
         setTab(savedTab);
       }
     };
-
     loadData();
   }, []);
 
   // Restore selection when screen comes into focus (but don't reload data)
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const restoreSelection = async () => {
-  //       if (hasLoadedDataRef.current && participants.length > 0) {
-  //         const savedParticipantId = await loadSelectedParticipant();
-  //         const savedTab = await loadSelectedTab();
-
-  //         console.log(`♻️ Restoring selection on focus: ${savedParticipantId}`);
-  //         if (savedParticipantId !== null) {
-  //           // Check if saved participant still exists in current data
-  //           const participantExists = participants.some(p => p.ParticipantId === savedParticipantId);
-  //           if (participantExists) {
-  //             setSelId(savedParticipantId);
-  //           } else {
-  //             // If saved participant no longer exists, select first one
-  //             setSelId(participants[0].ParticipantId);
-  //             await saveSelectedParticipant(participants[0].ParticipantId);
-  //           }
-  //         }
-  //         setTab(savedTab);
-  //       }
-  //     };
-
-  //     restoreSelection();
-  //   }, [participants])
-  // );
-
   useFocusEffect(
     useCallback(() => {
       const restoreTab = async () => {
         const savedTab = await loadSelectedTab();
         setTab(savedTab);
-        
       };
       restoreTab();
     }, [])
   );
 
-const sel = participants.find((p) => p.ParticipantId === selId);
+    const sel = participants.find((p) => p.ParticipantId === selId);
 
 
-  // Save selected participant when it changes and handle tab switching
-useEffect(() => {
-  if (selId !== null) {
-    console.log(`💾 Saving participant selection: ${selId}`);
-    saveSelectedParticipant(selId);
-    
-    if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
-      console.log(`🔄 Switching tab`);
-      setTab('assessment');
-    }
-    
-    if (tab === 'assessment' && sel?.groupType === null) {
-      console.log(`🔄 Switching tab`);
-      setTab('dash');
-    }
-  }
-}, [selId, sel?.groupType, tab]);
-
-
-  // Save selected tab when it changes
+    // Save selected participant when it changes
   useEffect(() => {
-    saveSelectedTab(tab);
-  }, [tab]);
+    if (selId !== null) {
+      console.log(`💾 Saving participant selection: ${selId}`);
+      saveSelectedParticipant(selId);
+      
+      if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
+        console.log(`🔄 Switching tab`);
+        setTab('assessment');
+      }
+      
+      if (tab === 'assessment' && sel?.groupType === null) {
+        console.log(`🔄 Switching tab`);
+        setTab('dash');
+      }
+    }
+  }, [selId, sel?.groupType, tab]);
 
   // Manual refresh function for pull-to-refresh
   const onRefresh = useCallback(async () => {
@@ -218,89 +339,33 @@ useEffect(() => {
     }
   }, [searchText]);
 
-  const fetchParticipants = async (search: string = "") => {
-    try {
-      setLoading(true);
+  // Save selected tab when it changes
+  useEffect(() => {
+    saveSelectedTab(tab);
+  }, [tab]);
 
-      const requestBody: any = {};
-
-      const trimmedSearch = search.trim();
-      const lowerSearch = trimmedSearch.toLowerCase();
-
-      if (trimmedSearch !== "") {
-        // Add basic filters
-        requestBody.StudyId = "CS-0001";
-        requestBody.CriteriaStatus = "Included";
-        requestBody.GroupType = "Trial";
-
-        if (["male", "female", "other"].includes(lowerSearch)) {
-          requestBody.Gender = lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1);
-        }
-        else if (/^PID-\d+$/i.test(trimmedSearch)) {
-          // Exact PID match (e.g., "PID-25")
-          requestBody.SearchString = trimmedSearch;
-        }
-        else if (/^\d+$/i.test(trimmedSearch)) {
-          // Number only - search for PID containing this number (e.g., "25" -> search for PID containing "25")
-          requestBody.SearchString = `PID-${trimmedSearch}`;
-        }
-        else if (!isNaN(Number(trimmedSearch)) && trimmedSearch.length > 2) {
-          // Age search only for numbers longer than 2 digits
-          requestBody.AgeFrom = Number(trimmedSearch);
-          requestBody.AgeTo = Number(trimmedSearch);
-        }
-        else {
-          requestBody.CancerDiagnosis = trimmedSearch;
-        }
-      } else {
-        // Send empty object to get all records
-      }
-
-      const response = await apiService.post<any>(
-        "/GetParticipantsPaginationFilterSearch",
-        requestBody
-      );
-
-      if (response.data?.ResponseData) {
-        const parsed: Patient[] = response.data.ResponseData.map((item: any) => {
-          console.log(`📊 Mapping participant ${item.ParticipantId} - GroupType: "${item.GroupType}"`);
-          return {
-            id: item.ParticipantId,
-            ParticipantId: item.ParticipantId,
-            studyId: item.StudyId,
-            age: Number(item.Age) ?? 0,
-            status: item.CriteriaStatus?.toLowerCase() || "pending",
-            gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
-            cancerType: item.CancerDiagnosis || "N/A",
-            stage: item.StageOfCancer || "N/A",
-            name: item.Name ?? undefined,
-            groupType: item.GroupType || null, // Map GroupType from API response
-          };
-        });
-
-        setParticipants(parsed);
-        setLastRefreshTime(new Date());
-        return parsed; // Return the participants data
-      }
-      return []; // Return empty array if no data
-    } catch (error) {
-      console.error("Failed to fetch participants:", error);
-      return []; // Return empty array on error
-    } finally {
-      setLoading(false);
-    }
+  // Function to apply search filter when user clicks search or submits input
+  const handleApplySearch = () => {
+    setAppliedSearchText(searchText.trim());
+    fetchParticipants(searchText.trim());
   };
 
+  // Effect to clear filters when search is cleared by user typing empty string
+  useEffect(() => {
+    if (searchText === '') {
+      handleClearFilters();
+      setAppliedSearchText('');
+    }
+  }, [searchText]);
 
-  
-  // Debug logging for GroupType
+  const filteredParticipants = filterParticipants(participants, appliedSearchText);
+
+    // Debug logging for GroupType
   if (sel) {
     console.log(`🔍 Selected participant ${sel.ParticipantId} - GroupType: ${sel.groupType || 'null'}`);
   }
 
-
-
-  const renderTabContent = () => {
+ const renderTabContent = () => {
     const patientId = sel?.ParticipantId || 0;
     const studyId = sel?.studyId || 0
     console.log("StudyId", studyId)
@@ -324,7 +389,6 @@ useEffect(() => {
     }
   };
 
-
   return (
     <View className="flex-1 bg-white">
       <View className="flex-row flex-1">
@@ -335,9 +399,9 @@ useEffect(() => {
               <View className="flex-row items-center gap-2">
                 <Text className="font-extrabold">Participant List</Text>
                 <Text></Text>
-                {/* <Text className="text-[#21c57e]">●</Text> */}
-                <Image source={require("../../../assets/patientList.png")} ></Image>
+                <Image source={require("../../../assets/patientList.png")} />
               </View>
+
               <TouchableOpacity 
                 onPress={onRefresh}
                 className="p-2 rounded-lg bg-gray-100"
@@ -349,24 +413,27 @@ useEffect(() => {
                   color={refreshing ? "#999" : "#0ea06c"} 
                 />
               </TouchableOpacity>
+             
             </View>
             <Text className="text-xs text-[#6b7a77]">
               List of Participants ({participants.length})
-              {lastRefreshTime && (
+               {lastRefreshTime && (
                 <Text className="text-[#999]">
                   {' • Last updated: ' + lastRefreshTime.toLocaleTimeString()}
                 </Text>
               )}
             </Text>
-
             <View className="flex-row items-center space-x-2 mt-3">
               {/* Search Bar */}
               <View className="flex-row items-center bg-white border border-[#e6eeeb] rounded-2xl px-4 py-3 flex-1">
                 <TextInput
                   placeholder="Search by Patient ID,Age,Cancer Type"
                   value={searchText}
-                  onChangeText={setSearchText}
-                  onSubmitEditing={() => fetchParticipants(searchText)}
+                  onChangeText={val => {
+                    setSearchText(val);
+                    // Clearing handled by useEffect on searchText above
+                  }}
+                  onSubmitEditing={handleApplySearch}
                   className="flex-1 text-base text-gray-700"
                   placeholderTextColor="#999"
                   style={{
@@ -375,26 +442,30 @@ useEffect(() => {
                     borderRadius: 16,
                   }}
                 />
-
-                <Pressable onPress={() => fetchParticipants(searchText)}>
+                <Pressable onPress={handleApplySearch}>
                   <EvilIcons name="search" size={24} color="#21c57e" />
                 </Pressable>
               </View>
-
               {/* Filter Icon */}
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowAdvancedSearch(true)}>
                 <MaterialCommunityIcons name="tune" size={24} color="black" />
               </TouchableOpacity>
             </View>
-
+            {/* Advanced Filter Modal */}
+            <AdvancedFilterModal
+              visible={showAdvancedSearch}
+              onClose={handleAdvancedDone}
+              filters={advFilters}
+              onCriteriaStatusChange={handleCriteriaStatusChange}
+              onGenderChange={handleGenderChange}
+              onAgeChange={handleAgeChange}
+              onGroupTypeChange={handleGroupTypeChange}
+              onClearFilters={handleClearFilters}
+            />
             {/* Add Participant Button */}
             <Pressable
               onPress={() =>
-                navigation.navigate('SocioDemographic', {
-                  // patientId: Date.now(),
-                  // age:age
-
-                })
+                navigation.navigate('SocioDemographic')
               }
               className="mt-3 bg-[#0ea06c] rounded-xl py-3 px-4 items-center"
             >
@@ -403,9 +474,7 @@ useEffect(() => {
               </Text>
             </Pressable>
           </View>
-
-          <ScrollView 
-            className="flex-1 p-3" 
+          <ScrollView className="flex-1 p-3" 
             contentContainerStyle={{ paddingBottom: 10 }}
             refreshControl={
               <RefreshControl
@@ -418,13 +487,13 @@ useEffect(() => {
           >
             {loading ? (
               <ActivityIndicator color="#0ea06c" />
-            ) : participants.length > 0 ? (
-              participants.map((p) => (
+            ) : filteredParticipants.length > 0 ? (
+              filteredParticipants.map((p) => (
                 <ListItem
                   key={p.ParticipantId}
                   item={{
                     ...p,
-                    ParticipantId: p.ParticipantId.toString(),
+                    ParticipantId: `${p.ParticipantId}`,
                     status: p.status as 'ok' | 'pending' | 'alert',
                     gender: p.gender as 'Male' | 'Female' | 'Other'
                   }}
@@ -437,11 +506,8 @@ useEffect(() => {
                 <Text className="text-gray-500 text-lg">Patient not found</Text>
               </View>
             )}
-
           </ScrollView>
-
         </View>
-
         {/* Right Pane - Participant Details */}
         <View className="flex-1">
           <View className="px-6 pt-4 pb-2 flex-row items-center justify-between">
@@ -457,7 +523,6 @@ useEffect(() => {
               <Text>⋯</Text>
             </View>
           </View>
-
           <View className="px-6">
             {(() => {
               const tabs = [
