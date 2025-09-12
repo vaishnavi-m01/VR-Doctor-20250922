@@ -1,737 +1,980 @@
-import React, { useState, useMemo, use } from 'react';
-import { View, Text, ScrollView, Alert, Pressable } from 'react-native';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
+import { View, Text, ScrollView, Alert, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
 import DateField from '@components/DateField';
-import Segmented from '@components/Segmented';
 import Chip from '@components/Chip';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
+import { apiService } from 'src/services';
+import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
 import {
   DEFAULT_PATIENT_INFO,
   SESSION_CONSTANTS,
   FORM_LABELS,
   FORM_PLACEHOLDERS,
   PARTICIPANT_RESPONSES,
-  SEGMENTED_OPTIONS,
-  MESSAGES,
   ASSESSMENT_CONFIG
 } from '../../constants/appConstants';
 import {
-  validateRequired,
   getValidationMessage,
   getSuccessMessage,
-  getErrorMessage,
-  prepareFormSubmission
 } from '../../utils/formUtils';
 
+interface StudyObservationApiModel {
+  ObservationId: string | null;
+  ParticipantId: string;
+  StudyId: string;
+  DateAndTime: string;
+  DeviceId: string;
+  ObserverName: string;
+  SessionNumber: string;
+  SessionName: string;
+  FACTGScore: string;
+  DistressThermometerScore: string;
+  SessionCompleted: string;
+  SessionNotCompletedReason: string | null;
+  SessionStartTime: string;
+  SessionEndTime: string;
+  PatientResponseDuringSession: string;
+  PatientResponseOther: string | null;
+  TechnicalIssues: string;
+  TechnicalIssuesDescription: string | null;
+  PreVRAssessmentCompleted: string;
+  PostVRAssessmentCompleted: string;
+  DistressScoreAndFACTGCompleted: string;
+  SessionStoppedMidwayReason: string | null;
+  PatientAbleToFollowInstructions: string;
+  PatientInstructionsExplanation: string | null;
+  VisibleSignsOfDiscomfort: string;
+  DiscomfortDescription: string | null;
+  PatientRequiredAssistance: string;
+  AssistanceExplanation: string | null;
+  DeviationsFromProtocol: string;
+  ProtocolDeviationExplanation: string | null;
+  OtherObservations: string | null;
+  WeekNumber?: number;
+  Status?: number;
+  CreatedBy?: string;
+  ModifiedBy:string;
+}
+
+interface ObservationApiResponse {
+  ResponseData: StudyObservationApiModel[];
+}
+
+interface FormField {
+  SOFID: string;
+  FieldLabel: string;
+  SortOrder: number;
+  Status: number;
+  CreatedBy: string;
+  CreatedDate: string;
+  ModifiedBy: string | null;
+  ModifiedDate?: string | null;
+}
+
+interface FormFieldApiResponse {
+  ResponseData: FormField[];
+}
+
+// Extract only time e.g. "14:30:00" from a datetime string
+const extractTime = (dateTimeStr?: string | null) => {
+  if (!dateTimeStr) return '';
+  const match = dateTimeStr.match(/(\d{2}:\d{2}(:\d{2})?)/);
+  return match ? match[1] : '';
+};
+
+// Convert ISO datetime string to "YYYY-MM-DD HH:mm:ss" format for API
+const formatDateTimeForApi = (isoString: string) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+};
+
+function getCurrentDateTimeISO() {
+  return new Date().toISOString(); 
+}
+
 export default function StudyObservation() {
+  // Dynamic form fields state
+  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [fieldsLoading, setFieldsLoading] = useState<boolean>(false);
+  const [fieldsError, setFieldsError] = useState<string | null>(null);
+
+  // Dynamic form values - using SOFID as keys
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+
+  // Existing form states for complex fields
   const [completed, setCompleted] = useState('');
   const [tech, setTech] = useState('');
   const [discomfort, setDiscomfort] = useState('');
   const [deviation, setDeviation] = useState('');
   const [assistance, setAssistance] = useState('');
+  const [followInstructions, setFollowInstructions] = useState('');
+  const [preVRAssessment, setPreVRAssessment] = useState('');
+  const [postVRAssessment, setPostVRAssessment] = useState('');
+  const [distressScoreAndFactG, setDistressScoreAndFactG] = useState('');
   const [resp, setResp] = useState<string[]>([]);
-  const [selectedWeek, setSelectedWeek] = useState("");
+  const [selectedWeek, setSelectedWeek] = useState('');
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
 
-  // Form field states using constants - properly typed as strings
-  const [participantId, setParticipantId] = useState<string>(DEFAULT_PATIENT_INFO.PARTICIPANT_ID);
-  // const [age, setAge] = useState<string>(DEFAULT_PATIENT_INFO.AGE);
-  const [dateTime, setDateTime] = useState<string>('');
-  const [deviceId, setDeviceId] = useState<string>(SESSION_CONSTANTS.DEFAULT_DEVICE_ID);
-  const [observerName, setObserverName] = useState<string>(SESSION_CONSTANTS.DEFAULT_OBSERVER);
-  const [sessionNumber, setSessionNumber] = useState<string>(SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER);
-  const [sessionName, setSessionName] = useState<string>(SESSION_CONSTANTS.DEFAULT_SESSION_NAME);
-  const [factGScore, setFactGScore] = useState<string>('');
-  const [distressScore, setDistressScore] = useState<string>('');
-  const [startTime, setStartTime] = useState<string>('');
-  const [endTime, setEndTime] = useState<string>('');
-  const [preVRAssessment, setPreVRAssessment] = useState<string>('');
-  const [postVRAssessment, setPostVRAssessment] = useState<string>('');
-  const [distressScoreAndFactG, setDistressScoreAndFactG] = useState<string>('');
-  const [midwayReason, setMidwayReason] = useState<string>('');
-  const [followInstructions, setFollowInstructions] = useState<string>('');
-  const [otherResponse, setOtherResponse] = useState<string>('');
-  const [techDescription, setTechDescription] = useState<string>('');
-  const [discomfortDescription, setDiscomfortDescription] = useState<string>('');
-  const [deviationDescription, setDeviationDescription] = useState<string>('');
-  const [otherObservations, setOtherObservations] = useState<string>('');
-  const [AssistanceDescription, setsetAssistanceDescription] = useState<string>('');
+  const STATIC_OBSERVATION_ID = null;
+  const STATIC_DEVICE_ID = 'DEV-001';
+
+  const [observationId, setObservationId] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const route = useRoute<RouteProp<RootStackParamList, 'StudyObservation'>>();
-  const { patientId, age,studyId } = route.params as { patientId: number, age: number,studyId:number };
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { userId } = useContext(UserContext);
 
-  const flag = useMemo(() => completed === 'No' || tech === 'Yes' || discomfort === 'Yes' || deviation === 'Yes', [completed, tech, discomfort, deviation]);
+  const { patientId: routePatientId, age, studyId, observationId: routeObservationId } = route.params as {
+    patientId: number;
+    age: number;
+    studyId: number;
+    observationId?: string;
+  };
 
-  // Validation function using constants
+  useEffect(() => {
+  if (routeObservationId) {
+    setObservationId(routeObservationId);
+  } else {
+    setObservationId(STATIC_OBSERVATION_ID);
+  }
+}, [routeObservationId]);
+
+  const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());
+
+  const flag = useMemo(
+    () => completed === 'No' || tech === 'Yes' || discomfort === 'Yes' || deviation === 'Yes',
+    [completed, tech, discomfort, deviation]
+  );
+
+  useEffect(() => {
+   
+    const initialValues: Record<string, string> = {
+      'SOFID-1': getCurrentDateTimeISO(),
+      'SOFID-2': routePatientId.toString(), 
+      'SOFID-3': STATIC_DEVICE_ID, 
+      'SOFID-4': "Dr.John", 
+      'SOFID-5': "3", 
+      'SOFID-6': "Chemotherapy ", 
+      'SOFID-7': '',
+      'SOFID-8': '',
+      'SOFID-11': '',
+      'SOFID-12': '', 
+      'SOFID-13': '',
+      'SOFID-15': '',
+      'SOFID-19': '', 
+      'SOFID-21': '', 
+      'SOFID-23': '', 
+      'SOFID-25': '',
+      'SOFID-27': '', 
+      'SOFID-28': '', 
+    };
+    
+    setFormValues(initialValues);
+    setStudyIdState(studyId.toString());
+    setObservationId(routeObservationId ?? STATIC_OBSERVATION_ID);
+    setIsLoaded(true);
+
+    fetchFormFields();
+  }, [routePatientId, studyId, routeObservationId]);
+
+  // Fetch dynamic form fields from API
+  const fetchFormFields = async () => {
+    setFieldsLoading(true);
+    setFieldsError(null);
+    try {
+      const res = await apiService.post<FormFieldApiResponse>('/GetStudyObservationFormFields', {});
+      const fields = res.data?.ResponseData ?? [];
+      fields.sort((a, b) => a.SortOrder - b.SortOrder);
+      setFormFields(fields);
+    } catch (error) {
+      console.error('Error fetching form fields:', error);
+      setFieldsError('Failed to load form fields');
+    } finally {
+      setFieldsLoading(false);
+    }
+  };
+
+  // Update form value by SOFID
+  const updateFormValue = (sofid: string, value: string) => {
+    setFormValues(prev => ({
+      ...prev,
+      [sofid]: value
+    }));
+  };
+
+  // Helper to get form value by SOFID
+  const getFormValue = (sofid: string): string => {
+    return formValues[sofid] || '';
+  };
+
+ const fetchObservationByParticipantId = async (participantId: string) => {
+  setLoading(true);
+  try {
+    const payload = {
+      ObservationId: null,
+      ParticipantId: participantId,
+      StudyId: null,
+      SessionName: null,
+      DateAndTime: null,
+    };
+    const res = await apiService.post<ObservationApiResponse>('/GetParticipantStudyObservationForms', payload);
+    
+    const found = res.data?.ResponseData?.[0];
+    if (found) {
+      // Update form values from response
+      const updatedValues: Record<string, string> = {
+        
+        'SOFID-1': found.DateAndTime || getCurrentDateTimeISO(),
+        'SOFID-2': found.ParticipantId,
+        'SOFID-3': found.DeviceId || 'DEV-001',
+        'SOFID-4': found.ObserverName || 'Dr John',
+        'SOFID-5': found.SessionNumber || '3',
+        'SOFID-6': found.SessionName || 'Chemotherapy',
+        'SOFID-7': found.FACTGScore || '',
+        'SOFID-8': found.DistressThermometerScore || '',
+        'SOFID-11': extractTime(found.SessionStartTime),
+        'SOFID-12': extractTime(found.SessionEndTime),
+        'SOFID-13': found.PatientResponseDuringSession || '',
+        'SOFID-15': found.TechnicalIssuesDescription || '',
+        'SOFID-19': found.SessionStoppedMidwayReason || '',
+        'SOFID-21': found.PatientInstructionsExplanation || '',
+        'SOFID-23': found.DiscomfortDescription || '',
+        'SOFID-25': found.AssistanceExplanation || '',
+        'SOFID-27': found.ProtocolDeviationExplanation || '',
+        'SOFID-28': found.OtherObservations || '',
+      };
+
+      setObservationId(found.ObservationId ?? null);
+
+      setFormValues(updatedValues);
+
+   
+      setCompleted(found.SessionCompleted || '');
+      setTech(found.TechnicalIssues || '');
+      setPreVRAssessment(found.PreVRAssessmentCompleted || '');
+      setPostVRAssessment(found.PostVRAssessmentCompleted || '');
+      setDistressScoreAndFactG(found.DistressScoreAndFACTGCompleted || '');
+      setFollowInstructions(found.PatientAbleToFollowInstructions || '');
+      setDiscomfort(found.VisibleSignsOfDiscomfort || '');
+      setAssistance(found.PatientRequiredAssistance || '');
+      setDeviation(found.DeviationsFromProtocol || '');
+      setResp(found.PatientResponseDuringSession ? found.PatientResponseDuringSession.split(',') : []);
+      setSelectedWeek(found.WeekNumber ? `week${found.WeekNumber}` : '');
+
+      setIsLoaded(true);
+      console.log("Participant loaded successfully");
+      
+    } else {
+      console.log("No Observation for this participant");
+    }
+  } catch (error) {
+    console.error('Error fetching observation:', error);
+    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch observation' });
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  const participantId = routePatientId.toString();
+  if (participantId) {
+    fetchObservationByParticipantId(participantId);
+  }
+}, [routePatientId]);
+
+
+  // Render field based on SOFID and field type
+  const renderFormField = (field: FormField) => {
+    const { SOFID, FieldLabel } = field;
+    
+    // Special handling for specific fields
+    switch (SOFID) {
+      case 'SOFID-1': // Date & Time
+        return (
+          <View key={SOFID} className="w-full md:w-[48%]">
+            <DateField 
+              label={FieldLabel} 
+              value={getFormValue(SOFID)} 
+              onChange={(value) => updateFormValue(SOFID, value)} 
+            />
+          </View>
+        );
+        
+      case 'SOFID-9': // Was the session completed?
+        return (
+          <View key={SOFID} className="mb-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setCompleted('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  completed === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${completed === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${completed === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setCompleted('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  completed === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${completed === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${completed === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-10': // If No, specify reason
+        if (completed !== 'No') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Specify reason for not completing session"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+            />
+          </View>
+        );
+        
+      case 'SOFID-13': // Patient Response During Session
+        return (
+          <View key={SOFID} className="mt-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-1">{FieldLabel}</Text>
+            <Chip 
+              items={[...PARTICIPANT_RESPONSES]} 
+              value={resp} 
+              onChange={setResp} 
+            />
+            {resp.includes('Other') && (
+              <View className="mt-2">
+                <Field 
+                  label="Describe other response" 
+                  placeholder="Describe other response" 
+                  value={getFormValue('SOFID-13-OTHER')} 
+                  onChangeText={(value) => updateFormValue('SOFID-13-OTHER', value)} 
+                />
+              </View>
+            )}
+          </View>
+        );
+        
+      case 'SOFID-14': // Any Technical Issues?
+        return (
+          <View key={SOFID} className="mt-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setTech('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  tech === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${tech === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${tech === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setTech('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  tech === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${tech === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${tech === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-15': // If Yes, describe technical issues
+        if (tech !== 'Yes') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Describe technical issues"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      case 'SOFID-16': // Pre-VR Assessment
+      case 'SOFID-17': // Post-VR Assessment  
+      case 'SOFID-18': // Distress score and FACT G
+        return (
+          <View key={SOFID} className="flex-1">
+            <Field
+              label={FieldLabel}
+              placeholder="Yes/No"
+              value={SOFID === 'SOFID-16' ? preVRAssessment : SOFID === 'SOFID-17' ? postVRAssessment : distressScoreAndFactG}
+              onChangeText={(value) => {
+                if (SOFID === 'SOFID-16') setPreVRAssessment(value);
+                else if (SOFID === 'SOFID-17') setPostVRAssessment(value);
+                else setDistressScoreAndFactG(value);
+              }}
+            />
+          </View>
+        );
+        
+      case 'SOFID-20': // Was the patient able to follow instructions?
+        return (
+          <View key={SOFID} className="mt-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setFollowInstructions('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  followInstructions === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${followInstructions === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${followInstructions === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setFollowInstructions('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  followInstructions === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${followInstructions === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${followInstructions === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-21': // If No, explain instruction difficulties
+        if (followInstructions !== 'No') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Explain instruction difficulties"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      case 'SOFID-22': // Any visible signs of discomfort?
+        return (
+          <View key={SOFID} className="flex-1">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setDiscomfort('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  discomfort === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${discomfort === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${discomfort === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setDiscomfort('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  discomfort === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${discomfort === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${discomfort === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-23': // If Yes, describe discomfort
+        if (discomfort !== 'Yes') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Describe discomfort"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      case 'SOFID-24': // Did the patient require assistance?
+        return (
+          <View key={SOFID} className="mt-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setAssistance('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  assistance === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${assistance === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${assistance === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setAssistance('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  assistance === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${assistance === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${assistance === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-25': // If Yes, explain assistance provided
+        if (assistance !== 'Yes') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Explain assistance provided"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      case 'SOFID-26': // Any deviations from protocol?
+        return (
+          <View key={SOFID} className="mt-3">
+            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">{FieldLabel}</Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => setDeviation('Yes')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  deviation === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${deviation === 'Yes' ? 'text-white' : 'text-black'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${deviation === 'Yes' ? 'text-white' : 'text-black'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setDeviation('No')}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                  deviation === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
+              >
+                <Text className={`text-lg mr-1 ${deviation === 'No' ? 'text-white' : 'text-black'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${deviation === 'No' ? 'text-white' : 'text-black'}`}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+        
+      case 'SOFID-27': // If Yes, explain protocol deviations
+        if (deviation !== 'Yes') return null;
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Explain protocol deviations"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      case 'SOFID-28': // Other Observations
+        return (
+          <View key={SOFID} className="mt-3">
+            <Field
+              label={FieldLabel}
+              placeholder="Enter any other observations"
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              multiline
+            />
+          </View>
+        );
+        
+      // Default field rendering for simple text inputs
+      default:
+        // Skip fields that are conditionally rendered or already handled
+        const skipFields = ['SOFID-10', 'SOFID-15', 'SOFID-21', 'SOFID-23', 'SOFID-25', 'SOFID-27'];
+        if (skipFields.includes(SOFID)) return null;
+        
+        // Determine if field should be numeric
+        const numericFields = ['SOFID-5', 'SOFID-7', 'SOFID-8'];
+        const timeFields = ['SOFID-11', 'SOFID-12'];
+        
+        return (
+          <View key={SOFID} className="w-full md:w-[48%]">
+            <Field
+              label={FieldLabel}
+              placeholder={`Enter ${FieldLabel.toLowerCase()}`}
+              value={getFormValue(SOFID)}
+              onChangeText={(value) => updateFormValue(SOFID, value)}
+              keyboardType={numericFields.includes(SOFID) ? "numeric" : "default"}
+            />
+          </View>
+        );
+    }
+  };
+
+  // Validation handler
   const handleValidate = () => {
-    if (completed === 'No') {
+    if (completed === 'No' && !getFormValue('SOFID-10').trim()) {
       Alert.alert('Validation Error', getValidationMessage('SPECIFY_REASON'));
       return;
     }
-    if (tech === 'Yes' && !techDescription.trim()) {
+    if (tech === 'Yes' && !getFormValue('SOFID-15').trim()) {
       Alert.alert('Validation Error', getValidationMessage('DESCRIBE_TECH_ISSUES'));
       return;
     }
-    if (discomfort === 'Yes' && !discomfortDescription.trim()) {
+    if (discomfort === 'Yes' && !getFormValue('SOFID-23').trim()) {
       Alert.alert('Validation Error', getValidationMessage('DESCRIBE_DISCOMFORT'));
       return;
     }
-    if (deviation === 'Yes' && !deviationDescription.trim()) {
+    if (deviation === 'Yes' && !getFormValue('SOFID-27').trim()) {
       Alert.alert('Validation Error', getValidationMessage('EXPLAIN_DEVIATIONS'));
       return;
     }
-    if (resp.includes('Other') && !otherResponse.trim()) {
+    if (assistance === 'Yes' && !getFormValue('SOFID-25').trim()) {
+      Alert.alert('Validation Error', 'Please explain the assistance provided.');
+      return;
+    }
+    if (resp.includes('Other') && !getFormValue('SOFID-13-OTHER').trim()) {
       Alert.alert('Validation Error', getValidationMessage('DESCRIBE_OTHER_RESPONSE'));
+      return;
+    }
+    if (followInstructions === 'No' && !getFormValue('SOFID-21').trim()) {
+      Alert.alert('Validation Error', 'Please explain why the patient could not follow instructions.');
       return;
     }
     Alert.alert('Success', getValidationMessage('VALIDATION_PASSED'));
   };
 
-  // Save function using constants
+  // Save handler
   const handleSave = async () => {
+    setSaving(true);
     try {
-      const observationData = prepareFormSubmission({
-        participantId,
-        age,
-                 weekNo: selectedWeek ? parseInt(selectedWeek.replace('week', '')) : 1,
-        dateTime,
-        deviceId,
-        observerName,
-        sessionNumber,
-        sessionName,
-        factGScore,
-        distressScore,
-        completed,
-        startTime,
-        endTime,
-        resp,
-        otherResponse,
-        tech,
-        techDescription,
-        discomfort,
-        discomfortDescription,
-        deviation,
-        deviationDescription,
-        preVRAssessment,
-        postVRAssessment,
-        midwayReason,
-        followInstructions,
-        otherObservations,
-      }, patientId);
+      const participantId = getFormValue('SOFID-2');
+      const dateTime = getFormValue('SOFID-1');
 
-      console.log('Saving observation data:', observationData);
+      if (!participantId || !studyIdState || !dateTime) {
+        Toast.show({
+          type: 'error',
+          text1: 'Validation Error',
+          text2: 'Missing required fields: Participant ID, Study ID, or Date/Time',
+          position: 'top',
+          topOffset: 50,
+        });
+        setSaving(false);
+        return;
+      }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const dateTimeFormatted = formatDateTimeForApi(dateTime);
 
-      Alert.alert('Success', getSuccessMessage('SAVED'));
+      const payload: StudyObservationApiModel = {
+        ObservationId: observationId, // Could be null for new
+        ParticipantId: participantId,
+        StudyId: studyIdState,
+        DateAndTime: dateTimeFormatted,
+        DeviceId: getFormValue('SOFID-3') || STATIC_DEVICE_ID,
+        ObserverName: getFormValue('SOFID-4'),
+        SessionNumber: getFormValue('SOFID-5'),
+        SessionName: getFormValue('SOFID-6'),
+        FACTGScore: getFormValue('SOFID-7'),
+        DistressThermometerScore: getFormValue('SOFID-8'),
+        SessionCompleted: completed,
+        SessionNotCompletedReason: completed === 'No' ? getFormValue('SOFID-10') : null,
+        SessionStartTime: getFormValue('SOFID-11'),
+        SessionEndTime: getFormValue('SOFID-12'),
+        PatientResponseDuringSession: resp.join(','),
+        PatientResponseOther:
+          resp.includes('Other') && getFormValue('SOFID-13-OTHER').trim() !== ''
+            ? getFormValue('SOFID-13-OTHER')
+            : null,
+        TechnicalIssues: tech,
+        TechnicalIssuesDescription:
+          tech === 'Yes' && getFormValue('SOFID-15').trim() !== ''
+            ? getFormValue('SOFID-15')
+            : null,
+        PreVRAssessmentCompleted: preVRAssessment,
+        PostVRAssessmentCompleted: postVRAssessment,
+        DistressScoreAndFACTGCompleted: distressScoreAndFactG,
+        SessionStoppedMidwayReason: completed === 'No' ? getFormValue('SOFID-19') || getFormValue('SOFID-10') : null,
+        PatientAbleToFollowInstructions: followInstructions,
+        PatientInstructionsExplanation:
+          followInstructions === 'No' && getFormValue('SOFID-21').trim() !== ''
+            ? getFormValue('SOFID-21')
+            : null,
+        VisibleSignsOfDiscomfort: discomfort,
+        DiscomfortDescription:
+          discomfort === 'Yes' && getFormValue('SOFID-23').trim() !== ''
+            ? getFormValue('SOFID-23')
+            : null,
+        PatientRequiredAssistance: assistance,
+        AssistanceExplanation:
+          assistance === 'Yes' && getFormValue('SOFID-25').trim() !== ''
+            ? getFormValue('SOFID-25')
+            : null,
+        DeviationsFromProtocol: deviation,
+        ProtocolDeviationExplanation:
+          deviation === 'Yes' && getFormValue('SOFID-27').trim() !== ''
+            ? getFormValue('SOFID-27')
+            : null,
+        OtherObservations: getFormValue('SOFID-28').trim() !== '' ? getFormValue('SOFID-28') : null,
+        WeekNumber: selectedWeek ? parseInt(selectedWeek.replace('week', '')) : 1,
+        Status: 1,
+        CreatedBy: userId ?? 'UID-1',
+        ModifiedBy:userId ?? 'UID-1',
+      };
 
-      // Navigate back or to next screen
-      // navigation.goBack();
+      console.log('Saving observation payload:', payload);
+
+      await apiService.post('/AddUpdateParticipantStudyObservationForm', payload);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: observationId ? 'Observation updated successfully' : 'Observation saved successfully',
+        position: 'top',
+        topOffset: 50,
+      });
+
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving observation:', error);
-      Alert.alert('Error', getErrorMessage('SAVE_FAILED'));
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save observation. Please try again.',
+        position: 'top',
+        topOffset: 50,
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
-     // Clear form function using constants
-   const handleClear = () => {
-     setCompleted('');
-     setTech('');
-     setDiscomfort('');
-     setDeviation('');
-     setResp([]);
-     setParticipantId(DEFAULT_PATIENT_INFO.PARTICIPANT_ID);
-     // setAge(DEFAULT_PATIENT_INFO.AGE);
+  // Clear form handler
+  const handleClear = () => {
+    // Reset all form values
+    const clearedValues: Record<string, string> = {};
+    Object.keys(formValues).forEach(key => {
+      clearedValues[key] = '';
+    });
+    
+    // Set default values for required fields
+    clearedValues['SOFID-1'] = getCurrentDateTimeISO();
+    clearedValues['SOFID-2'] = routePatientId.toString();
+    clearedValues['SOFID-3'] = STATIC_DEVICE_ID;
+    clearedValues['SOFID-4'] = SESSION_CONSTANTS.DEFAULT_OBSERVER;
+    clearedValues['SOFID-5'] = SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER;
+    clearedValues['SOFID-6'] = SESSION_CONSTANTS.DEFAULT_SESSION_NAME;
+    
+    setFormValues(clearedValues);
+    
+    // Reset complex field states
+    setCompleted('');
+    setTech('');
+    setDiscomfort('');
+    setDeviation('');
+    setAssistance('');
+    setResp([]);
+    setPreVRAssessment('');
+    setPostVRAssessment('');
+    setDistressScoreAndFactG('');
+    setFollowInstructions('');
+    setSelectedWeek('');
+    setShowWeekDropdown(false);
+    setObservationId(STATIC_OBSERVATION_ID);
 
-     setDateTime('');
-     setDeviceId(SESSION_CONSTANTS.DEFAULT_DEVICE_ID);
-     setObserverName(SESSION_CONSTANTS.DEFAULT_OBSERVER);
-     setSessionNumber(SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER);
-     setSessionName(SESSION_CONSTANTS.DEFAULT_SESSION_NAME);
-     setFactGScore('');
-     setDistressScore('');
-     setStartTime('');
-     setEndTime('');
-     setPreVRAssessment('');
-     setPostVRAssessment('');
-     setMidwayReason('');
-     setFollowInstructions('');
-     setOtherResponse('');
-     setTechDescription('');
-     setDiscomfortDescription('');
-     setDeviationDescription('');
-     setOtherObservations('');
-     setSelectedWeek(''); // Reset week dropdown to "Select Week"
-     setShowWeekDropdown(false); // Close dropdown if open
-     Alert.alert('Success', getSuccessMessage('FORM_CLEARED'));
-   };
+    Alert.alert('Success', getSuccessMessage('FORM_CLEARED'));
+  };
 
   return (
     <>
-             <View className="px-4 pt-4 relative">
-         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-           <Text className="font-zen text-lg font-bold text-green-600">
-             {FORM_LABELS.PARTICIPANT_ID}: {patientId || participantId}
-           </Text>
+      <View className="px-4 pt-4 relative">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+          <Text className="font-zen text-lg font-bold text-green-600">
+            {FORM_LABELS.PARTICIPANT_ID}: {getFormValue('SOFID-2')}
+          </Text>
+          <Text className="font-zen text-base font-semibold text-green-600">
+            Study ID: {studyIdState}
+          </Text>
+          <View className="flex-row items-center gap-3">
+            <Text className="font-zen text-base font-semibold text-gray-700">
+              {FORM_LABELS.AGE}: {age || 'Not specified'}
+            </Text>
+            <View className="w-32">
+              <Pressable
+                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                onPress={() => setShowWeekDropdown(!showWeekDropdown)}
+                style={{ backgroundColor: '#f8f9fa', borderColor: '#e5e7eb', borderRadius: 8 }}
+              >
+                <Text className="text-sm text-gray-700">
+                  {selectedWeek === 'week1'
+                    ? 'Week 1'
+                    : selectedWeek === 'week2'
+                      ? 'Week 2'
+                      : selectedWeek === 'week3'
+                        ? 'Week 3'
+                        : selectedWeek === 'week4'
+                          ? 'Week 4'
+                          : 'Select Week'}
+                </Text>
+                <Text className="text-gray-500 text-xs">▼</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
 
-           <Text className="font-zen text-base font-semibold text-green-600">
-             Study ID: {studyId || studyId || 'N/A'}
-           </Text>
-
-           <View className="flex-row items-center gap-3">
-             <Text className="font-zen text-base font-semibold text-gray-700">
-               {FORM_LABELS.AGE}: {age || 'Not specified'}
-             </Text>
-             
-             {/* Week Dropdown - Next to Age */}
-             <View className="w-32">
-               <Pressable 
-                 className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                 onPress={() => setShowWeekDropdown(!showWeekDropdown)}
-                 style={{
-                   backgroundColor: '#f8f9fa',
-                   borderColor: '#e5e7eb',
-                   borderRadius: 8,
-                 }}
-               >
-                 <Text className="text-sm text-gray-700">
-                   {selectedWeek === "week1" ? "Week 1" : 
-                    selectedWeek === "week2" ? "Week 2" : 
-                    selectedWeek === "week3" ? "Week 3" : 
-                    selectedWeek === "week4" ? "Week 4" : "Select Week"}
-                 </Text>
-                 <Text className="text-gray-500 text-xs">▼</Text>
-               </Pressable>
-             </View>
-           </View>
-         </View>
-         
-         {/* Dropdown Menu - Positioned outside the header container */}
-         {showWeekDropdown && (
-           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
-             <Pressable 
-               className="px-3 py-2 border-b border-gray-100"
-               onPress={() => {
-                 setSelectedWeek("week1");
-                 setShowWeekDropdown(false);
-               }}
-             >
-               <Text className="text-sm text-gray-700">Week 1</Text>
-             </Pressable>
-             <Pressable 
-               className="px-3 py-2 border-b border-gray-100"
-               onPress={() => {
-                 setSelectedWeek("week2");
-                 setShowWeekDropdown(false);
-               }}
-             >
-               <Text className="text-sm text-gray-700">Week 2</Text>
-             </Pressable>
-             <Pressable 
-               className="px-3 py-2 border-b border-gray-100"
-               onPress={() => {
-                 setSelectedWeek("week3");
-                 setShowWeekDropdown(false);
-               }}
-             >
-               <Text className="text-sm text-gray-700">Week 3</Text>
-             </Pressable>
-             <Pressable 
-               className="px-3 py-2"
-               onPress={() => {
-                 setSelectedWeek("week4");
-                 setShowWeekDropdown(false);
-               }}
-             >
-               <Text className="text-sm text-gray-700">Week 4</Text>
-             </Pressable>
-           </View>
-         )}
-       </View>
+        {showWeekDropdown && (
+          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
+            {['week1', 'week2', 'week3', 'week4'].map((week, i) => (
+              <Pressable
+                key={week}
+                className={`px-3 py-2 ${i < 3 ? 'border-b border-gray-100' : ''}`}
+                onPress={() => {
+                  setSelectedWeek(week);
+                  setShowWeekDropdown(false);
+                }}
+              >
+                <Text className="text-sm text-gray-700">{`Week ${i + 1}`}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
 
       <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
-        <FormCard icon={ASSESSMENT_CONFIG.STUDY_OBSERVATION.ICON} title={ASSESSMENT_CONFIG.STUDY_OBSERVATION.TITLE}>
-          <View className="flex-row flex-wrap gap-3">
-            <View className="w-full md:w-[48%]">
-              <DateField
-                label={FORM_LABELS.DATE}
-                value={dateTime}
-                onChange={setDateTime}
-              />
-            </View>
-             <View className="w-full md:w-[48%]">
-              <DateField
-                label={FORM_LABELS.TIME}
-                value={dateTime}
-                onChange={setDateTime}
-                mode="time"
-              />
-            </View>
-            <View className="w-full md:w-[48%]">
-              <Field
-                label={FORM_LABELS.PARTICIPANT_ID}
-                placeholder={`${patientId}`}
-                value={participantId}
-                onChangeText={setParticipantId}
-              />
-            </View>
-            <View className="w-full md:w-[48%]">
-              <Field
-                label={FORM_LABELS.DEVICE_ID}
-                placeholder={FORM_PLACEHOLDERS.DEVICE_ID}
-                value={deviceId}
-                onChangeText={setDeviceId}
-              />
-            </View>
-            <View className="w-full md:w-[48%]">
-              <Field
-                label={FORM_LABELS.OBSERVER_NAME}
-                placeholder={FORM_PLACEHOLDERS.OBSERVER_NAME}
-                value={observerName}
-                onChangeText={setObserverName}
-              />
-            </View>
-            <View className="w-full md:w-[48%]">
-              <Field
-                label={FORM_LABELS.SESSION_NUMBER}
-                placeholder={FORM_PLACEHOLDERS.SESSION_NUMBER}
-                value={sessionNumber}
-                onChangeText={setSessionNumber}
-                keyboardType="numeric"
-              />
-            </View>
-            <View className="w-full md:w-[48%]">
-              <Field
-                label={FORM_LABELS.SESSION_NAME}
-                placeholder={FORM_PLACEHOLDERS.SESSION_NAME}
-                value={sessionName}
-                onChangeText={setSessionName}
-              />
-            </View>
+        {fieldsLoading ? (
+          <View className="flex-1 justify-center items-center py-20">
+            <ActivityIndicator size="large" color="#4FC264" />
+            <Text className="mt-4 text-gray-600">Loading form fields...</Text>
           </View>
-        </FormCard>
-
-        <FormCard icon="1" title="Baseline Assessment">
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Field
-                label={FORM_LABELS.FACT_G_SCORE}
-                placeholder={FORM_PLACEHOLDERS.FACT_G_SCORE}
-                value={factGScore}
-                onChangeText={setFactGScore}
-                keyboardType="numeric"
-              />
-            </View>
-            <View className="flex-1">
-              <Field
-                label={FORM_LABELS.DISTRESS_THERMOMETER}
-                placeholder={FORM_PLACEHOLDERS.DISTRESS_THERMOMETER}
-                value={distressScore}
-                onChangeText={setDistressScore}
-                keyboardType="numeric"
-              />
-            </View>
+        ) : fieldsError ? (
+          <View className="flex-1 justify-center items-center py-20">
+            <Text style={{ color: 'red', textAlign: 'center', marginVertical: 10 }}>
+              {fieldsError}
+            </Text>
+            <Pressable
+              className="bg-[#4FC264] px-4 py-2 rounded-lg mt-4"
+              onPress={fetchFormFields}
+            >
+              <Text className="text-white font-medium">Retry</Text>
+            </Pressable>
           </View>
-        </FormCard>
-
-        <FormCard icon="2" title="Session Details">
-          <View className="mb-3">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Was the session completed?</Text>
-            <View className="flex-row gap-2">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setCompleted('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'Yes'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ✅
-                </Text>
-                <Text className={`font-medium text-xs ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setCompleted('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'No'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ❌
-                </Text>
-                <Text className={`font-medium text-xs ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-            {completed === 'No' && (
-              <View className="mt-3">
-                <Field
-                  label="If No, specify reason"
-                  placeholder={FORM_PLACEHOLDERS.REASON_NOT_COMPLETING}
-                  value={midwayReason}
-                  onChangeText={setMidwayReason}
-                />
+        ) : (
+          <>
+            {/* Basic Information Section */}
+            <FormCard icon={ASSESSMENT_CONFIG.STUDY_OBSERVATION.ICON} title={ASSESSMENT_CONFIG.STUDY_OBSERVATION.TITLE}>
+              <View className="flex-row flex-wrap gap-3">
+                {formFields
+                  .filter(field => ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6'].includes(field.SOFID))
+                  .map(field => renderFormField(field))}
               </View>
-            )}
-          </View>
+            </FormCard>
 
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Field
-                label={FORM_LABELS.START_TIME}
-                placeholder={FORM_PLACEHOLDERS.START_TIME}
-                value={startTime}
-                onChangeText={setStartTime}
-              />
-            </View>
-            <View className="flex-1">
-              <Field
-                label={FORM_LABELS.END_TIME}
-                placeholder={FORM_PLACEHOLDERS.END_TIME}
-                value={endTime}
-                onChangeText={setEndTime}
-              />
-            </View>
-          </View>
-
-          <View className="mt-3">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-1">Participant Response During Session</Text>
-            <Chip items={[...PARTICIPANT_RESPONSES]} value={resp} onChange={setResp} />
-            {resp.includes('Other') && (
-              <View className="mt-2">
-                <Field
-                  label="Describe other response"
-                  placeholder={FORM_PLACEHOLDERS.OTHER_RESPONSE}
-                  value={otherResponse}
-                  onChangeText={setOtherResponse}
-                />
+            {/* Baseline Assessment Section */}
+            <FormCard icon="1" title="Baseline Assessment">
+              <View className="flex-row gap-3">
+                {formFields
+                  .filter(field => ['SOFID-7', 'SOFID-8'].includes(field.SOFID))
+                  .map(field => (
+                    <View key={field.SOFID} className="flex-1">
+                      <Field
+                        label={field.FieldLabel}
+                        placeholder={`Enter ${field.FieldLabel.toLowerCase()}`}
+                        value={getFormValue(field.SOFID)}
+                        onChangeText={(value) => updateFormValue(field.SOFID, value)}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  ))}
               </View>
-            )}
-          </View>
+            </FormCard>
 
-          <View className="mt-3">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Any Technical Issues?</Text>
-            <View className="flex-row gap-2">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setTech('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${tech === 'Yes'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${tech === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ✅
-                </Text>
-                <Text className={`font-medium text-xs ${tech === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setTech('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${tech === 'No'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${tech === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ❌
-                </Text>
-                <Text className={`font-medium text-xs ${tech === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-            {tech === 'Yes' && (
-              <View className="mt-3">
-                <Field
-                  label="If Yes, describe"
-                  placeholder={FORM_PLACEHOLDERS.TECHNICAL_ISSUES}
-                  value={techDescription}
-                  onChangeText={setTechDescription}
-                />
+            {/* Session Details Section */}
+            <FormCard icon="2" title="Session Details">
+              {formFields
+                .filter(field => ['SOFID-9', 'SOFID-10',  'SOFID-13', 'SOFID-14', 'SOFID-15'].includes(field.SOFID))
+                .map(field => renderFormField(field))}
+              
+              <View className="flex-row gap-3 mt-3">
+                {formFields
+                  .filter(field => ['SOFID-11', 'SOFID-12'].includes(field.SOFID))
+                  .map(field => (
+                    <View key={field.SOFID} className="flex-1">
+                      <Field
+                        label={field.FieldLabel}
+                        placeholder="HH:MM"
+                        value={getFormValue(field.SOFID)}
+                        onChangeText={(value) => updateFormValue(field.SOFID, value)}
+                      />
+                    </View>
+                  ))}
               </View>
-            )}
-          </View>
-        </FormCard>
+            </FormCard>
 
-        <FormCard icon="3" title="Counselor / Social Worker Compliance">
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Field
-                label="Pre-VR Assessment completed?"
-                placeholder="Yes/No"
-                value={preVRAssessment}
-                onChangeText={setPreVRAssessment}
-              />
-            </View>
-            <View className="flex-1">
-              <Field
-                label="Post-VR Assessment completed?"
-                placeholder="Yes/No"
-                value={postVRAssessment}
-                onChangeText={setPostVRAssessment}
-              />
-            </View>
-            <View className="flex-1">
-              <Field
-                label="Distress score and FACT G(end of week)?"
-                placeholder="Yes/No"
-                value={distressScoreAndFactG}
-                onChangeText={setDistressScoreAndFactG}
-              />
-            </View>
-          </View>
-          <View className="mt-3">
-            <Field
-              label="If the session was stopped midway, reason"
-              placeholder={FORM_PLACEHOLDERS.MIDWAY_REASON}
-              value={midwayReason}
-              onChangeText={setMidwayReason}
-            />
-          </View>
-          <View className="mt-3">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Was the Participant able to follow instructions?</Text>
-            <View className="flex-row gap-2">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setFollowInstructions('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${followInstructions === 'Yes'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${followInstructions === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ✅
-                </Text>
-                <Text className={`font-medium text-xs ${followInstructions === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setFollowInstructions('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${followInstructions === 'No'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${followInstructions === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ❌
-                </Text>
-                <Text className={`font-medium text-xs ${followInstructions === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </FormCard>
-
-        <FormCard icon="4" title="Additional Observations & Side Effects">
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Visible signs of discomfort?</Text>
-              <View className="flex-row gap-2">
-                {/* Yes Button */}
-                <Pressable
-                  onPress={() => setDiscomfort('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${discomfort === 'Yes'
-                    ? 'bg-[#EBF6D6]'
-                    : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${discomfort === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
-                    ✅
-                  </Text>
-                  <Text className={`font-medium text-xs ${discomfort === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
-                    Yes
-                  </Text>
-                </Pressable>
-
-                {/* No Button */}
-                <Pressable
-                  onPress={() => setDiscomfort('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${discomfort === 'No'
-                    ? 'bg-[#EBF6D6]'
-                    : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${discomfort === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
-                    ❌
-                  </Text>
-                  <Text className={`font-medium text-xs ${discomfort === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
-                    No
-                  </Text>
-                </Pressable>
+            {/* Counselor Compliance Section */}
+            <FormCard icon="3" title="Dr John">
+              <View className="flex-row gap-3">
+                {formFields
+                  .filter(field => ['SOFID-16', 'SOFID-17', 'SOFID-18'].includes(field.SOFID))
+                  .map(field => renderFormField(field))}
               </View>
-            </View>
-            {discomfort === 'Yes' && (
-              <View className="mt-3">
-                <Field
-                  label="Describe"
-                  placeholder={FORM_PLACEHOLDERS.DISCOMFORT_SYMPTOMS}
-                  value={discomfortDescription}
-                  onChangeText={setDiscomfortDescription}
-                />
-              </View>
-            )}
-          </View>
+              
+              {formFields
+                .filter(field => ['SOFID-20', 'SOFID-21'].includes(field.SOFID))
+                .map(field => renderFormField(field))}
+            </FormCard>
 
+            {/* Additional Observations Section */}
+            <FormCard icon="4" title="Additional Observations & Side Effects">
+              {formFields
+                .filter(field => ['SOFID-22', 'SOFID-23', 'SOFID-24', 'SOFID-25', 'SOFID-26', 'SOFID-27', 'SOFID-28'].includes(field.SOFID))
+                .map(field => renderFormField(field))}
 
-          <View className="flex-1">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Did the patient require any assistance during the session?</Text>
-            <View className="flex-row gap-2">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setAssistance('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${deviation === 'Yes'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${deviation === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ✅
-                </Text>
-                <Text className={`font-medium text-xs ${deviation === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setAssistance('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${deviation === 'No'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${deviation === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ❌
-                </Text>
-                <Text className={`font-medium text-xs ${deviation === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-            {deviation === 'Yes' && (
-              <View className="mt-3">
-                <Field
-                  label="Explain"
-                  placeholder={FORM_PLACEHOLDERS.DEVIATION_EXPLANATION}
-                  value={deviationDescription}
-                  onChangeText={setsetAssistanceDescription}
-                />
-              </View>
-            )}
-          </View>
-
-          <View className="flex-1">
-            <Text className="font-zen text-xs text-[#4b5f5a] mb-2">Any deviations from protocol?</Text>
-            <View className="flex-row gap-2">
-              {/* Yes Button */}
-              <Pressable
-                onPress={() => setDeviation('Yes')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${deviation === 'Yes'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${deviation === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ✅
-                </Text>
-                <Text className={`font-medium text-xs ${deviation === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Yes
-                </Text>
-              </Pressable>
-
-              {/* No Button */}
-              <Pressable
-                onPress={() => setDeviation('No')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${deviation === 'No'
-                  ? 'bg-[#EBF6D6]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`text-lg mr-1 ${deviation === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  ❌
-                </Text>
-                <Text className={`font-medium text-xs ${deviation === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No
-                </Text>
-              </Pressable>
-            </View>
-            {deviation === 'Yes' && (
-              <View className="mt-3">
-                <Field
-                  label="Explain"
-                  placeholder={FORM_PLACEHOLDERS.DEVIATION_EXPLANATION}
-                  value={deviationDescription}
-                  onChangeText={setDeviationDescription}
-                />
-              </View>
-            )}
-          </View>
-
-          <View className="mt-3">
-            <Field
-              label={FORM_LABELS.OTHER_OBSERVATIONS}
-              placeholder={FORM_PLACEHOLDERS.OTHER_OBSERVATIONS}
-              value={otherObservations}
-              onChangeText={setOtherObservations}
-              multiline
-            />
-          </View>
-          
-          {/* Extra space to ensure Other Observations field is not hidden by BottomBar */}
-          <View style={{ height: 150 }} />
-        </FormCard>
+              <View style={{ height: 150 }} />
+            </FormCard>
+          </>
+        )}
       </ScrollView>
 
       <BottomBar>
-        {flag && <Text className="font-zen px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">⚠︎ Needs review</Text>}
+        
         <View className="flex-row gap-3">
-          <Btn variant="light" onPress={handleClear}>Clear</Btn>
-          <Btn variant="light" onPress={handleValidate}>Validate</Btn>
-          <Btn onPress={handleSave}>Save Observation</Btn>
+          <Btn variant="light" onPress={handleClear}>
+            Clear
+          </Btn>
+          <Btn variant="light" onPress={handleValidate}>
+            Validate
+          </Btn>
+          <Btn onPress={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </Btn>
         </View>
       </BottomBar>
     </>
