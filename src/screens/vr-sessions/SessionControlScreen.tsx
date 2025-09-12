@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
@@ -15,6 +15,29 @@ export default function SessionControlScreen() {
   const [music, setMusic] = useState(0.3);
   const [voice, setVoice] = useState(0.6);
   const [intensity, setIntensity] = useState(0.75);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(10.5);
+
+  // Simulate time progression when playing
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && currentTime < totalDuration) {
+      interval = setInterval(() => {
+        setCurrentTime(prev => {
+          const newTime = prev + 0.1;
+          if (newTime >= totalDuration) {
+            setIsPlaying(false);
+            return totalDuration;
+          }
+          return newTime;
+        });
+      }, 100);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying, currentTime, totalDuration]);
 
   return (
     <View className="flex-1 bg-white">
@@ -98,7 +121,9 @@ export default function SessionControlScreen() {
               
               {/* Time Display */}
               <View className="items-center mb-6">
-                <Text className="text-3xl font-bold text-gray-800">12:36 / 20:00</Text>
+                <Text className="text-3xl font-bold text-gray-800">
+                  {currentTime.toFixed(2)} - {totalDuration.toFixed(2)}
+                </Text>
                 <Text className="text-sm text-gray-500 mt-1">Duration</Text>
               </View>
 
@@ -147,21 +172,36 @@ export default function SessionControlScreen() {
 
               {/* Media Controls */}
               <View className="flex-row items-center gap-3">
-                <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
-                  <Text className="text-sm">⏮</Text>
+                {/* Play/Pause Toggle Button */}
+                <Pressable 
+                  className={`w-12 h-12 rounded-full items-center justify-center ${isPlaying ? 'bg-green-500' : 'bg-blue-500'}`}
+                  onPress={() => setIsPlaying(!isPlaying)}
+                >
+                  <Text className="text-white text-lg">
+                    {isPlaying ? '⏸' : '▶'}
+                  </Text>
                 </Pressable>
-                <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
-                  <Text className="text-sm">▶</Text>
+                
+                {/* Stop Button */}
+                <Pressable 
+                  className="w-12 h-12 rounded-full items-center justify-center bg-red-500"
+                  onPress={() => {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                  }}
+                >
+                  <Text className="text-white text-lg">⏹</Text>
                 </Pressable>
-                <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
-                  <Text className="text-sm">⏸</Text>
-                </Pressable>
-                <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
-                  <Text className="text-sm">⏭</Text>
-                </Pressable>
+                
+                {/* Timeline Slider */}
                 <View className="flex-1 mx-3">
-                  <SliderBar value={progress} onChange={setProgress} />
+                  <SliderBar 
+                    value={currentTime / totalDuration} 
+                    onChange={(value) => setCurrentTime(value * totalDuration)} 
+                  />
                 </View>
+                
+                {/* Volume and Settings */}
                 <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
                   <Text className="text-sm">🔊</Text>
                 </Pressable>
@@ -176,15 +216,26 @@ export default function SessionControlScreen() {
               <Text className="font-bold text-base mb-6 text-gray-700">Content and media controls</Text>
               
               {/* Media Control Buttons */}
-              <View className="flex-row justify-center gap-4 mb-6">
-                <Pressable className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
-                  <Text className="text-lg">⏮</Text>
+              <View className="flex-row justify-center gap-6 mb-6">
+                {/* Play/Pause Toggle Button */}
+                <Pressable 
+                  className={`w-16 h-16 rounded-full items-center justify-center ${isPlaying ? 'bg-green-500' : 'bg-blue-500'}`}
+                  onPress={() => setIsPlaying(!isPlaying)}
+                >
+                  <Text className="text-white text-2xl">
+                    {isPlaying ? '⏸' : '▶'}
+                  </Text>
                 </Pressable>
-                <Pressable className="w-12 h-12 rounded-full bg-gray-700 items-center justify-center">
-                  <Text className="text-white text-lg">▶</Text>
-                </Pressable>
-                <Pressable className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
-                  <Text className="text-lg">⏭</Text>
+                
+                {/* Stop Button */}
+                <Pressable 
+                  className="w-16 h-16 rounded-full items-center justify-center bg-red-500"
+                  onPress={() => {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                  }}
+                >
+                  <Text className="text-white text-2xl">⏹</Text>
                 </Pressable>
               </View>
 

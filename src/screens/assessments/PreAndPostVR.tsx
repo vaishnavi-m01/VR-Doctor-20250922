@@ -329,6 +329,9 @@ export default function PreAndPostVR() {
             ))}
           </FormCard>
         )}
+
+        {/* Extra space to ensure content is not hidden by BottomBar */}
+        <View style={{ height: 150 }} />
       </ScrollView>
 
       <BottomBar>

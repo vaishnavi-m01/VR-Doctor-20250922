@@ -1,16 +1,20 @@
 
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { getParticipantBackgroundColor } from '../utils/participantColors';
 
 type Props = {
   name: string;
   sub: string;
   onStart?: () => void;
+  groupType?: string | null;
 };
 
-export default function PatientCard({ name, sub, onStart }: Props) {
+export default function PatientCard({ name, sub, onStart, groupType }: Props) {
+  const bgColor = getParticipantBackgroundColor(groupType);
+  
   return (
-    <View className="bg-white border border-[#e6eeeb] rounded-2xl p-3 flex-row items-center gap-3 shadow-soft">
+    <View className={`${bgColor} border border-[#e6eeeb] rounded-2xl p-3 flex-row items-center gap-3 shadow-soft`}>
       <View className="w-12 h-12 rounded-full bg-gradient-to-br from-[#b8e9d5] to-[#7fd4b5]" />
       <View className="flex-1">
         <Text className="font-bold">{name}</Text>

@@ -156,6 +156,7 @@ export default function SimpleParticipantTest() {
                 'Participant Details',
                 `ID: ${participant.ParticipantId}\nAge: ${participant.Age}\nGender: ${participant.Gender}\nStatus: ${participant.CriteriaStatus}`
               )}
+              groupType={participant.GroupType}
             />
           ))
         )}

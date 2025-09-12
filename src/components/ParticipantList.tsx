@@ -7,6 +7,7 @@ import Card from './Card';
 import Button from './Button';
 import SearchBar from './SearchBar';
 import StatusChip from './StatusChip';
+import { getParticipantBackgroundColor } from '../utils/participantColors';
 
 interface ParticipantListProps {
   onParticipantSelect?: (participant: Participant) => void;
@@ -56,12 +57,16 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
     fetchParticipants();
   };
 
-  const renderParticipantItem = ({ item }: { item: Participant }) => (
-    <Card
-      key={item.ParticipantId}
-      onPress={() => onParticipantSelect?.(item)}
-      className="mb-3 p-4"
-    >
+
+  const renderParticipantItem = ({ item }: { item: Participant }) => {
+    const bgColor = getParticipantBackgroundColor(item.GroupType);
+    
+    return (
+      <Card
+        key={item.ParticipantId}
+        onPress={() => onParticipantSelect?.(item)}
+        className={`mb-3 p-4 ${bgColor}`}
+      >
       <View className="flex-row justify-between items-start mb-2">
         <Text className="text-lg font-semibold text-gray-800">
           {item.ParticipantId}
@@ -111,7 +116,8 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
         )}
       </View>
     </Card>
-  );
+    );
+  };
 
   const renderFilters = () => (
     <View className="mb-4 space-y-3">

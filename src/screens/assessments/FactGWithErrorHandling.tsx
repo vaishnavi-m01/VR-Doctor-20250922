@@ -300,6 +300,9 @@ function FactGWithErrorHandling({ patientId }: FactGWithErrorHandlingProps) {
           assessments={factGAssessments}
           onRetry={handleRetryAssessments}
         />
+
+        {/* Extra space to ensure content is not hidden by BottomBar */}
+        <View style={{ height: 150 }} />
       </ScrollView>
 
       <BottomBar>

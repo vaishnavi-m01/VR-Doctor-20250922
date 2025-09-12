@@ -240,6 +240,7 @@ export default function PatientDatabaseScreen() {
                   name={participant.ParticipantId || `Participant ${index + 1}`}
                   sub={`${participant.Age || 'N/A'} y • ${participant.Gender || 'N/A'} • ${participant.CriteriaStatus || 'N/A'}`}
                   onStart={() => handleParticipantSelect(participant)}
+                  groupType={participant.GroupType}
                 />
               ))}
             </View>

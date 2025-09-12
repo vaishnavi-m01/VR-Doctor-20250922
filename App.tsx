@@ -131,7 +131,6 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <SafeAreaView className="flex-1 bg-white">
-            <UserProvider>
             <NavigationContainer
               onStateChange={(state) => {
                 try {
@@ -151,11 +150,12 @@ export default function App() {
                 </View>
               }
             >
-              <View className="flex-1">
-                <Stack.Navigator
-                  initialRouteName="Splash"
-                  screenOptions={{ headerShown: false }}
-                >
+              <UserProvider>
+                <View className="flex-1">
+                  <Stack.Navigator
+                    initialRouteName="Splash"
+                    screenOptions={{ headerShown: false }}
+                  >
                   {/* Core Screens */}
                   <Stack.Screen name="Splash" component={Splash} />
                   <Stack.Screen name="Login" component={Login} />
@@ -326,13 +326,13 @@ export default function App() {
                   />
                 </Stack.Navigator>
 
-                {/* Bottom Navigation - Always visible on main screens */}
-                {shouldShowBottomNav(currentRoute) && (
-                  <BottomDock activeScreen={currentRoute} />
-                )}
-              </View>
+                  {/* Bottom Navigation - Always visible on main screens */}
+                  {shouldShowBottomNav(currentRoute) && (
+                    <BottomDock activeScreen={currentRoute} />
+                  )}
+                </View>
+              </UserProvider>
             </NavigationContainer>
-            </UserProvider>
             <Toast config={toastConfig} />
           </SafeAreaView>
         </SafeAreaProvider>

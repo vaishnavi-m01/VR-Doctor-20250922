@@ -11,6 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
+import { getParticipantBackgroundColor } from '../../utils/participantColors';
 
 export type Participant = {
   id: number;
@@ -240,6 +241,7 @@ export default function StudyGroupAssignment() {
     }
   };
 
+
   const Row = ({
     p,
     selectable,
@@ -256,12 +258,12 @@ export default function StudyGroupAssignment() {
     <Pressable
       onPress={onPress}
       disabled={!selectable}
-      className={`flex-row items-center justify-between bg-white border rounded-xl p-4 mb-3 ${
+      className={`flex-row items-center justify-between border rounded-xl p-4 mb-3 ${
         selectable
           ? selected
             ? 'border-[#0ea06c] bg-[#f0fdf7]'
-            : 'border-[#e6eeeb]'
-          : 'border-[#e6eeeb]'
+            : `border-[#e6eeeb] ${getParticipantBackgroundColor(p.GroupType)}`
+          : `border-[#e6eeeb] ${getParticipantBackgroundColor(p.GroupType)}`
       }`}
     >
       <View className="flex-row items-center">

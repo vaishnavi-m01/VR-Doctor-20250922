@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { getParticipantBackgroundColor } from '../utils/participantColors';
 
 
 export type Patient = {
@@ -12,6 +13,7 @@ export type Patient = {
   cancerType?: string;
   stage?: string;
   gender: 'Male' | 'Female' | 'Other';
+  groupType?: string | null;
 };
 
 export default function PatientCard({
@@ -23,7 +25,8 @@ export default function PatientCard({
   selected?: boolean;
   onPress?: () => void;
 }) {
-  const chipBg = selected ? 'bg-[#19B888]' : 'bg-[#EBF6D6]';
+  const baseBgColor = getParticipantBackgroundColor(item.groupType);
+  const chipBg = selected ? 'bg-[#19B888]' : baseBgColor;
   const iconColor =
     item.status === 'alert'
       ? '#f97316'

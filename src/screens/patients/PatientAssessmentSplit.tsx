@@ -495,7 +495,8 @@ const handleAdvancedDone = async () => {
                     ...p,
                     ParticipantId: `${p.ParticipantId}`,
                     status: p.status as 'ok' | 'pending' | 'alert',
-                    gender: p.gender as 'Male' | 'Female' | 'Other'
+                    gender: p.gender as 'Male' | 'Female' | 'Other',
+                    groupType: p.groupType
                   }}
                   selected={p.ParticipantId === selId}
                   onPress={() => setSelId(p.ParticipantId)}
@@ -527,7 +528,7 @@ const handleAdvancedDone = async () => {
             {(() => {
               const tabs = [
                 { key: 'dash', label: 'Dashboard' },
-                { key: 'info', label: 'Participant Register' },
+                { key: 'info', label: 'Registration' },
                 // Only show Orientation tab if participant is in "Study" group
                 ...(sel?.groupType === 'Study' ? [{ key: 'orie', label: 'Orientation' }] : []),
                 // Only show Assessment tab if participant is not null (Study or Controlled)
