@@ -247,7 +247,7 @@ export default function ExitInterview() {
                   <View className="mt-4 flex-row gap-3">
                     <View className="flex-1">
                       <Field
-                        label="What was most helpful?"
+                        label="What aspects of the VR sessions did you find most helpful?"
                         placeholder="Your notes…"
                         value={vrHelpful}
                         onChangeText={setVrHelpful}
@@ -255,7 +255,7 @@ export default function ExitInterview() {
                     </View>
                     <View className="flex-1">
                       <Field
-                        label="What was challenging?"
+                        label="What aspects of the VR sessions did you find challenging?"
                         placeholder="Your notes…"
                         value={vrChallenging}
                         onChangeText={setVrChallenging}

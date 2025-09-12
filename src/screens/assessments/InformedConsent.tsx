@@ -7,7 +7,7 @@ import {
     Pressable,
     Alert,
 } from 'react-native';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 
@@ -55,7 +55,7 @@ export default function InformedConsentForm({
     const [studyTitle, setStudyTitle] = useState(
         'An exploratory study to assess the effectiveness of Virtual Reality assisted Guided Imagery on QoL of cancer patients undergoing chemo-radiation treatment'
     );
-    const [studyNumber, setStudyNumber] = useState('');
+    const [studyNumber, setStudyNumber] = useState(studyId);
 
     /* ------------------ Participant Information ---------------- */
     const [participantInitials, setParticipantInitials] = useState('');
@@ -134,32 +134,26 @@ export default function InformedConsentForm({
         [acks, agree]
     );
 
-    const handleSaveDraft = () => {
-        Alert.alert('Saved as Draft', 'Your progress was saved locally.');
-    };
+    useFocusEffect(
+        React.useCallback(() => {
+            const fetchParticipantDetails = async () => {
+                try {
+                    const res = await apiService.post<any>("/GetParticipantDetails", { ParticipantId: patientId });
+                    const data = res.data?.ResponseData;
+                    if (data) {
+                        setQualification(data.EducationLevel ?? "");
+                        setParticipantName(data.Signature ?? "");
+                        setAgeInput(data.Age ? String(data.Age) : "");
+                        setSubjectSignaturePad(data.SubjectSignature || "");
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
 
-    const handlePreview = () => {
-        Alert.alert('Preview', 'Open a preview screen or PDF (hook here).');
-    };
-
-    // const handleClear = () => {
-    //     setAcks({ i: false, ii: false, iii: false, iv: false });
-    //     setAgree(false);
-    //     setSignatures({
-    //         subjectName: '',
-    //         subjectDate: '',
-    //         coPIName: '',
-    //         coPIDate: '',
-    //         investigatorName: '',
-    //         witnessName: '',
-    //         witnessDate: '',
-    //     });
-    // };
-
-
-
-
-
+            if (patientId) fetchParticipantDetails();
+        }, [patientId])
+    );
 
 
 
@@ -180,10 +174,10 @@ export default function InformedConsentForm({
                 PICDID: PICDID || '',
                 StudyId: studyId,
                 ParticipantId: patientId,
-                // QuestionId: Object.keys(acks)
-                //     .filter((qid) => acks[qid])
-                //     .join(","),
-               QuestionId: informedConsent[0]?.ICMID,
+                QuestionId: Object.keys(acks)
+                    .filter((qid) => acks[qid])
+                    .join(","),
+                // QuestionId: informedConsent[0]?.ICMID,
 
 
                 Response: 1,
@@ -244,24 +238,17 @@ export default function InformedConsentForm({
     useEffect(() => {
         const fetchConsent = async () => {
             try {
-                const consentRes = await apiService.post<any>(
-                    "/GetParticipantInformedConsent",
-                    {
-                        ParticipantId: patientId,
-                        StudyId: studyId,
-                    }
-                );
-
-                console.log("Consent API response:", consentRes.data);
+                const consentRes = await apiService.post<any>("/GetParticipantInformedConsent", {
+                    ParticipantId: patientId,
+                    StudyId: studyId,
+                });
 
                 const c = consentRes.data.ResponseData?.[0];
-                if (!c) {
-                    console.warn("No consent data returned");
-                    return;
-                }
+                if (!c) return;
 
                 setPICDID(c.PICDID || null);
 
+                // Set acknowledgements
                 const qids = Array.isArray(c.QuestionId) ? c.QuestionId : [c.QuestionId];
                 const savedAcks: Record<string, boolean> = {};
                 qids.forEach((qid) => {
@@ -271,8 +258,7 @@ export default function InformedConsentForm({
 
                 setAgree(c.Response === 1);
 
-
-
+                // Signatures
                 setSignatures({
                     subjectName: c.SubjectSignatoryName || "",
                     subjectDate: c.SubjectSignatureDate ? formatDateDDMMYYYY(c.SubjectSignatureDate) : "",
@@ -283,26 +269,21 @@ export default function InformedConsentForm({
                     witnessDate: c.WitnessDate ? formatDateDDMMYYYY(c.WitnessDate) : "",
                 });
 
-
-
-                // Signature Area states 
                 setSubjectSignaturePad(c.SubjectSignature || "");
                 setCoPISignaturePad(c.CoPrincipalInvestigatorSignature || "");
                 setWitnessSignaturePad(c.WitnessSignature || "");
 
-                // Participant information
-                setParticipantInitials(c.ParticipantInitials || "");
-                setParticipantName(c.ParticipantName || "");
-                setDateOfBirth(c.DateOfBirth ? formatDate(c.DateOfBirth) : "");
-                setAgeInput(c.Age ? String(c.Age) : "");
-                setQualification(c.Qualification || "");
-                setOccupation(c.Occupation || "");
-                setAnnualIncome(c.AnnualIncome || "");
-                setAddress(c.Address || "");
+                // Participant info: **only update if values exist**
+                if (c.ParticipantName) setParticipantName(c.ParticipantName);
+                if (c.Qualification) setQualification(c.Qualification);
+
+                if (c.Age) setAgeInput(String(c.Age));
+                if (c.DateOfBirth) setDateOfBirth(formatDate(c.DateOfBirth));
+                if (c.Address) setAddress(c.Address);
 
                 // Study details
-                setStudyTitle(c.StudyTitle || studyTitle);
-                setStudyNumber(c.StudyNumber || studyNumber);
+                if (c.StudyTitle) setStudyTitle(c.StudyTitle);
+                if (c.StudyNumber) setStudyNumber(c.StudyNumber);
 
             } catch (err) {
                 console.error("❌ Error fetching consent:", err);
@@ -316,6 +297,7 @@ export default function InformedConsentForm({
 
         fetchConsent();
     }, []);
+
 
 
     /* ============================ UI ============================ */
@@ -384,12 +366,12 @@ export default function InformedConsentForm({
                 <FormCard icon="B" title="Participant Information">
                     {/* Row 1 */}
                     <View className="flex-row space-x-4 mb-4">
-                        <LabeledInput
+                        {/* <LabeledInput
                             label="Participant’s Initials"
                             placeholder="e.g. ABC"
                             value={participantInitials}
                             onChangeText={setParticipantInitials}
-                        />
+                        /> */}
                         <LabeledInput
                             label="Participant’s Name"
                             placeholder="Full name"
@@ -401,7 +383,7 @@ export default function InformedConsentForm({
                     {/* Row 2 */}
                     <View className="flex-row space-x-4 mb-4">
                         {/* Date of Birth */}
-                        <View className="flex-[1.2]">
+                        {/* <View className="flex-[1.2]">
                             <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
                                 Date of Birth
                             </Text>
@@ -417,7 +399,7 @@ export default function InformedConsentForm({
                                     <EvilIcons name="calendar" size={22} color="#6b7a77" />
                                 </View>
                             </InputShell>
-                        </View>
+                        </View> */}
 
                         {/* Age */}
                         <View className="flex-[0.6]">
@@ -426,7 +408,7 @@ export default function InformedConsentForm({
                             </Text>
                             <InputShell>
                                 <TextInput
-                                    value={ageInput}
+                                    value={age}
                                     onChangeText={setAgeInput}
                                     placeholder="Age"
                                     placeholderTextColor="#9ca3af"
@@ -449,7 +431,7 @@ export default function InformedConsentForm({
 
 
                     {/* Row 3 */}
-                    <View className="flex-row space-x-4 mb-4">
+                    {/* <View className="flex-row space-x-4 mb-4">
                         <LabeledInput
                             label="Occupation"
                             placeholder="Occupation"
@@ -462,10 +444,10 @@ export default function InformedConsentForm({
                             value={annualIncome}
                             onChangeText={setAnnualIncome}
                         />
-                    </View>
+                    </View> */}
 
                     {/* Address */}
-                    <View className="mb-2">
+                    {/* <View className="mb-2">
                         <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
                             Address of the Participant
                         </Text>
@@ -480,7 +462,7 @@ export default function InformedConsentForm({
                                 className="text-base text-[#0b1f1c]"
                             />
                         </View>
-                    </View>
+                    </View> */}
                 </FormCard>
 
                 {/* Acknowledgements */}

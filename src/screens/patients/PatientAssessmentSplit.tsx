@@ -55,6 +55,7 @@ export default function ParticipantAssessmentSplit() {
   const [appliedSearchText, setAppliedSearchText] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
+
   // Advanced filter state
   const [advFilters, setAdvFilters] = useState<AdvancedFilters>({
     criteriaStatus: '',
@@ -66,6 +67,7 @@ export default function ParticipantAssessmentSplit() {
 
   const SELECTED_PARTICIPANT_KEY = 'selectedParticipantId';
   const SELECTED_TAB_KEY = 'selectedTab';
+
 
   // Advanced filter handlers
   const handleCriteriaStatusChange = (status: string) => {
@@ -86,25 +88,66 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-// Clear filters: reset advFilters, searchText, appliedSearchText and fetch all participants
-const handleClearFilters = async () => {
-  setAdvFilters({
-    criteriaStatus: '',
-    gender: '',
-    ageFrom: '',
-    ageTo: '',
-    groupType: '',
-  });
-  setSearchText('');
-  setAppliedSearchText('');
-  await fetchParticipants('');
-};
+  // Clear filters: reset advFilters, searchText, appliedSearchText and fetch all participants
+  const handleClearFilters = async () => {
+    setAdvFilters({
+      criteriaStatus: '',
+      gender: '',
+      ageFrom: '',
+      ageTo: '',
+      groupType: '',
+    });
+    setSearchText('');
+    setAppliedSearchText('');
+    await fetchParticipants('');
+  };
 
-// Modal done handler: close modal and refetch participants with current filters/search
-const handleAdvancedDone = async () => {
-  setShowAdvancedSearch(false);
-  await fetchParticipants(appliedSearchText);
-};
+  useFocusEffect(
+    useCallback(() => {
+      const refreshParticipants = async () => {
+        console.log(" Screen focused: fetching participants...");
+        await fetchParticipants(appliedSearchText);
+      };
+      refreshParticipants();
+    }, [appliedSearchText]) // re-fetch if applied search text changes
+  );
+
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!hasLoadedDataRef.current) {
+        hasLoadedDataRef.current = true;
+
+        //  Load saved participant from AsyncStorage
+        const savedParticipantId = await loadSelectedParticipant();
+        const savedTab = await loadSelectedTab();
+
+        //  Fetch participants
+        const fetchedParticipants = await fetchParticipants('');
+
+        //  Restore saved selection if it exists in fetched list
+        if (savedParticipantId !== null && fetchedParticipants.some(p => p.ParticipantId === savedParticipantId)) {
+          setSelId(savedParticipantId);
+        } else if (fetchedParticipants.length > 0) {
+          setSelId(fetchedParticipants[0].ParticipantId);
+          await saveSelectedParticipant(fetchedParticipants[0].ParticipantId);
+        }
+
+        //  Restore tab
+        setTab(savedTab);
+      }
+    };
+
+    loadData();
+  }, []);
+
+
+
+  // Modal done handler: close modal and refetch participants with current filters/search
+  const handleAdvancedDone = async () => {
+    setShowAdvancedSearch(false);
+    await fetchParticipants(appliedSearchText);
+  };
 
 
   // Save selected participant ID to AsyncStorage
@@ -225,16 +268,16 @@ const handleAdvancedDone = async () => {
           groupType: item.GroupType || null,
         }));
         setParticipants(parsed);
-        if (selId === null && parsed.length > 0) {
-          setSelId(parsed[0].ParticipantId);
-          await saveSelectedParticipant(parsed[0].ParticipantId);
-        } else if (selId !== null) {
-          const existsSelected = parsed.some(p => p.ParticipantId === selId);
-          if (!existsSelected && parsed.length > 0) {
-            setSelId(parsed[0].ParticipantId);
-            await saveSelectedParticipant(parsed[0].ParticipantId);
-          }
-        }
+        // if (selId === null && parsed.length > 0) {
+        //   setSelId(parsed[0].ParticipantId);
+        //   await saveSelectedParticipant(parsed[0].ParticipantId);
+        // } else if (selId !== null) {
+        //   const existsSelected = parsed.some(p => p.ParticipantId === selId);
+        //   if (!existsSelected && parsed.length > 0) {
+        //     setSelId(parsed[0].ParticipantId);
+        //     await saveSelectedParticipant(parsed[0].ParticipantId);
+        //   }
+        // }
         return parsed;
       }
       setParticipants([]);
@@ -307,20 +350,20 @@ const handleAdvancedDone = async () => {
     }, [])
   );
 
-    const sel = participants.find((p) => p.ParticipantId === selId);
+  const sel = participants.find((p) => p.ParticipantId === selId);
 
 
-    // Save selected participant when it changes
+  // Save selected participant when it changes
   useEffect(() => {
     if (selId !== null) {
       console.log(`💾 Saving participant selection: ${selId}`);
       saveSelectedParticipant(selId);
-      
+
       if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
         console.log(`🔄 Switching tab`);
         setTab('assessment');
       }
-      
+
       if (tab === 'assessment' && sel?.groupType === null) {
         console.log(`🔄 Switching tab`);
         setTab('dash');
@@ -360,12 +403,12 @@ const handleAdvancedDone = async () => {
 
   const filteredParticipants = filterParticipants(participants, appliedSearchText);
 
-    // Debug logging for GroupType
+  // Debug logging for GroupType
   if (sel) {
     console.log(`🔍 Selected participant ${sel.ParticipantId} - GroupType: ${sel.groupType || 'null'}`);
   }
 
- const renderTabContent = () => {
+  const renderTabContent = () => {
     const patientId = sel?.ParticipantId || 0;
     const studyId = sel?.studyId || 0
     console.log("StudyId", studyId)
@@ -402,22 +445,22 @@ const handleAdvancedDone = async () => {
                 <Image source={require("../../../assets/patientList.png")} />
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={onRefresh}
                 className="p-2 rounded-lg bg-gray-100"
                 disabled={refreshing}
               >
-                <MaterialCommunityIcons 
-                  name="refresh" 
-                  size={20} 
-                  color={refreshing ? "#999" : "#0ea06c"} 
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={20}
+                  color={refreshing ? "#999" : "#0ea06c"}
                 />
               </TouchableOpacity>
-             
+
             </View>
             <Text className="text-xs text-[#6b7a77]">
               List of Participants ({participants.length})
-               {lastRefreshTime && (
+              {lastRefreshTime && (
                 <Text className="text-[#999]">
                   {' • Last updated: ' + lastRefreshTime.toLocaleTimeString()}
                 </Text>
@@ -464,8 +507,14 @@ const handleAdvancedDone = async () => {
             />
             {/* Add Participant Button */}
             <Pressable
+              // onPress={() =>
+              //   navigation.navigate('SocioDemographic')
+              // }
               onPress={() =>
-                navigation.navigate('SocioDemographic')
+                navigation.navigate('SocioDemographic', {
+                  // patientId: Date.now(),
+                  // age: age
+                })
               }
               className="mt-3 bg-[#0ea06c] rounded-xl py-3 px-4 items-center"
             >
@@ -474,7 +523,7 @@ const handleAdvancedDone = async () => {
               </Text>
             </Pressable>
           </View>
-          <ScrollView className="flex-1 p-3" 
+          <ScrollView className="flex-1 p-3"
             contentContainerStyle={{ paddingBottom: 10 }}
             refreshControl={
               <RefreshControl
@@ -537,9 +586,9 @@ const handleAdvancedDone = async () => {
                 ...(sel?.groupType === 'Study' ? [{ key: ' VR', label: ' VR Session' }] : []),
                 { key: 'notification', label: 'Notification' },
               ];
-              
+
               console.log(`🎯 Rendering tabs for participant ${sel?.ParticipantId} (GroupType: ${sel?.groupType || 'null'}):`, tabs.map(t => t.label));
-              
+
               return (
                 <TabPills
                   tabs={tabs}

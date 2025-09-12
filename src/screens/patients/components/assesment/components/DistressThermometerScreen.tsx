@@ -42,9 +42,11 @@ export default function DistressThermometerScreen() {
   const [otherProblems, setOtherProblems] = useState<string>("");
   const navigation = useNavigation<any>();
   const [distressId, setDistressId] = useState<string | null>(null);
-    const { userId, setUserId } = useContext(UserContext);
-  
-  
+  const { userId, setUserId } = useContext(UserContext);
+
+  const [PDWSID, setPDWSID] = useState<string | null>(null);
+
+
   console.log("distressssId", distressId)
 
 
@@ -69,37 +71,25 @@ export default function DistressThermometerScreen() {
       setLoading(true);
       setError(null);
 
-      // Updated API call to match your requirements
+      //  Fetch weekly QA questions
       const res = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressThermometerWeeklyQA",
         {
-          ParticipantId: enteredPatientId || `${patientId}`
+          ParticipantId: enteredPatientId || `${patientId}`,
         }
       );
 
-      console.log("getThermmeterWeekQAPI Response:", res.data?.ResponseData);
+      const responseData = res.data?.ResponseData || [];
 
-      if (!res.data) {
-        throw new Error("No response data received");
-      }
-
-      const responseData = res.data?.ResponseData;
-
-      if (Array.isArray(responseData) && responseData.length > 0) {
-
-        // const existing = responseData[0];
-        // setDistressId(existing.DistressId || null);
-        // Group questions by category
+      // Group questions by category
+      if (responseData.length > 0) {
         const grouped: Category[] = Object.values(
           responseData.reduce((acc: Record<string, Category>, item) => {
-            // Only process items that have a CategoryName
             if (item.CategoryName) {
               const catName = item.CategoryName;
               if (!acc[catName]) {
                 acc[catName] = { categoryName: catName, questions: [] };
               }
-
-              // Only add questions that have both DistressQuestionId and Question
               if (item.DistressQuestionId && item.Question) {
                 acc[catName].questions.push({
                   id: item.DistressQuestionId,
@@ -110,23 +100,34 @@ export default function DistressThermometerScreen() {
             return acc;
           }, {})
         );
-
-        console.log("groupedd", grouped)
         setCategories(grouped);
 
-        // Set any existing answers from the API response
+        // Set existing answers
         const existingAnswers: Record<string, boolean> = {};
-        responseData.forEach(item => {
+        responseData.forEach((item) => {
           if (item.DistressQuestionId && item.IsAnswered === "Yes") {
             existingAnswers[item.DistressQuestionId] = true;
           }
         });
         setSelectedProblems(existingAnswers);
-
       } else {
         setCategories([]);
-        console.log("No data received from API");
+        console.log("No questions received from API");
       }
+
+      //  Fetch the existing weekly score and set `v`
+      const resScore = await apiService.post<{ ResponseData: any[] }>(
+        "/GetParticipantDistressWeeklyScore",
+        { ParticipantId: enteredPatientId || `${patientId}` }
+      );
+
+      const scoreData = resScore.data?.ResponseData?.[0];
+      if (scoreData && scoreData.ScaleValue) {
+        setV(Number(scoreData.ScaleValue)); // <-- set state here
+      } else {
+        setV(0); // default if no score
+      }
+
     } catch (err) {
       console.error("API error:", err);
       setError("Failed to fetch data. Please try again.");
@@ -141,6 +142,7 @@ export default function DistressThermometerScreen() {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     setDistressId(null);
@@ -191,22 +193,35 @@ export default function DistressThermometerScreen() {
 
       console.log("Save success:", res.data);
 
-      const scoreObj = {
-        ParticipantId: `${patientId}`,
-        StudyId: studyId
-          ? studyId.toString().startsWith("CS-")
-            ? studyId.toString()
-            : `CS-${studyId.toString().padStart(4, "0")}`
-          : "CS-0001",
-        DistressThermometerScore: `${v}`,
-        ModifiedBy: userId,
-      };
+      // const scoreObj = {
+      //   ParticipantId: `${patientId}`,
+      //   StudyId: studyId
+      //     ? studyId.toString().startsWith("CS-")
+      //       ? studyId.toString()
+      //       : `CS-${studyId.toString().padStart(4, "0")}`
+      //     : "CS-0001",
+      //   DistressThermometerScore: `${v}`,
+      //   ModifiedBy: userId,
+      // };
 
-      console.log("Saving Score payload:", scoreObj);
+      // console.log("Saving Score payload:", scoreObj);
+
+      // const res2 = await apiService.post(
+      //   "/AddUpdateParticipantDistressThermometerScore",
+      //   scoreObj
+      // );
+
+
+      const scoreObj = {
+        PDWSID: PDWSID || '',
+        ParticipantId: patientId,
+        ScaleValue: `${v}`,
+        ModifiedBy: userId
+
+      }
 
       const res2 = await apiService.post(
-        "/AddUpdateParticipantDistressThermometerScore",
-        scoreObj
+        "/AddUpdateParticipantDistressWeeklyScore", scoreObj
       );
 
       console.log("thermometerscore", res2);
@@ -219,7 +234,7 @@ export default function DistressThermometerScreen() {
       //   topOffset: 50,
       //   onHide: () => navigation.goBack(),
       // });
-       Toast.show({
+      Toast.show({
         type: "success",
         text1: "Success",
         text2: "Saved successfully!",

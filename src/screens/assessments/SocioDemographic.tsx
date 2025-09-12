@@ -17,7 +17,27 @@ import { DropdownField } from '@components/DropdownField';
 import { formatForDB, formatForUI } from 'src/utils/date';
 
 
+interface LifeStyleData {
+  HabitID?: string;
+  Habit?: string;
+}
 
+interface ParticipantLifestyle {
+  Lifestyle: string;
+  Level: string;
+}
+
+
+interface getLifeStyleData {
+  HabitID?: string;
+  StudyId?: string;
+  Habit: string;
+  LifestylePsychId?: string;
+  ParticipantId?: string;
+  ParticipantStudyId?: string;
+  Level: string;
+
+}
 interface ParticipantDetails {
   Age?: number;
   Gender?: string;
@@ -47,6 +67,8 @@ interface ParticipantDetails {
   TechnologyExperience?: string;
   Signature?: string;
   SignatureDate?: Date | string;
+
+  LifestyleData?: ParticipantLifestyle[];
 }
 
 
@@ -70,6 +92,8 @@ interface CancerTypes {
   SortKey?: number;
   Status: number | string;
 }
+
+
 type DropdownOption = {
   label: string;
   value: string;
@@ -88,6 +112,10 @@ export default function SocioDemographic() {
   const [religionSpecify, setReligionSpecify] = useState("");
   const [educationOptions, setEducationOptions] = useState<EducationLevel[]>([]);
   const [educationLevel, setEducationLevel] = useState<string>("");
+  const [lifeStyleData, setLifeStyleData] = useState<LifeStyleData[]>([]);
+  const [selectedValues, setSelectedValues] = useState<{ [key: string]: string }>({});
+  const [getlifeStyleData, setGetLifeStyleData] = useState<getLifeStyleData[]>([]);
+
 
   const [employmentStatus, setEmploymentStatus] = useState("");
 
@@ -152,6 +180,47 @@ export default function SocioDemographic() {
       .catch((err) => console.error(err));
   }, []);
 
+
+
+  useEffect(() => {
+    apiService
+      .post<{ ResponseData: LifeStyleData[] }>("/GetLifeStyleData")
+      .then((res) => {
+        setLifeStyleData(res.data.ResponseData);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+
+
+
+  const habitConfig: {
+    [key: string]: { label: string; options: string[] };
+  } = {
+    "LSHMID-1": {
+      label: "Tobacco Use",
+      options: ["Never", "Occasionally", "Frequently"],
+    },
+    "LSHMID-2": {
+      label: "Alcohol Consumption",
+      options: ["Never", "Occasionally", "Frequently"],
+    },
+    "LSHMID-3": {
+      label: "Smoking History",
+      options: ["Never", "Former Smoker", "Current Smoker"],
+    },
+    "LSHMID-4": {
+      label: "Stress Levels",
+      options: ["Low", "Moderate", "High"],
+    },
+    "LSHMID-5": {
+      label: "Technology Experience",
+      options: ["No Experience", "Some Experience", "Proficient"],
+    },
+  };
+
+
+
   useEffect(() => {
     // Fallback cancer types in case API fails
     const fallbackCancerTypes = [
@@ -200,9 +269,6 @@ export default function SocioDemographic() {
 
 
 
-
-
-
   useEffect(() => {
     if (isEditMode) {
       (async () => {
@@ -239,12 +305,25 @@ export default function SocioDemographic() {
             setCurrentMedications(data.CurrentMedications ?? "");
 
             // Lifestyle
-            setSmokingHistory(data.SmokingHistory ?? "");
-            setAlcoholConsumption(data.AlcoholConsumption ?? "");
-            setPhysicalActivityLevel(data.PhysicalActivityLevel ?? "");
-            setStressLevels(data.StressLevels ?? "");
-            setTechnologyExperience(data.TechnologyExperience ?? "");
+            // setSmokingHistory(data.SmokingHistory ?? "");
+            // setAlcoholConsumption(data.AlcoholConsumption ?? "");
+            // setPhysicalActivityLevel(data.PhysicalActivityLevel ?? "");
+            // setStressLevels(data.StressLevels ?? "");
+            // setTechnologyExperience(data.TechnologyExperience ?? "");
 
+
+            const lifestyleRes = await apiService.post<{ ResponseData: { HabitID: string; Level: string }[] }>(
+              "/GetParticipantLifestyleData",
+              { ParticipantId: patientId }
+            );
+
+            if (lifestyleRes.data?.ResponseData?.length) {
+              const lifestyleMap: { [key: string]: string } = {};
+              lifestyleRes.data.ResponseData.forEach((item) => {
+                lifestyleMap[item.HabitID] = item.Level;
+              });
+              setSelectedValues(lifestyleMap);
+            }
             setParticipantSignature(data.Signature);
             if (data?.SignatureDate) {
               const dbDate = new Date(data.SignatureDate)
@@ -325,17 +404,16 @@ export default function SocioDemographic() {
         OtherMedicalConditions: otherMedicalConditions,
         CurrentMedications: currentMedications,
 
-        SmokingHistory: smokingHistory,
-        AlcoholConsumption: alcoholConsumption,
-        PhysicalActivityLevel: physicalActivityLevel,
-        StressLevels: stressLevels,
-        TechnologyExperience: technologyExperience,
-        // createdAtDate:consentDate,
-
         Signature: participantSignature,
-        SignatureDate: consentDate
+        SignatureDate: consentDate,
 
+        //   lifestyle section
+        LifestyleData: Object.entries(selectedValues).map(([habitId, level]) => ({
+          Lifestyle: habitId,
+          Level: level,
+        })),
       };
+
 
       let response;
       if (isEditMode) {
@@ -346,6 +424,8 @@ export default function SocioDemographic() {
       }
 
       if (response.status === 200) {
+
+        
         Toast.show({
           type: "success",
           text1: isEditMode ? "Updated" : "Success",
@@ -384,21 +464,23 @@ export default function SocioDemographic() {
 
   return (
     <>
-      <View className="px-6 pt-6 pb-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">
-            Participant ID: {patientId}
-          </Text>
+      {isEditMode && (
+        <View className="px-6 pt-6 pb-4">
+          <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+            <Text className="text-lg font-bold text-green-600">
+              Participant ID: {patientId}
+            </Text>
 
-          <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId || 'N/A'}
-          </Text>
+            <Text className="text-base font-semibold text-green-600">
+              Study ID: {studyId || "N/A"}
+            </Text>
 
-          <Text className="text-base font-semibold text-gray-700">
-            Age: {age || "Not specified"}
-          </Text>
+            <Text className="text-base font-semibold text-gray-700">
+              Age: {age || "Not specified"}
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
 
       <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
 
@@ -838,244 +920,50 @@ export default function SocioDemographic() {
 
         {/* Section 3: Lifestyle and Psychological Factors */}
         <FormCard icon="🧠" title="Section 3: Lifestyle and Psychological Factors">
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">1. Smoking History</Text>
-            <View className="flex-row gap-3">
-              {/* Never Button */}
-              <Pressable
-                onPress={() => setSmokingHistory('Never')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${smokingHistory === 'Never'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${smokingHistory === 'Never' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Never
-                </Text>
-              </Pressable>
+          {lifeStyleData.map((habit, idx) => {
+            const config = habitConfig[habit.HabitID];
+            if (!config) return null; // skip if no config found
 
-              {/* Former Smoker Button */}
-              <Pressable
-                onPress={() => setSmokingHistory('Former Smoker')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${smokingHistory === 'Former Smoker'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${smokingHistory === 'Former Smoker' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Former
+            return (
+              <View key={habit.HabitID} className="mt-6">
+                {/* Title */}
+                <Text className="text-base font-medium text-[#2c4a43] mb-4">
+                  {idx + 1}. {config.label}
                 </Text>
-              </Pressable>
 
-              {/* Current Smoker Button */}
-              <Pressable
-                onPress={() => setSmokingHistory('Current Smoker')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${smokingHistory === 'Current Smoker'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${smokingHistory === 'Current Smoker' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Current
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">2. Alcohol Consumption</Text>
-            <View className="flex-row gap-3">
-              {/* Never Button */}
-              <Pressable
-                onPress={() => setAlcoholConsumption('Never')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${alcoholConsumption === 'Never'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${alcoholConsumption === 'Never' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Never
-                </Text>
-              </Pressable>
-
-              {/* Occasionally Button */}
-              <Pressable
-                onPress={() => setAlcoholConsumption('Occasionally')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${alcoholConsumption === 'Occasionally'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${alcoholConsumption === 'Occasionally' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Occasionally
-                </Text>
-              </Pressable>
-
-              {/* Frequently Button */}
-              <Pressable
-                onPress={() => setAlcoholConsumption('Frequently')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${alcoholConsumption === 'Frequently'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${alcoholConsumption === 'Frequently' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Frequently
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">3. Physical Activity Level</Text>
-            <View className="flex-row gap-3">
-              {/* Sedentary Button */}
-              <Pressable
-                onPress={() => setPhysicalActivityLevel('Sedentary')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${physicalActivityLevel === 'Sedentary'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${physicalActivityLevel === 'Sedentary' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Sedentary
-                </Text>
-              </Pressable>
-
-              {/* Moderate Button */}
-              <Pressable
-                onPress={() => setPhysicalActivityLevel('Moderate')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${physicalActivityLevel === 'Moderate'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${physicalActivityLevel === 'Moderate' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Moderate
-                </Text>
-              </Pressable>
-
-              {/* Active Button */}
-              <Pressable
-                onPress={() => setPhysicalActivityLevel('Active')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${physicalActivityLevel === 'Active'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${physicalActivityLevel === 'Active' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Active
-                </Text>
-              </Pressable>
-            </View>
-            <Text className="text-sm text-gray-500 mt-2">
-              Sedentary: Little to no exercise, Moderate: Exercise 1-3 times per week, Active: Exercise 4+ times per week
-            </Text>
-          </View>
-
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">4. Stress Levels</Text>
-            <View className="flex-row gap-3">
-              {/* Low Button */}
-              <Pressable
-                onPress={() => setStressLevels('Low')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${stressLevels === 'Low'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${stressLevels === 'Low' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Low
-                </Text>
-              </Pressable>
-
-              {/* Moderate Button */}
-              <Pressable
-                onPress={() => setStressLevels('Moderate')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${stressLevels === 'Moderate'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${stressLevels === 'Moderate' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Moderate
-                </Text>
-              </Pressable>
-
-              {/* High Button */}
-              <Pressable
-                onPress={() => setStressLevels('High')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${stressLevels === 'High'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${stressLevels === 'High' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  High
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="mt-6">
-            <Text className="text-base font-medium text-[#2c4a43] mb-4">5. Experience with Technology (VR, Smartphones, etc.)</Text>
-            <View className="flex-row gap-3">
-              {/* No Experience Button */}
-              <Pressable
-                onPress={() => setTechnologyExperience('No experience')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${technologyExperience === 'No experience'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${technologyExperience === 'No experience' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  No Experience
-                </Text>
-              </Pressable>
-
-              {/* Some Experience Button */}
-              <Pressable
-                onPress={() => setTechnologyExperience('Some experience')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${technologyExperience === 'Some experience'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${technologyExperience === 'Some experience' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Some Experience
-                </Text>
-              </Pressable>
-
-              {/* Proficient Button */}
-              <Pressable
-                onPress={() => setTechnologyExperience('Proficient')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${technologyExperience === 'Proficient'
-                  ? 'bg-[#4FC264]'
-                  : 'bg-[#EBF6D6]'
-                  }`}
-              >
-                <Text className={`font-medium text-base ${technologyExperience === 'Proficient' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
-                  Proficient
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+                {/* Options */}
+                <View className="flex-row gap-3">
+                  {config.options.map((opt) => (
+                    <Pressable
+                      key={opt}
+                      onPress={() =>
+                        setSelectedValues((prev) => ({
+                          ...prev,
+                          [habit.HabitID]: opt,   // ✅ store by HabitID
+                        }))
+                      }
+                      className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${selectedValues[habit.HabitID] === opt
+                        ? "bg-[#4FC264]"
+                        : "bg-[#EBF6D6]"
+                        }`}
+                    >
+                      <Text
+                        className={`font-medium text-base ${selectedValues[habit.HabitID] === opt
+                          ? "text-white"
+                          : "text-[#2c4a43]"
+                          }`}
+                      >
+                        {opt}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
         </FormCard>
+
+
 
         <FormCard icon="✍️" title="Section 4: Consent and Signature">
           <View className="mt-6">
