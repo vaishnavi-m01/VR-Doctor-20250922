@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect,useContext } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import FormCard from "../../../../../components/FormCard";
 import BottomBar from "../../../../../components/BottomBar";
@@ -7,6 +7,7 @@ import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
+import { UserContext } from 'src/store/context/UserContext';
 
 interface FactGQuestion {
   FactGCategoryId: string;
@@ -90,6 +91,8 @@ export default function EdmontonFactGScreen() {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [isDefaultForm, setIsDefaultForm] = useState(true);
 
+  const { userId } = useContext(UserContext);
+
   const route = useRoute<RouteProp<RootStackParamList, "EdmontonFactGScreen">>();
   const navigation = useNavigation();
   const { patientId, age, studyId } = route.params as {
@@ -136,10 +139,19 @@ export default function EdmontonFactGScreen() {
     return `${year}-${month}-${day}`;
   };
 
+  const formatTodayDate = (): string => {
+    const today = new Date();
+    const dd = today.getDate().toString().padStart(2, "0");
+    const mm = (today.getMonth() + 1).toString().padStart(2, "0");
+    const yyyy = today.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+
   const fetchAvailableDates = async () => {
     try {
       const participantId = `${patientId}`;
-      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
 
       const response = await apiService.post<WeeklyDatesResponse>(
         "/GetParticipantFactGQuestionsWeeklyWeeks",
@@ -162,6 +174,16 @@ export default function EdmontonFactGScreen() {
       });
 
       setAvailableDates(sortedDates);
+
+     const todayFormatted = formatTodayDate();
+    if (sortedDates.includes(todayFormatted)) {
+      setSelectedDate(todayFormatted);
+      setIsDefaultForm(false);
+    } else {
+      setSelectedDate("");
+      setIsDefaultForm(true);
+    }
+
 
     } catch (error) {
       console.error("Failed to fetch available dates:", error);
@@ -192,7 +214,7 @@ export default function EdmontonFactGScreen() {
       }
 
       const participantId = `${patientId}`;
-      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
 
       const payload: any = {
         StudyId: studyIdFormatted,
@@ -304,7 +326,6 @@ export default function EdmontonFactGScreen() {
   useEffect(() => {
     if (patientId) {
       fetchAvailableDates();
-      fetchFactG(null);
       setSelectedDate("");
       setIsDefaultForm(true);
     }
@@ -374,7 +395,7 @@ export default function EdmontonFactGScreen() {
       }
 
       const participantId = `${patientId}`;
-      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
 
       const payload = {
         StudyId: studyIdFormatted,
@@ -382,7 +403,7 @@ export default function EdmontonFactGScreen() {
         SessionNo: "SessionNo-1",
         FactGData: factGData,
         FinalScore: score.TOTAL,
-        CreatedBy: "UH-1000",
+        CreatedBy: userId ?? 'UID-1',
         CreatedDate: createdDate,
       };
 
@@ -468,7 +489,7 @@ export default function EdmontonFactGScreen() {
         >
           <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>Participant ID: {patientId}</Text>
           <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
-            Study ID: {studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001"}
+            Study ID: {studyId ? `${studyId}` : "CS-0001"}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>Age: {age || "Not specified"}</Text>

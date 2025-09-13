@@ -5,7 +5,6 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import Checkbox from "../../../../../components/Checkbox";
@@ -19,16 +18,41 @@ import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
 import { UserContext } from "src/store/context/UserContext";
 
-// Define expected API types
 type Question = {
   id: string;
   label: string;
+  PDTWQID?: string;
 };
 
 type Category = {
   categoryName: string;
   questions: Question[];
 };
+
+interface SaveScoreResponse {
+  PDWSID?: string;
+}
+
+interface SaveScoreRequest {
+  ParticipantId: string;
+  StudyId: string;
+  ScaleValue: string;
+  Notes: string;
+  CreatedBy: string;
+  ModifiedBy: string | null;
+  CreatedDate: string;
+  ModifiedDate: string;
+  PDWSID?: string;
+}
+
+interface WeeklyDateItem {
+  CreatedDate: string;
+  ExtractedDate?: string;
+}
+
+interface WeeklyDatesResponse {
+  ResponseData: WeeklyDateItem[];
+}
 
 export default function DistressThermometerScreen() {
   const [v, setV] = useState(0);
@@ -40,50 +64,53 @@ export default function DistressThermometerScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const [isDefaultForm, setIsDefaultForm] = useState(true);
   const [otherProblems, setOtherProblems] = useState<string>("");
-  const navigation = useNavigation<any>();
-  const [distressId, setDistressId] = useState<string | null>(null);
-  const { userId, setUserId } = useContext(UserContext);
-
+  const [isDefaultForm, setIsDefaultForm] = useState(true);
   const [PDWSID, setPDWSID] = useState<string | null>(null);
 
-
-  console.log("distressssId", distressId)
-
-
+  const navigation = useNavigation<any>();
+  const { userId } = useContext(UserContext);
   const route = useRoute<RouteProp<RootStackParamList, "DistressThermometerScreen">>();
   const { patientId, age, studyId } = route.params as {
     patientId: number;
     age: number;
-    studyId: number;
+    studyId: number | string;
   };
   const [enteredPatientId, setEnteredPatientId] = useState<string>(`${patientId}`);
 
-  // Date formatting functions
   const formatDate = (dateString: string): string => {
-    // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
+    if (!dateString) return "";
+    let d = dateString;
+    if (dateString.includes("T")) {
+      d = dateString.split("T")[0];
+    }
+    const [year, month, day] = d.split("-");
     return `${day}-${month}-${year}`;
   };
 
+  const formatTodayDate = (): string => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
   const convertDateForAPI = (dateString: string): string => {
-    // Convert DD-MM-YYYY to YYYY-MM-DD for API
-    const [day, month, year] = dateString.split("-");
+    if (!dateString) return "";
+    const parts = dateString.split("-");
+    if (parts.length !== 3) return dateString;
+    const [day, month, year] = parts;
     return `${year}-${month}-${day}`;
   };
 
-  // Fetch available dates for dropdown
   const fetchAvailableDates = async () => {
     try {
-      const participantId = `${patientId}`;
-      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+      const participantId = enteredPatientId || `${patientId}`;
+      const studyIdFormatted = studyId || `${studyId}`;
 
-      const response = await apiService.post<{ ResponseData: any[] }>(
-        "/GetParticipantDistressThermometerWeeklyQA",
+      const response = await apiService.post<WeeklyDatesResponse>(
+        "/GetParticipantDistressThermometerWeeklyQAWeeks",
         {
           ParticipantId: participantId,
           StudyId: studyIdFormatted,
@@ -91,10 +118,10 @@ export default function DistressThermometerScreen() {
       );
 
       const weeklyData = response.data?.ResponseData ?? [];
-      const uniqueDatesSet = new Set(weeklyData.map((item) => item.CreatedDate));
-      const formattedDates = Array.from(uniqueDatesSet)
-        .filter(date => date) // Filter out null/undefined dates
-        .map(formatDate);
+      const uniqueDatesSet = new Set(
+        weeklyData.map((item) => item.ExtractedDate || formatDate(item.CreatedDate))
+      );
+      const formattedDates = Array.from(uniqueDatesSet).filter((date) => date);
 
       const sortedDates = formattedDates.sort((a, b) => {
         const dateA = new Date(convertDateForAPI(a));
@@ -104,8 +131,16 @@ export default function DistressThermometerScreen() {
 
       setAvailableDates(sortedDates);
 
-    } catch (error) {
-      console.error("Failed to fetch available dates:", error);
+      const today = formatTodayDate();
+      if (sortedDates.includes(today)) {
+        setSelectedDate(today);
+        setIsDefaultForm(false);
+      } else {
+        setSelectedDate("");
+        setIsDefaultForm(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch available dates:", err);
       setAvailableDates([]);
       Toast.show({
         type: "error",
@@ -115,217 +150,282 @@ export default function DistressThermometerScreen() {
     }
   };
 
-  // Toggle a problem selection
-  const toggleProblem = (questionId: string) => {
-    setSelectedProblems((prev) => ({
-      ...prev,
-      [questionId]: !prev[questionId],
-    }));
-  };
-
   const getData = async (dateToUse?: string | null) => {
     try {
       setLoading(true);
       setError(null);
+      setCategories([]);
+      setSelectedProblems({});
+      setOtherProblems("");
+      setPDWSID(null);
 
       let apiDate: string | null = null;
-      if (dateToUse) {
+      if (dateToUse && dateToUse.trim() !== "") {
         apiDate = convertDateForAPI(dateToUse);
+        setIsDefaultForm(false);
+      } else {
+        setIsDefaultForm(true);
+        // Clear all form states explicitly for new form
+        setV(0);
+        setNotes("");
+        setSelectedProblems({});
+        setOtherProblems("");
       }
 
-      //  Fetch weekly QA questions
+      const participantId = enteredPatientId || `${patientId}`;
+      const studyIdFormatted = studyId || `${studyId}`;
+
+      const payload: any = {
+        ParticipantId: participantId,
+        StudyId: studyIdFormatted,
+      };
+      if (apiDate) {
+        payload.CreatedDate = apiDate;
+      }
+
+      if (!apiDate) {
+        // New form - fetch questions without date filter to show the problem list
+        const res = await apiService.post<{ ResponseData: any[] }>(
+          "/GetParticipantDistressThermometerWeeklyQA",
+          {
+            ParticipantId: participantId,
+            StudyId: studyIdFormatted,
+          }
+        );
+
+        const responseData = res.data?.ResponseData || [];
+
+        if (responseData.length === 0) {
+          setCategories([]);
+          setError("No distress thermometer questions found.");
+          return;
+        }
+
+        // Group questions by category
+        const grouped: Record<string, Category> = {};
+        responseData.forEach((item) => {
+          if (item.CategoryName) {
+            if (!grouped[item.CategoryName]) {
+              grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
+            }
+            grouped[item.CategoryName].questions.push({
+              id: item.DistressQuestionId,
+              label: item.Question,
+              PDTWQID: item.PDTWQID || undefined,
+            });
+          }
+        });
+        setCategories(Object.values(grouped));
+
+        // Clear selected problems and other fields since it's new form
+        setSelectedProblems({});
+        setOtherProblems("");
+        setV(0);
+        setNotes("");
+        setPDWSID(null);
+
+        return;
+      }
+
+      // Fetch questions grouped by categories
       const res = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressThermometerWeeklyQA",
-        {
-          ParticipantId: enteredPatientId || `${patientId}`,
-          ...(apiDate && { CreatedDate: apiDate }),
-        }
+        payload
       );
 
       const responseData = res.data?.ResponseData || [];
 
-      // Group questions by category
-      if (responseData.length > 0) {
-        const grouped: Category[] = Object.values(
-          responseData.reduce((acc: Record<string, Category>, item) => {
-            if (item.CategoryName) {
-              const catName = item.CategoryName;
-              if (!acc[catName]) {
-                acc[catName] = { categoryName: catName, questions: [] };
-              }
-              if (item.DistressQuestionId && item.Question) {
-                acc[catName].questions.push({
-                  id: item.DistressQuestionId,
-                  label: item.Question,
-                });
-              }
-            }
-            return acc;
-          }, {})
-        );
-        setCategories(grouped);
-
-        // Set existing answers
-        const existingAnswers: Record<string, boolean> = {};
-        responseData.forEach((item) => {
-          if (item.DistressQuestionId && item.IsAnswered === "Yes") {
-            existingAnswers[item.DistressQuestionId] = true;
-          }
-        });
-        setSelectedProblems(existingAnswers);
-      } else {
+      if (responseData.length === 0) {
         setCategories([]);
-        console.log("No questions received from API");
+        setError(
+          apiDate
+            ? "No distress thermometer questions found for selected date."
+            : "No distress thermometer questions found."
+        );
+        return;
       }
 
-      //  Fetch the existing weekly score and set `v`
+      // Group questions by category
+      const grouped: Record<string, Category> = {};
+      responseData.forEach((item) => {
+        if (item.CategoryName) {
+          if (!grouped[item.CategoryName]) {
+            grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
+          }
+          grouped[item.CategoryName].questions.push({
+            id: item.DistressQuestionId,
+            label: item.Question,
+            PDTWQID: item.PDTWQID || undefined,
+          });
+        }
+      });
+      setCategories(Object.values(grouped));
+
+      // Set answers for selected problems
+      const existingAnswers: Record<string, boolean> = {};
+      responseData.forEach((item) => {
+        if (item.DistressQuestionId && item.IsAnswered === "Yes") {
+          existingAnswers[item.DistressQuestionId] = true;
+        }
+      });
+      setSelectedProblems(existingAnswers);
+
+      const firstItemWithOther = responseData.find((item) => item.OtherProblems);
+      setOtherProblems(firstItemWithOther?.OtherProblems || "");
+
+      // Fetch score for distress thermometer
+      const scorePayload: any = {
+        ParticipantId: participantId,
+        StudyId: studyIdFormatted,
+      };
+      if (apiDate) {
+        scorePayload.CreatedDate = apiDate;
+      }
+
       const resScore = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressWeeklyScore",
-        { 
-          ParticipantId: enteredPatientId || `${patientId}`,
-          ...(apiDate && { CreatedDate: apiDate }),
-        }
+        scorePayload
       );
-
       const scoreData = resScore.data?.ResponseData?.[0];
-      if (scoreData && scoreData.ScaleValue) {
-        setV(Number(scoreData.ScaleValue)); // <-- set state here
+      if (scoreData) {
+        setV(Number(scoreData.ScaleValue));
+        setPDWSID(scoreData.PDWSID || null);
+        setNotes(scoreData.Notes || "");
       } else {
-        setV(0); // default if no score
+        setV(0);
+        setPDWSID(null);
+        setNotes("");
       }
-
     } catch (err) {
-      console.error("API error:", err);
-      setError("Failed to fetch data. Please try again.");
+      console.error("Failed to fetch distress thermometer data:", err);
+      setError("Failed to load distress thermometer data. Please try again.");
       Toast.show({
         type: "error",
         text1: "Error",
         text2: "Failed to load distress thermometer data",
-        position: "top",
-        topOffset: 50,
       });
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (enteredPatientId) {
+      fetchAvailableDates();
+    }
+  }, [enteredPatientId]);
 
   useEffect(() => {
-    setDistressId(null);
-    getData();
-    fetchAvailableDates();
-  }, [enteredPatientId]);
+    if (enteredPatientId && selectedDate) {
+      getData(selectedDate);
+    } else if (enteredPatientId && selectedDate === "") {
+      getData(null);
+    }
+  }, [selectedDate, enteredPatientId]);
 
   const handleSave = async () => {
     try {
       setLoading(true);
 
-      // ✅ Validate required fields
       if (!enteredPatientId) {
         Toast.show({
           type: "error",
           text1: "Error",
           text2: "Please enter a Participant ID",
-          position: "top",
-          topOffset: 50,
         });
+        setLoading(false);
         return;
       }
 
-      //  Prepare DistressData
+      // Detect if this is an update by presence of PDTWQID (existing data)
+      const hasExistingData = categories.some((cat) =>
+        cat.questions.some((q) => q.PDTWQID)
+      );
+
+      // Prepare distress answers for API
       const distressData = categories.flatMap((cat) =>
         cat.questions.map((q) => ({
           DistressQuestionId: q.id,
           IsAnswered: selectedProblems[q.id] ? "Yes" : "No",
+          ...(q.PDTWQID ? { PDTWQID: q.PDTWQID } : {}),
         }))
       );
 
-      const today = new Date().toISOString().split("T")[0];
-      const dateToUse = selectedDate ? convertDateForAPI(selectedDate) : today;
+      const createdDate = selectedDate && selectedDate.trim() !== ""
+        ? convertDateForAPI(selectedDate)
+        : new Date().toISOString().split("T")[0];
 
-      const reqObj = {
-        ParticipantId: patientId,
-        StudyId: studyId,
-        CreatedBy: "UH-1000",
-        CreatedDate: dateToUse,
+      const studyIdFormatted =
+        typeof studyId === "string"
+          ? studyId
+          : `${studyId}`;
+
+      // Construct the request object with an update flag if existing data detected
+      const reqObj: any = {
+        ParticipantId: enteredPatientId,
+        StudyId: studyIdFormatted,
+        CreatedBy: userId || "UH-1000",
+        ModifiedBy: userId || "UH-1000",
+        CreatedDate: createdDate,
+        ModifiedDate: createdDate,
         DistressData: distressData,
-        otherProblems: otherProblems,
+        OtherProblems: otherProblems || "",
       };
 
-      console.log("Saving payload:", reqObj);
-
-      const res = await apiService.post(
-        "/AddUpdateParticipantDistressThermometerWeeklyQA",
-        reqObj
-      );
-
-      console.log("Save success:", res.data);
-
-      // const scoreObj = {
-      //   ParticipantId: `${patientId}`,
-      //   StudyId: studyId
-      //     ? studyId.toString().startsWith("CS-")
-      //       ? studyId.toString()
-      //       : `CS-${studyId.toString().padStart(4, "0")}`
-      //     : "CS-0001",
-      //   DistressThermometerScore: `${v}`,
-      //   ModifiedBy: userId,
-      // };
-
-      // console.log("Saving Score payload:", scoreObj);
-
-      // const res2 = await apiService.post(
-      //   "/AddUpdateParticipantDistressThermometerScore",
-      //   scoreObj
-      // );
-
-
-      const scoreObj = {
-        PDWSID: PDWSID || '',
-        ParticipantId: patientId,
-        ScaleValue: `${v}`,
-        ModifiedBy: userId,
-        CreatedDate: dateToUse,
+      if (hasExistingData) {
+        reqObj.IsUpdate = true;
       }
 
-      const res2 = await apiService.post(
-        "/AddUpdateParticipantDistressWeeklyScore", scoreObj
+      // Call backend to add or update distress thermometer data
+      await apiService.post("/AddUpdateParticipantDistressThermometerWeeklyQA", reqObj);
+
+      // Prepare distress score save request including PDWSID for update
+      const scoreObj: SaveScoreRequest = {
+        ParticipantId: enteredPatientId,
+        StudyId: studyIdFormatted,
+        ScaleValue: v.toString(),
+        Notes: notes || "",
+        CreatedBy: userId || "UH-1000",
+        ModifiedBy: userId || "UH-1000",
+        CreatedDate: createdDate,
+        ModifiedDate: createdDate,
+      };
+
+      if (PDWSID) {
+        scoreObj.PDWSID = PDWSID;
+      }
+
+      // Call backend to add or update distress score
+      const scoreRes = await apiService.post<SaveScoreResponse>(
+        "/AddUpdateParticipantDistressWeeklyScore",
+        scoreObj
       );
 
-      console.log("thermometerscore", res2);
+      if (scoreRes.data?.PDWSID) {
+        setPDWSID(scoreRes.data.PDWSID);
+      }
 
-      // Toast.show({
-      //   type: "success",
-      //   text1: "Success",
-      //   text2: distressId ? "Updated successfully!" : "Added successfully!",
-      //   position: "top",
-      //   topOffset: 50,
-      //   onHide: () => navigation.goBack(),
-      // });
       Toast.show({
         type: "success",
         text1: "Success",
-        text2: "Saved successfully!",
-        position: "top",
-        topOffset: 50,
-        onHide: () => navigation.goBack(),
+        text2: "Distress thermometer data saved successfully!",
+        onHide: () => {
+          navigation.goBack();
+          fetchAvailableDates();
+          getData(selectedDate);
+        },
       });
-
-
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save error:", err);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to save distress thermometer.",
-        position: "top",
-        topOffset: 50,
+        text2: err.message || "Failed to save distress thermometer data.",
       });
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleClear = () => {
     setV(0);
@@ -335,100 +435,166 @@ export default function DistressThermometerScreen() {
     setSelectedDate("");
     setShowDateDropdown(false);
     setIsDefaultForm(true);
+    setCategories([]);
+    getData(null);
   };
 
   const handleRefresh = () => {
-    getData(selectedDate || null);
     fetchAvailableDates();
+    getData(selectedDate || null);
+  };
+
+  const toggleProblem = (questionId: string) => {
+    setSelectedProblems((prev) => {
+      return { ...prev, [questionId]: !prev[questionId] };
+    });
   };
 
   return (
     <>
-      {/* Header Card */}
-      <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">
+      {/* Header with FactG-style dropdown */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View
+          style={{
+            backgroundColor: "white",
+            borderBottomColor: "#e5e7eb",
+            borderBottomWidth: 1,
+            borderRadius: 12,
+            padding: 32,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+          }}
+        >
+          <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>
             Participant ID: {enteredPatientId}
           </Text>
-
-          <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId ? (studyId.toString().startsWith('CS-') ? studyId.toString() : `CS-${studyId.toString().padStart(4, '0')}`) : 'CS-0001'}
+          <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
+            Study ID:{" "}
+            {studyId
+              ? typeof studyId === "string" 
+                ? studyId
+                : `${studyId}`
+              : "CS-0001"}
           </Text>
-
-          <View className="flex-row items-center gap-3">
-            <Text className="text-base font-semibold text-gray-700">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>
               Age: {age || "Not specified"}
             </Text>
 
-            {/* Date Dropdown */}
-            <View className="w-32">
+            {/* FactG-style Date Dropdown */}
+            <View style={{ width: 128 }}>
               <Pressable
-                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowDateDropdown(!showDateDropdown)}
                 style={{
                   backgroundColor: '#f8f9fa',
                   borderColor: '#e5e7eb',
+                  borderWidth: 1,
                   borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
+                onPress={() => setShowDateDropdown(!showDateDropdown)}
               >
-                <Text className="text-sm text-gray-700">
+                <Text style={{ fontSize: 14, color: "#374151" }}>
                   {selectedDate || (isDefaultForm ? "Select Date" : "Select Date")}
                 </Text>
-                <Text className="text-gray-500 text-xs">▼</Text>
+                <Text style={{ color: "#6b7280", fontSize: 12 }}>▼</Text>
               </Pressable>
             </View>
           </View>
         </View>
+      </View>
 
-        {/* Date Dropdown Menu */}
-        {showDateDropdown && (
-          <>
-            {/* Backdrop to close dropdown */}
+      {/* FactG-style Date Dropdown Menu */}
+      {showDateDropdown && (
+        <>
+          {/* Backdrop to close dropdown */}
+          <Pressable
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9998,
+            }}
+            onPress={() => setShowDateDropdown(false)}
+          />
+          <View
+            style={{
+              position: "absolute",
+              top: 96,
+              right: 24,
+              backgroundColor: "white",
+              borderColor: "#e5e7eb",
+              borderWidth: 1,
+              borderRadius: 8,
+              shadowColor: "#000",
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+              shadowOffset: { width: 0, height: 4 },
+              zIndex: 9999,
+              elevation: 10,
+              width: 128,
+              maxHeight: 192,
+            }}
+          >
             <Pressable
-              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
-              onPress={() => setShowDateDropdown(false)}
-            />
-            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
-            <Pressable
-              className="px-3 py-2 border-b border-gray-100"
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderBottomColor: "#f3f4f6",
+                borderBottomWidth: 1,
+              }}
               onPress={() => {
                 setSelectedDate("");
                 setShowDateDropdown(false);
                 setIsDefaultForm(true);
                 setCategories([]);
                 setSelectedProblems({});
-                setV(0);
-                getData();
+                setOtherProblems("");
+                getData(null);
               }}
             >
-              <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
+              <Text style={{ fontSize: 14, color: "#374151", fontWeight: "600" }}>New Form</Text>
             </Pressable>
-            
+
             {availableDates.length > 0 ? (
               availableDates.map((date, index) => (
                 <Pressable
                   key={date}
-                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderBottomColor: index < availableDates.length - 1 ? "#f3f4f6" : undefined,
+                    borderBottomWidth: index < availableDates.length - 1 ? 1 : 0,
+                  }}
                   onPress={() => {
                     setSelectedDate(date);
                     setShowDateDropdown(false);
                     setIsDefaultForm(false);
-                    getData(date);
                   }}
                 >
-                  <Text className="text-sm text-gray-700">{date}</Text>
+                  <Text style={{ fontSize: 14, color: "#374151" }}>{date}</Text>
                 </Pressable>
               ))
             ) : (
-              <View className="px-3 py-2">
-                <Text className="text-sm text-gray-500">No saved dates</Text>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                <Text style={{ fontSize: 14, color: "#9ca3af" }}>No saved dates</Text>
               </View>
             )}
-            </View>
-          </>
-        )}
-      </View>
+          </View>
+        </>
+      )}
 
+      {/* Main content ScrollView */}
       <ScrollView className="flex-1 bg-gray-100 p-4 pb-[200px]">
         {/* Distress Thermometer Card */}
         <View className="bg-white rounded-lg p-4 shadow-md mb-4">
@@ -439,7 +605,8 @@ export default function DistressThermometerScreen() {
               </View>
               <View>
                 <Text className="font-bold text-lg text-[#333]">
-                  Distress Thermometer
+                  Distress Thermometer{" "}
+                  {isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}
                 </Text>
                 <Text className="text-xs text-[#6b7a77]">
                   "Considering the past week, including today."
@@ -447,7 +614,6 @@ export default function DistressThermometerScreen() {
               </View>
             </View>
           </View>
-
           <View className="flex-row justify-between mb-2">
             <View className="flex-1">
               <Text className="text-xs text-[#6b7a77] mb-2">Participant ID</Text>
@@ -458,8 +624,8 @@ export default function DistressThermometerScreen() {
                   onChangeText={setEnteredPatientId}
                   placeholder="Enter Patient ID"
                   style={{
-                    backgroundColor: '#f8f9fa',
-                    borderColor: '#e5e7eb',
+                    backgroundColor: "#f8f9fa",
+                    borderColor: "#e5e7eb",
                     borderRadius: 16,
                   }}
                 />
@@ -468,7 +634,9 @@ export default function DistressThermometerScreen() {
                   className="bg-blue-500 rounded-lg px-3 py-3 flex-row items-center"
                   disabled={loading}
                 >
-                  {loading && <ActivityIndicator size="small" color="white" className="mr-1" />}
+                  {loading && (
+                    <ActivityIndicator size="small" color="white" className="mr-1" />
+                  )}
                   <Text className="text-white text-xs font-semibold">
                     {loading ? "Loading..." : "Refresh"}
                   </Text>
@@ -480,12 +648,29 @@ export default function DistressThermometerScreen() {
 
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 shadow-md mb-4">
-          <Text className="font-bold text-lg text-[#333] mb-4">
-            Rate Your Distress (0-10)
-          </Text>
+          <Text className="font-bold text-lg text-[#333] mb-4">Rate Your Distress (0-10)</Text>
           <FormCard icon="DT" title="Distress Thermometer">
             <Thermometer value={v} onChange={setV} />
           </FormCard>
+        </View>
+
+        {/* Notes Section */}
+        <View className="bg-white rounded-lg p-4 shadow-md mb-4">
+          <Text className="font-bold text-lg text-[#333] mb-4">Notes</Text>
+          <TextInput
+            className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
+            placeholder="Add any additional notes..."
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            numberOfLines={3}
+            style={{
+              backgroundColor: "#f8f9fa",
+              borderColor: "#e5e7eb",
+              borderRadius: 16,
+              textAlignVertical: "top",
+            }}
+          />
         </View>
 
         {/* Dynamic Problem List */}
@@ -494,10 +679,10 @@ export default function DistressThermometerScreen() {
 
           {loading && (
             <View className="items-center py-4">
-              <Text className="text-gray-500">Loading questions...</Text>
+              <ActivityIndicator size="large" color="#2E7D32" />
+              <Text className="text-gray-500 mt-2">Loading questions...</Text>
             </View>
           )}
-
           {error && (
             <View className="bg-red-50 p-3 rounded-lg mb-4">
               <Text className="text-red-600 text-center">{error}</Text>
@@ -506,12 +691,9 @@ export default function DistressThermometerScreen() {
               </Pressable>
             </View>
           )}
-
           {!loading && !error && categories.length === 0 && (
             <View className="bg-yellow-50 p-3 rounded-lg mb-4">
-              <Text className="text-yellow-700 text-center">
-                No questions found for this participant.
-              </Text>
+              <Text className="text-yellow-700 text-center">No questions found for this participant.</Text>
               <Pressable onPress={handleRefresh} className="mt-2">
                 <Text className="text-blue-600 text-center font-semibold">Refresh</Text>
               </Pressable>
@@ -520,9 +702,7 @@ export default function DistressThermometerScreen() {
 
           {categories.map((cat, index) => (
             <View key={`${cat.categoryName}-${index}`} className="mb-4">
-              <Text className="font-bold mb-2 text-sm text-[#333]">
-                {cat.categoryName}
-              </Text>
+              <Text className="font-bold mb-2 text-sm text-[#333]">{cat.categoryName}</Text>
               <View className="flex-row flex-wrap">
                 {cat.questions?.map((q) => (
                   <Checkbox
@@ -546,20 +726,32 @@ export default function DistressThermometerScreen() {
               multiline
               numberOfLines={3}
               style={{
-                backgroundColor: '#f8f9fa',
-                borderColor: '#e5e7eb',
+                backgroundColor: "#f8f9fa",
+                borderColor: "#e5e7eb",
                 borderRadius: 16,
-                textAlignVertical: 'top',
+                textAlignVertical: "top",
               }}
             />
           </View>
         </View>
 
-        {/* Extra space to ensure content is not hidden by BottomBar */}
+        {/* Extra space to prevent content being hidden */}
         <View style={{ height: 100 }} />
       </ScrollView>
 
       <BottomBar>
+        <Text
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 12,
+            backgroundColor: "#0b362c",
+            color: "white",
+            fontWeight: "700",
+          }}
+        >
+          Distress: {v}
+        </Text>
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
@@ -568,12 +760,12 @@ export default function DistressThermometerScreen() {
         </Btn>
         <Btn onPress={handleSave} disabled={loading || categories.length === 0}>
           {loading ? (
-            <View className="flex-row items-center">
-              <ActivityIndicator size="small" color="white" className="mr-2" />
-              <Text className="text-white">Saving...</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
+              <Text style={{ color: "white" }}>Saving...</Text>
             </View>
           ) : (
-            "Save Distress Thermometer"
+            "Save"
           )}
         </Btn>
       </BottomBar>

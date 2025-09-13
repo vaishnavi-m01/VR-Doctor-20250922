@@ -25,6 +25,7 @@ import {
   getSuccessMessage,
 } from '../../utils/formUtils';
 
+
 interface StudyObservationApiModel {
   ObservationId: string | null;
   ParticipantId: string;
@@ -63,9 +64,11 @@ interface StudyObservationApiModel {
   ModifiedBy:string;
 }
 
+
 interface ObservationApiResponse {
   ResponseData: StudyObservationApiModel[];
 }
+
 
 interface FormField {
   SOFID: string;
@@ -78,9 +81,32 @@ interface FormField {
   ModifiedDate?: string | null;
 }
 
+
 interface FormFieldApiResponse {
   ResponseData: FormField[];
 }
+
+interface DistressWeeklyScore {
+  PDWSID: string;
+  ParticipantId: string;
+  ScaleValue: string;
+  SortKey: number;
+  Status: number;
+  CreatedBy: string;
+  CreatedDate: string;
+  ModifiedBy: string | null;
+  ModifiedDate: string;
+}
+interface DistressWeeklyResponse {
+  ResponseData: DistressWeeklyScore[];
+}
+interface FactGResponse {
+  ResponseData: any[];
+  CategoryScore: Record<string, string>;
+  FinalScore: string;
+}
+
+
 
 // Extract only time e.g. "14:30:00" from a datetime string
 const extractTime = (dateTimeStr?: string | null) => {
@@ -88,6 +114,7 @@ const extractTime = (dateTimeStr?: string | null) => {
   const match = dateTimeStr.match(/(\d{2}:\d{2}(:\d{2})?)/);
   return match ? match[1] : '';
 };
+
 
 // Convert ISO datetime string to "YYYY-MM-DD HH:mm:ss" format for API
 const formatDateTimeForApi = (isoString: string) => {
@@ -102,9 +129,21 @@ const formatDateTimeForApi = (isoString: string) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 };
 
+// Format date to YYYY-MM-DD for API requests
+const formatDateForApi = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+
 function getCurrentDateTimeISO() {
   return new Date().toISOString(); 
 }
+
 
 export default function StudyObservation() {
   // Dynamic form fields state
@@ -112,8 +151,12 @@ export default function StudyObservation() {
   const [fieldsLoading, setFieldsLoading] = useState<boolean>(false);
   const [fieldsError, setFieldsError] = useState<string | null>(null);
 
+
   // Dynamic form values - using SOFID as keys
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [baselineLoading, setBaselineLoading] = useState<boolean>(false);
+  const [distressScore, setDistressScore] = useState<string>('');
+  const [factGScore, setFactGScore] = useState<string>('');
 
   // Existing form states for complex fields
   const [completed, setCompleted] = useState('');
@@ -150,12 +193,12 @@ export default function StudyObservation() {
   };
 
   useEffect(() => {
-  if (routeObservationId) {
-    setObservationId(routeObservationId);
-  } else {
-    setObservationId(STATIC_OBSERVATION_ID);
-  }
-}, [routeObservationId]);
+    if (routeObservationId) {
+      setObservationId(routeObservationId);
+    } else {
+      setObservationId(STATIC_OBSERVATION_ID);
+    }
+  }, [routeObservationId]);
 
   const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());
 
@@ -164,8 +207,70 @@ export default function StudyObservation() {
     [completed, tech, discomfort, deviation]
   );
 
+  const fetchBaselineScores = async (participantId: string, studyId: string) => {
+    setBaselineLoading(true);
+    try {
+      // 1. FACT-G final score (get most recent CreatedDate, then get FinalScore)
+      let factGScore = '';
+      const factGDateRes = await apiService.post('/GetParticipantFactGQuestionWeekly', {
+        StudyId: studyId,
+        ParticipantId: participantId,
+        CreatedDate: null
+      }) as { data: FactGResponse };
+      const factGDateList = factGDateRes.data.ResponseData;
+      let lastFactGDate: string | null = null;
+      if (factGDateList && factGDateList.length > 0) {
+        // get the most recent CreatedDate in the correct field
+        lastFactGDate = factGDateList[factGDateList.length - 1]["STR_TO_DATE(PFGQWK.CreatedDate, '%Y-%m-%d')"];
+      }
+      if (lastFactGDate) {
+        const factGDetailsRes = await apiService.post('/GetParticipantFactGQuestionWeekly', {
+          StudyId: studyId,
+          ParticipantId: participantId,
+          CreatedDate: lastFactGDate
+        }) as { data: FactGResponse };
+        factGScore = factGDetailsRes.data.FinalScore || '';
+      }
+
+      // 2. Distress score (get most recent ScaleValue)
+      let distressValue = '';
+      const distressRes = await apiService.post('/GetParticipantDistressWeeklyScore', {
+        ParticipantId: participantId,
+        CreatedDate: null
+      }) as { data: DistressWeeklyResponse };
+      if (distressRes.data.ResponseData && distressRes.data.ResponseData.length > 0) {
+        distressValue = distressRes.data.ResponseData[distressRes.data.ResponseData.length - 1].ScaleValue;
+      }
+
+      // 3. Set values
+      setDistressScore(distressValue);
+      setFactGScore(factGScore);
+      setFormValues(prev => ({
+        ...prev,
+        'SOFID-7': factGScore,
+        'SOFID-8': distressValue,
+      }));
+    } catch (error) {
+      setDistressScore('');
+      setFactGScore('');
+      setFormValues(prev => ({
+        ...prev,
+        'SOFID-7': '',
+        'SOFID-8': '',
+      }));
+    } finally {
+      setBaselineLoading(false);
+    }
+  };
+
+useEffect(() => {
+  const participantId = `${routePatientId}`;
+  fetchBaselineScores(participantId, `${studyId}`);
+}, [routePatientId, studyId, routeObservationId]);
+
+
+
   useEffect(() => {
-   
     const initialValues: Record<string, string> = {
       'SOFID-1': getCurrentDateTimeISO(),
       'SOFID-2': routePatientId.toString(), 
@@ -193,7 +298,23 @@ export default function StudyObservation() {
     setIsLoaded(true);
 
     fetchFormFields();
+    
+    // Fetch baseline scores
+    const participantId = `${routePatientId}`;
+    const currentDate = getCurrentDateTimeISO();
+    fetchBaselineScores(participantId, currentDate);
   }, [routePatientId, studyId, routeObservationId]);
+
+  // Update form values when baseline scores are fetched
+  useEffect(() => {
+    if (distressScore || factGScore) {
+      setFormValues(prev => ({
+        ...prev,
+        'SOFID-7': factGScore,
+        'SOFID-8': distressScore
+      }));
+    }
+  }, [distressScore, factGScore]);
 
   // Fetch dynamic form fields from API
   const fetchFormFields = async () => {
@@ -212,94 +333,92 @@ export default function StudyObservation() {
     }
   };
 
-  // Update form value by SOFID
   const updateFormValue = (sofid: string, value: string) => {
     setFormValues(prev => ({
       ...prev,
-      [sofid]: value
+      [sofid]: value,
     }));
+    if (sofid === 'SOFID-7') setFactGScore(value);      // FACT-G
+    if (sofid === 'SOFID-8') setDistressScore(value);   // Distress
   };
+
 
   // Helper to get form value by SOFID
   const getFormValue = (sofid: string): string => {
     return formValues[sofid] || '';
   };
 
- const fetchObservationByParticipantId = async (participantId: string) => {
-  setLoading(true);
-  try {
-    const payload = {
-      ObservationId: null,
-      ParticipantId: participantId,
-      StudyId: null,
-      SessionName: null,
-      DateAndTime: null,
-    };
-    const res = await apiService.post<ObservationApiResponse>('/GetParticipantStudyObservationForms', payload);
-    
-    const found = res.data?.ResponseData?.[0];
-    if (found) {
-      // Update form values from response
-      const updatedValues: Record<string, string> = {
-        
-        'SOFID-1': found.DateAndTime || getCurrentDateTimeISO(),
-        'SOFID-2': found.ParticipantId,
-        'SOFID-3': found.DeviceId || 'DEV-001',
-        'SOFID-4': found.ObserverName || 'Dr John',
-        'SOFID-5': found.SessionNumber || '3',
-        'SOFID-6': found.SessionName || 'Chemotherapy',
-        'SOFID-7': found.FACTGScore || '',
-        'SOFID-8': found.DistressThermometerScore || '',
-        'SOFID-11': extractTime(found.SessionStartTime),
-        'SOFID-12': extractTime(found.SessionEndTime),
-        'SOFID-13': found.PatientResponseDuringSession || '',
-        'SOFID-15': found.TechnicalIssuesDescription || '',
-        'SOFID-19': found.SessionStoppedMidwayReason || '',
-        'SOFID-21': found.PatientInstructionsExplanation || '',
-        'SOFID-23': found.DiscomfortDescription || '',
-        'SOFID-25': found.AssistanceExplanation || '',
-        'SOFID-27': found.ProtocolDeviationExplanation || '',
-        'SOFID-28': found.OtherObservations || '',
+  const fetchObservationByParticipantId = async (participantId: string) => {
+    setLoading(true);
+    try {
+      const payload = {
+        ObservationId: null,
+        ParticipantId: participantId,
+        StudyId: null,
+        SessionName: null,
+        DateAndTime: null,
       };
-
-      setObservationId(found.ObservationId ?? null);
-
-      setFormValues(updatedValues);
-
-   
-      setCompleted(found.SessionCompleted || '');
-      setTech(found.TechnicalIssues || '');
-      setPreVRAssessment(found.PreVRAssessmentCompleted || '');
-      setPostVRAssessment(found.PostVRAssessmentCompleted || '');
-      setDistressScoreAndFactG(found.DistressScoreAndFACTGCompleted || '');
-      setFollowInstructions(found.PatientAbleToFollowInstructions || '');
-      setDiscomfort(found.VisibleSignsOfDiscomfort || '');
-      setAssistance(found.PatientRequiredAssistance || '');
-      setDeviation(found.DeviationsFromProtocol || '');
-      setResp(found.PatientResponseDuringSession ? found.PatientResponseDuringSession.split(',') : []);
-      setSelectedWeek(found.WeekNumber ? `week${found.WeekNumber}` : '');
-
-      setIsLoaded(true);
-      console.log("Participant loaded successfully");
+      const res = await apiService.post<ObservationApiResponse>('/GetParticipantStudyObservationForms', payload);
       
-    } else {
-      console.log("No Observation for this participant");
+      const found = res.data?.ResponseData?.[0];
+      if (found) {
+        // Update form values from response
+        const updatedValues: Record<string, string> = {
+          'SOFID-1': found.DateAndTime || getCurrentDateTimeISO(),
+          'SOFID-2': found.ParticipantId,
+          'SOFID-3': found.DeviceId || 'DEV-001',
+          'SOFID-4': found.ObserverName || 'Dr John',
+          'SOFID-5': found.SessionNumber || '3',
+          'SOFID-6': found.SessionName || 'Chemotherapy',
+          'SOFID-7': found.FACTGScore || factGScore,
+          'SOFID-8': found.DistressThermometerScore || distressScore,
+          'SOFID-11': extractTime(found.SessionStartTime),
+          'SOFID-12': extractTime(found.SessionEndTime),
+          'SOFID-13': found.PatientResponseDuringSession || '',
+          'SOFID-15': found.TechnicalIssuesDescription || '',
+          'SOFID-19': found.SessionStoppedMidwayReason || '',
+          'SOFID-21': found.PatientInstructionsExplanation || '',
+          'SOFID-23': found.DiscomfortDescription || '',
+          'SOFID-25': found.AssistanceExplanation || '',
+          'SOFID-27': found.ProtocolDeviationExplanation || '',
+          'SOFID-28': found.OtherObservations || '',
+        };
+
+        setObservationId(found.ObservationId ?? null);
+        setFormValues(updatedValues);
+
+        setCompleted(found.SessionCompleted || '');
+        setTech(found.TechnicalIssues || '');
+        setPreVRAssessment(found.PreVRAssessmentCompleted || '');
+        setPostVRAssessment(found.PostVRAssessmentCompleted || '');
+        setDistressScoreAndFactG(found.DistressScoreAndFACTGCompleted || '');
+        setFollowInstructions(found.PatientAbleToFollowInstructions || '');
+        setDiscomfort(found.VisibleSignsOfDiscomfort || '');
+        setAssistance(found.PatientRequiredAssistance || '');
+        setDeviation(found.DeviationsFromProtocol || '');
+        setResp(found.PatientResponseDuringSession ? found.PatientResponseDuringSession.split(',') : []);
+        setSelectedWeek(found.WeekNumber ? `week${found.WeekNumber}` : '');
+
+        setIsLoaded(true);
+        console.log("Participant loaded successfully");
+        
+      } else {
+        console.log("No Observation for this participant");
+      }
+    } catch (error) {
+      console.error('Error fetching observation:', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch observation' });
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching observation:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to fetch observation' });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  const participantId = routePatientId.toString();
-  if (participantId) {
-    fetchObservationByParticipantId(participantId);
-  }
-}, [routePatientId]);
-
+  useEffect(() => {
+    const participantId = `${routePatientId}`;
+    if (participantId) {
+      fetchObservationByParticipantId(participantId);
+    }
+  }, [routePatientId]);
 
   // Render field based on SOFID and field type
   const renderFormField = (field: FormField) => {
@@ -317,7 +436,28 @@ useEffect(() => {
             />
           </View>
         );
-        
+case 'SOFID-7': // FACT-G Score
+    case 'SOFID-8': // Distress Thermometer Score
+      return (
+        <View key={SOFID} className="flex-1">
+          <Text className="font-zen text-xs text-[#4b5f5a] mb-1">{FieldLabel}</Text>
+          <View className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-3">
+            {baselineLoading ? (
+              <View className="flex-row items-center">
+                <Text className="ml-2 text-sm text-gray-600">Loading...</Text>
+              </View>
+            ) : (
+              <Text className="text-base text-gray-800">
+               
+              {SOFID === 'SOFID-7'
+                ? factGScore ? factGScore : 'No data available'
+                : distressScore ? distressScore : 'No data available'}
+                </Text>
+              )}
+          </View>
+        </View>
+      );
+      
       case 'SOFID-9': // Was the session completed?
         return (
           <View key={SOFID} className="mb-3">
@@ -623,7 +763,7 @@ useEffect(() => {
         if (skipFields.includes(SOFID)) return null;
         
         // Determine if field should be numeric
-        const numericFields = ['SOFID-5', 'SOFID-7', 'SOFID-8'];
+        const numericFields = ['SOFID-5'];
         const timeFields = ['SOFID-11', 'SOFID-12'];
         
         return (
@@ -787,7 +927,7 @@ useEffect(() => {
     
     // Set default values for required fields
     clearedValues['SOFID-1'] = getCurrentDateTimeISO();
-    clearedValues['SOFID-2'] = routePatientId.toString();
+    clearedValues['SOFID-2'] = `${routePatientId}`;
     clearedValues['SOFID-3'] = STATIC_DEVICE_ID;
     clearedValues['SOFID-4'] = SESSION_CONSTANTS.DEFAULT_OBSERVER;
     clearedValues['SOFID-5'] = SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER;
@@ -809,6 +949,21 @@ useEffect(() => {
     setSelectedWeek('');
     setShowWeekDropdown(false);
     setObservationId(STATIC_OBSERVATION_ID);
+    
+    // Reset baseline scores
+    setDistressScore('');
+    setFactGScore('');
+    
+    setFormValues(prev => ({
+      ...prev,
+      'SOFID-7': '',
+      'SOFID-8': '',
+    }));
+
+    // Re-fetch baseline scores after clearing
+    const participantId = `${routePatientId}`;
+    const currentDate = getCurrentDateTimeISO();
+    fetchBaselineScores(participantId, currentDate);
 
     Alert.alert('Success', getSuccessMessage('FORM_CLEARED'));
   };
@@ -818,7 +973,7 @@ useEffect(() => {
       <View className="px-4 pt-4 relative">
         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
           <Text className="font-zen text-lg font-bold text-green-600">
-            {FORM_LABELS.PARTICIPANT_ID}: {getFormValue('SOFID-2')}
+            {FORM_LABELS.PARTICIPANT_ID}:{routePatientId}
           </Text>
           <Text className="font-zen text-base font-semibold text-green-600">
             Study ID: {studyIdState}
@@ -902,17 +1057,7 @@ useEffect(() => {
               <View className="flex-row gap-3">
                 {formFields
                   .filter(field => ['SOFID-7', 'SOFID-8'].includes(field.SOFID))
-                  .map(field => (
-                    <View key={field.SOFID} className="flex-1">
-                      <Field
-                        label={field.FieldLabel}
-                        placeholder={`Enter ${field.FieldLabel.toLowerCase()}`}
-                        value={getFormValue(field.SOFID)}
-                        onChangeText={(value) => updateFormValue(field.SOFID, value)}
-                        keyboardType="numeric"
-                      />
-                    </View>
-                  ))}
+                  .map(field => renderFormField(field))}
               </View>
             </FormCard>
 
@@ -964,7 +1109,6 @@ useEffect(() => {
       </ScrollView>
 
       <BottomBar>
-        
         <View className="flex-row gap-3">
           <Btn variant="light" onPress={handleClear}>
             Clear
