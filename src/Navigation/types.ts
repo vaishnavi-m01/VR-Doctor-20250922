@@ -30,5 +30,7 @@ export type RootStackParamList = {
   AdverseEventReportsHistory: {patientId:number,age:number,studyId:number};
   StudyGroupAssignment: { patientId: number,age:number,studyId:number };
   InformedConsent: { patientId: number,age:number,studyId:number };
+  VRSessionsList: { patientId: number,age:number,studyId:number };
+  SessionDetailsScreen: { patientId: number,age:number,studyId:number,sessionDetails:any };
 };
  

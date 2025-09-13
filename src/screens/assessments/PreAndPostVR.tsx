@@ -48,16 +48,38 @@ export default function PreAndPostVR() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState<'Pre' | 'Post'>('Pre');
+  const [showAssessmentDropdown, setShowAssessmentDropdown] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<string>('Select Session');
+  const [showSessionDropdown, setShowSessionDropdown] = useState(false);
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const { userId, setUserId } = useContext(UserContext);
 
-
-
+  // Fetch available sessions
+  const fetchAvailableSessions = async () => {
+    try {
+      // Mock sessions data - replace with actual API call
+      const mockSessions = [
+        'Session 1',
+        'Session 2', 
+        'Session 3',
+        'Session 4',
+        'Session 5'
+      ];
+      setAvailableSessions(mockSessions);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setErrors({});
       try {
+        // Fetch sessions first
+        await fetchAvailableSessions();
+        
         const questionsRes = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData");
         const fetchedQuestions = questionsRes.data.ResponseData || [];
 
@@ -234,8 +256,56 @@ export default function PreAndPostVR() {
         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {participantIdInput}</Text>
           <Text className="text-base font-semibold text-green-600">Study ID: {studyIdFormatted}</Text>
-          <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
+          
+          <View className="flex-row items-center gap-3">
+            <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
+            
+            {/* Sessions Dropdown */}
+            <View className="w-32">
+              <Pressable
+                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  borderColor: '#e5e7eb',
+                  borderRadius: 8,
+                }}
+              >
+                <Text className="text-sm text-gray-700">
+                  {selectedSession}
+                </Text>
+                <Text className="text-gray-500 text-xs">▼</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
+
+        {/* Sessions Dropdown Menu */}
+        {showSessionDropdown && (
+          <>
+            {/* Backdrop to close dropdown */}
+            <Pressable
+              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+              onPress={() => setShowSessionDropdown(false)}
+            />
+            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+              {availableSessions.map((session, index) => (
+                <Pressable
+                  key={index}
+                  className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''} ${selectedSession === session ? 'bg-green-50' : ''}`}
+                  onPress={() => {
+                    setSelectedSession(session);
+                    setShowSessionDropdown(false);
+                  }}
+                >
+                  <Text className={`text-sm ${selectedSession === session ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>
+                    {session}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
       </View>
 
       <ScrollView className="px-4 pt-4 bg-bg pb-[400px]">
@@ -250,9 +320,62 @@ export default function PreAndPostVR() {
               {errors['date'] && <Text className="text-red-500 text-xs mt-1">{errors['date']}</Text>}
             </View>
           </View>
+          
+          {/* Assessment Type Dropdown */}
+          <View className="mt-4">
+            <Text className="text-xs text-[#4b5f5a] mb-2">Assessment Type</Text>
+            <View className="w-32 relative">
+              <Pressable
+                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                onPress={() => setShowAssessmentDropdown(!showAssessmentDropdown)}
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  borderColor: '#e5e7eb',
+                  borderRadius: 8,
+                }}
+              >
+                <Text className="text-sm text-gray-700">
+                  {selectedAssessmentType}
+                </Text>
+                <Text className="text-gray-500 text-xs">▼</Text>
+              </Pressable>
+
+              {/* Assessment Type Dropdown Menu */}
+              {showAssessmentDropdown && (
+                <>
+                  {/* Backdrop to close dropdown */}
+                  <Pressable
+                    className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+                    onPress={() => setShowAssessmentDropdown(false)}
+                  />
+                  <View className="absolute top-10 left-0 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+                    <Pressable
+                      className={`px-3 py-2 border-b border-gray-100 ${selectedAssessmentType === 'Pre' ? 'bg-green-50' : ''}`}
+                      onPress={() => {
+                        setSelectedAssessmentType('Pre');
+                        setShowAssessmentDropdown(false);
+                      }}
+                    >
+                      <Text className={`text-sm ${selectedAssessmentType === 'Pre' ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>Pre</Text>
+                    </Pressable>
+                    
+                    <Pressable
+                      className={`px-3 py-2 ${selectedAssessmentType === 'Post' ? 'bg-green-50' : ''}`}
+                      onPress={() => {
+                        setSelectedAssessmentType('Post');
+                        setShowAssessmentDropdown(false);
+                      }}
+                    >
+                      <Text className={`text-sm ${selectedAssessmentType === 'Post' ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>Post</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
         </FormCard>
 
-        {preQuestions.length > 0 && (
+        {selectedAssessmentType === 'Pre' && preQuestions.length > 0 && (
           <FormCard icon="A" title="Pre Virtual Reality Questions">
             {preQuestions.map((q) => (
               <View key={q.PPVRQMID} className="mb-3">
@@ -291,7 +414,7 @@ export default function PreAndPostVR() {
           </FormCard>
         )}
 
-        {postQuestions.length > 0 && (
+        {selectedAssessmentType === 'Post' && postQuestions.length > 0 && (
           <FormCard icon="B" title="Post Virtual Reality Questions">
             {postQuestions.map((q) => (
               <View key={q.PPVRQMID} className="mb-3">
@@ -327,6 +450,16 @@ export default function PreAndPostVR() {
                 )}
               </View>
             ))}
+          </FormCard>
+        )}
+
+        {/* Show message when no questions available for selected type */}
+        {((selectedAssessmentType === 'Pre' && preQuestions.length === 0) || 
+          (selectedAssessmentType === 'Post' && postQuestions.length === 0)) && (
+          <FormCard icon="ℹ️" title={`No ${selectedAssessmentType} Questions Available`}>
+            <Text className="text-gray-600 text-center py-4">
+              No {selectedAssessmentType} Virtual Reality questions are available at this time.
+            </Text>
           </FormCard>
         )}
 

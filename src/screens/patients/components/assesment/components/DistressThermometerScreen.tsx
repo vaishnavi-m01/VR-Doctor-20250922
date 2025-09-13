@@ -37,8 +37,10 @@ export default function DistressThermometerScreen() {
   const [selectedProblems, setSelectedProblems] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState("week1");
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [isDefaultForm, setIsDefaultForm] = useState(true);
   const [otherProblems, setOtherProblems] = useState<string>("");
   const navigation = useNavigation<any>();
   const [distressId, setDistressId] = useState<string | null>(null);
@@ -58,6 +60,61 @@ export default function DistressThermometerScreen() {
   };
   const [enteredPatientId, setEnteredPatientId] = useState<string>(`${patientId}`);
 
+  // Date formatting functions
+  const formatDate = (dateString: string): string => {
+    // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const convertDateForAPI = (dateString: string): string => {
+    // Convert DD-MM-YYYY to YYYY-MM-DD for API
+    const [day, month, year] = dateString.split("-");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Fetch available dates for dropdown
+  const fetchAvailableDates = async () => {
+    try {
+      const participantId = `${patientId}`;
+      const studyIdFormatted = studyId ? `${studyId.toString().padStart(4, "0")}` : "CS-0001";
+
+      const response = await apiService.post<{ ResponseData: any[] }>(
+        "/GetParticipantDistressThermometerWeeklyQA",
+        {
+          ParticipantId: participantId,
+          StudyId: studyIdFormatted,
+        }
+      );
+
+      const weeklyData = response.data?.ResponseData ?? [];
+      const uniqueDatesSet = new Set(weeklyData.map((item) => item.CreatedDate));
+      const formattedDates = Array.from(uniqueDatesSet)
+        .filter(date => date) // Filter out null/undefined dates
+        .map(formatDate);
+
+      const sortedDates = formattedDates.sort((a, b) => {
+        const dateA = new Date(convertDateForAPI(a));
+        const dateB = new Date(convertDateForAPI(b));
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      setAvailableDates(sortedDates);
+
+    } catch (error) {
+      console.error("Failed to fetch available dates:", error);
+      setAvailableDates([]);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to fetch available dates",
+      });
+    }
+  };
+
   // Toggle a problem selection
   const toggleProblem = (questionId: string) => {
     setSelectedProblems((prev) => ({
@@ -66,16 +123,22 @@ export default function DistressThermometerScreen() {
     }));
   };
 
-  const getData = async () => {
+  const getData = async (dateToUse?: string | null) => {
     try {
       setLoading(true);
       setError(null);
+
+      let apiDate: string | null = null;
+      if (dateToUse) {
+        apiDate = convertDateForAPI(dateToUse);
+      }
 
       //  Fetch weekly QA questions
       const res = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressThermometerWeeklyQA",
         {
           ParticipantId: enteredPatientId || `${patientId}`,
+          ...(apiDate && { CreatedDate: apiDate }),
         }
       );
 
@@ -118,7 +181,10 @@ export default function DistressThermometerScreen() {
       //  Fetch the existing weekly score and set `v`
       const resScore = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressWeeklyScore",
-        { ParticipantId: enteredPatientId || `${patientId}` }
+        { 
+          ParticipantId: enteredPatientId || `${patientId}`,
+          ...(apiDate && { CreatedDate: apiDate }),
+        }
       );
 
       const scoreData = resScore.data?.ResponseData?.[0];
@@ -147,6 +213,7 @@ export default function DistressThermometerScreen() {
   useEffect(() => {
     setDistressId(null);
     getData();
+    fetchAvailableDates();
   }, [enteredPatientId]);
 
   const handleSave = async () => {
@@ -174,12 +241,13 @@ export default function DistressThermometerScreen() {
       );
 
       const today = new Date().toISOString().split("T")[0];
+      const dateToUse = selectedDate ? convertDateForAPI(selectedDate) : today;
 
       const reqObj = {
         ParticipantId: patientId,
         StudyId: studyId,
         CreatedBy: "UH-1000",
-        CreatedDate: today,
+        CreatedDate: dateToUse,
         DistressData: distressData,
         otherProblems: otherProblems,
       };
@@ -216,8 +284,8 @@ export default function DistressThermometerScreen() {
         PDWSID: PDWSID || '',
         ParticipantId: patientId,
         ScaleValue: `${v}`,
-        ModifiedBy: userId
-
+        ModifiedBy: userId,
+        CreatedDate: dateToUse,
       }
 
       const res2 = await apiService.post(
@@ -264,12 +332,14 @@ export default function DistressThermometerScreen() {
     setNotes("");
     setSelectedProblems({});
     setOtherProblems("");
-    setSelectedWeek('week1');
-    setShowWeekDropdown(false);
+    setSelectedDate("");
+    setShowDateDropdown(false);
+    setIsDefaultForm(true);
   };
 
   const handleRefresh = () => {
-    getData();
+    getData(selectedDate || null);
+    fetchAvailableDates();
   };
 
   return (
@@ -290,11 +360,11 @@ export default function DistressThermometerScreen() {
               Age: {age || "Not specified"}
             </Text>
 
-            {/* Week Dropdown */}
+            {/* Date Dropdown */}
             <View className="w-32">
               <Pressable
                 className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowWeekDropdown(!showWeekDropdown)}
+                onPress={() => setShowDateDropdown(!showDateDropdown)}
                 style={{
                   backgroundColor: '#f8f9fa',
                   borderColor: '#e5e7eb',
@@ -302,10 +372,7 @@ export default function DistressThermometerScreen() {
                 }}
               >
                 <Text className="text-sm text-gray-700">
-                  {selectedWeek === "week1" ? "Week 1" :
-                    selectedWeek === "week2" ? "Week 2" :
-                      selectedWeek === "week3" ? "Week 3" :
-                        selectedWeek === "week4" ? "Week 4" : "Week 1"}
+                  {selectedDate || (isDefaultForm ? "Select Date" : "Select Date")}
                 </Text>
                 <Text className="text-gray-500 text-xs">▼</Text>
               </Pressable>
@@ -313,22 +380,52 @@ export default function DistressThermometerScreen() {
           </View>
         </View>
 
-        {/* Dropdown Menu */}
-        {showWeekDropdown && (
-          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
-            {["week1", "week2", "week3", "week4"].map((week, index) => (
-              <Pressable
-                key={week}
-                className={`px-3 py-2 ${index < 3 ? 'border-b border-gray-100' : ''}`}
-                onPress={() => {
-                  setSelectedWeek(week);
-                  setShowWeekDropdown(false);
-                }}
-              >
-                <Text className="text-sm text-gray-700">Week {index + 1}</Text>
-              </Pressable>
-            ))}
-          </View>
+        {/* Date Dropdown Menu */}
+        {showDateDropdown && (
+          <>
+            {/* Backdrop to close dropdown */}
+            <Pressable
+              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+              onPress={() => setShowDateDropdown(false)}
+            />
+            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+            <Pressable
+              className="px-3 py-2 border-b border-gray-100"
+              onPress={() => {
+                setSelectedDate("");
+                setShowDateDropdown(false);
+                setIsDefaultForm(true);
+                setCategories([]);
+                setSelectedProblems({});
+                setV(0);
+                getData();
+              }}
+            >
+              <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
+            </Pressable>
+            
+            {availableDates.length > 0 ? (
+              availableDates.map((date, index) => (
+                <Pressable
+                  key={date}
+                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  onPress={() => {
+                    setSelectedDate(date);
+                    setShowDateDropdown(false);
+                    setIsDefaultForm(false);
+                    getData(date);
+                  }}
+                >
+                  <Text className="text-sm text-gray-700">{date}</Text>
+                </Pressable>
+              ))
+            ) : (
+              <View className="px-3 py-2">
+                <Text className="text-sm text-gray-500">No saved dates</Text>
+              </View>
+            )}
+            </View>
+          </>
         )}
       </View>
 

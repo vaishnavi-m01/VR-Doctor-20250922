@@ -2,8 +2,8 @@ import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
-  Modal,
   Pressable,
+  Modal,
   TouchableOpacity,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -100,17 +100,17 @@ export default function OrientationTab({
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
 
-      {/* Modal */}
+      {/* Non-blocking Modal Overlay */}
       <Modal
         visible={modalVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 bg-black bg-opacity-50 justify-center items-center p-5">
-          <View className="w-full max-w-[23rem] bg-white rounded-2xl shadow-lg overflow-hidden">
+        <View className="flex-1 justify-center items-center p-5">
+          <View className="w-full max-w-[23rem] bg-green-50 rounded-2xl shadow-lg overflow-hidden border-2 border-green-200">
             {/* Header */}
-            <View className="pt-6 px-6 pb-4 border-b border-gray-200 flex-row justify-between items-center">
+            <View className="pt-6 px-6 pb-4 border-b border-green-300 flex-row justify-between items-center">
               <Text className="text-lg font-bold text-gray-900">
                 Orientation Completed?
               </Text>
@@ -177,7 +177,7 @@ export default function OrientationTab({
             </View>
 
             {/* Footer */}
-            <View className="flex-row justify-end px-6 py-4 border-t border-gray-200">
+            <View className="flex-row justify-end px-6 py-4 border-t border-green-300">
               <Pressable
                 onPress={() => selectedStatus && !isLoading && selectCompletionStatus(selectedStatus)}
                 disabled={!selectedStatus || isLoading}

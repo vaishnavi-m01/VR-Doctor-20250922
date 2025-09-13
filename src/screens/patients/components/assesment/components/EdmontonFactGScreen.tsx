@@ -122,11 +122,16 @@ export default function EdmontonFactGScreen() {
   };
 
   const formatDate = (dateString: string): string => {
-    const [year, month, day] = dateString.split("-");
+    // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
 
   const convertDateForAPI = (dateString: string): string => {
+    // Convert DD-MM-YYYY to YYYY-MM-DD for API
     const [day, month, year] = dateString.split("-");
     return `${year}-${month}-${day}`;
   };
@@ -146,7 +151,9 @@ export default function EdmontonFactGScreen() {
 
       const weeklyData = response.data?.ResponseData ?? [];
       const uniqueDatesSet = new Set(weeklyData.map((item) => item.CreatedDate));
-      const formattedDates = Array.from(uniqueDatesSet).map(formatDate);
+      const formattedDates = Array.from(uniqueDatesSet)
+        .filter(date => date) // Filter out null/undefined dates
+        .map(formatDate);
 
       const sortedDates = formattedDates.sort((a, b) => {
         const dateA = new Date(convertDateForAPI(a));
@@ -466,90 +473,73 @@ export default function EdmontonFactGScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>Age: {age || "Not specified"}</Text>
 
-            <View style={{ width: 128, position: "relative" }}>
+            {/* Date Dropdown */}
+            <View className="w-32">
               <Pressable
-                style={{
-                  backgroundColor: "#eff6ff",
-                  borderColor: "#bfdbfe",
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
+                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
                 onPress={() => setShowDateDropdown(!showDateDropdown)}
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  borderColor: '#e5e7eb',
+                  borderRadius: 8,
+                }}
               >
-                <Text style={{ color: "#3b82f6", fontWeight: "600", fontSize: 14 }}>
+                <Text className="text-sm text-gray-700">
                   {selectedDate || (isDefaultForm ? "Select Date" : "Select Date")}
                 </Text>
-                <Text style={{ color: "#2563eb", fontSize: 12 }}>▼</Text>
+                <Text className="text-gray-500 text-xs">▼</Text>
               </Pressable>
-
-              {showDateDropdown && (
-                <View
-                  style={{
-                    backgroundColor: "white",
-                    borderColor: "#e5e7eb",
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.15,
-                    shadowRadius: 10,
-                    shadowOffset: { width: 0, height: 4 },
-                    zIndex: 9999,
-                    marginTop: 4,
-                    width: "100%",
-                    maxHeight: 200,
-                  }}
-                >
-                  <Pressable
-                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderBottomColor: "#e5e7eb", borderBottomWidth: 1 }}
-                    onPress={() => {
-                      setSelectedDate("");
-                      setShowDateDropdown(false);
-                      setIsDefaultForm(true);
-                      setSubscales([]);
-                      setAnswers({});
-                      fetchFactG(null);
-                    }}
-                  >
-                    <Text style={{ color: "#374151", fontWeight: "600", fontSize: 14 }}>New Form</Text>
-                  </Pressable>
-
-                  <ScrollView>
-                    {availableDates.length > 0 ? (
-                      availableDates.map((date, index) => (
-                        <Pressable
-                          key={date}
-                          style={{
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            borderBottomColor: index < availableDates.length - 1 ? "#e5e7eb" : undefined,
-                            borderBottomWidth: index < availableDates.length - 1 ? 1 : 0,
-                          }}
-                          onPress={() => {
-                            setSelectedDate(date);
-                            setShowDateDropdown(false);
-                            setIsDefaultForm(false);
-                          }}
-                        >
-                          <Text style={{ color: "#374151", fontSize: 14 }}>{date}</Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-                        <Text style={{ color: "#9ca3af", fontSize: 14 }}>No saved dates</Text>
-                      </View>
-                    )}
-                  </ScrollView>
-                </View>
-              )}
             </View>
+
           </View>
         </View>
       </View>
+
+        {/* Date Dropdown Menu */}
+        {showDateDropdown && (
+          <>
+            {/* Backdrop to close dropdown */}
+            <Pressable
+              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+              onPress={() => setShowDateDropdown(false)}
+            />
+            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+              <Pressable
+                className="px-3 py-2 border-b border-gray-100"
+                onPress={() => {
+                  setSelectedDate("");
+                  setShowDateDropdown(false);
+                  setIsDefaultForm(true);
+                  setSubscales([]);
+                  setAnswers({});
+                  fetchFactG(null);
+                }}
+              >
+                <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
+              </Pressable>
+              
+              {availableDates.length > 0 ? (
+                availableDates.map((date, index) => (
+                  <Pressable
+                    key={date}
+                    className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      setShowDateDropdown(false);
+                      setIsDefaultForm(false);
+                    }}
+                  >
+                    <Text className="text-sm text-gray-700">{date}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <View className="px-3 py-2">
+                  <Text className="text-sm text-gray-500">No saved dates</Text>
+                </View>
+              )}
+            </View>
+          </>
+        )}
 
       <ScrollView style={{ flex: 1, padding: 16, paddingBottom: 400 }}>
         <FormCard

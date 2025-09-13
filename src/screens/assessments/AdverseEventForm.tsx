@@ -104,7 +104,27 @@ export default function AdverseEventForm() {
     const [AEId, setAEId] = useState<string | null>(null);
     console.log("AEID", AEId)
 
+    // Sessions dropdown state
+    const [selectedSession, setSelectedSession] = useState<string>('Select Session');
+    const [showSessionDropdown, setShowSessionDropdown] = useState(false);
+    const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
+    // Fetch available sessions
+    const fetchAvailableSessions = async () => {
+        try {
+            // Mock sessions data - replace with actual API call
+            const mockSessions = [
+                'Session 1',
+                'Session 2', 
+                'Session 3',
+                'Session 4',
+                'Session 5'
+            ];
+            setAvailableSessions(mockSessions);
+        } catch (error) {
+            console.error('Error fetching sessions:', error);
+        }
+    };
 
     const ready = (() => {
         const base = (effect && clarity && confidence) ? Math.round(((effect || 0) + (clarity || 0) + (confidence || 0)) / 3) : '—';
@@ -126,6 +146,9 @@ export default function AdverseEventForm() {
     };
 
     useEffect(() => {
+        // Fetch sessions first
+        fetchAvailableSessions();
+        
         apiService
             .post<{ ResponseData: AeSeverity[] }>("/GetAeSeverityMaster")
             .then((res) => {
@@ -343,10 +366,57 @@ export default function AdverseEventForm() {
                         Study ID: {studyId || 'N/A'}
                     </Text>
 
-                    <Text className="text-base font-semibold text-gray-700">
-                        Age: {age}
-                    </Text>
+                    <View className="flex-row items-center gap-3">
+                        <Text className="text-base font-semibold text-gray-700">
+                            Age: {age}
+                        </Text>
+                        
+                        {/* Sessions Dropdown */}
+                        <View className="w-32">
+                            <Pressable
+                                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
+                                style={{
+                                    backgroundColor: '#f8f9fa',
+                                    borderColor: '#e5e7eb',
+                                    borderRadius: 8,
+                                }}
+                            >
+                                <Text className="text-sm text-gray-700">
+                                    {selectedSession}
+                                </Text>
+                                <Text className="text-gray-500 text-xs">▼</Text>
+                            </Pressable>
+                        </View>
+                    </View>
                 </View>
+
+                {/* Sessions Dropdown Menu */}
+                {showSessionDropdown && (
+                    <>
+                        {/* Backdrop to close dropdown */}
+                        <Pressable
+                            className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+                            onPress={() => setShowSessionDropdown(false)}
+                        />
+                        <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+                            {availableSessions.map((session, index) => (
+                                <Pressable
+                                    key={index}
+                                    className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''} ${selectedSession === session ? 'bg-green-50' : ''}`}
+                                    onPress={() => {
+                                        setSelectedSession(session);
+                                        setShowSessionDropdown(false);
+                                    }}
+                                >
+                                    <Text className={`text-sm ${selectedSession === session ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>
+                                        {session}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </>
+                )}
             </View>
 
             <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">

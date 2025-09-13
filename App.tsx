@@ -48,6 +48,8 @@ import VRPrePostList from '@screens/vr-sessions/vr-prepost_list';
 import AdverseEventReportsHistory from '@screens/assessments/AdverseEventReportsHistory';
 import StudyGroupAssignment from './src/screens/patients/StudyGroupAssignment';
 import InformedConsent from '@screens/assessments/InformedConsent';
+import VRSessionsList from './src/screens/vr-sessions/VRSessionsList';
+import SessionDetailsScreen from './src/screens/vr-sessions/SessionDetailsScreen';
 import { UserProvider } from 'src/store/context/UserContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -173,6 +175,18 @@ export default function App() {
 
                   {/* VR/Session Flow */}
                   <Stack.Screen
+                    name="VRSessionsList"
+                    component={VRSessionsList}
+                    options={{ headerShown: true, title: "VR Sessions" }}
+                  />
+                  
+                  <Stack.Screen
+                    name="SessionDetailsScreen"
+                    component={SessionDetailsScreen}
+                    options={{ headerShown: true, title: "Session Details" }}
+                  />
+                  
+                  <Stack.Screen
                     name="SessionSetupScreen"
                     component={SessionSetupScreen}
                     options={{
@@ -265,14 +279,6 @@ export default function App() {
                     options={{
                       headerShown: true,
                       title: "Informed Consent Form",
-                      headerRight: ({ tintColor }) => (
-                        <View className="rounded-full bg-green-100 border border-green-300 items-center justify-center mr-6 px-4 py-2">
-                          <Text className="text-green-800 font-medium">VR-QoL Trial</Text>
-                        </View>
-
-
-
-                      ),
                     }}
                   />
                   <Stack.Screen

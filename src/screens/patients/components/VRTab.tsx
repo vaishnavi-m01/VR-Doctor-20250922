@@ -54,7 +54,7 @@ const VRTab: React.FC<VRProps> = ({ patientId,age,studyId }) => {
                 icon="🎮"
                 title="VR Session Setup"
                 subtitle="Configure and initialize VR therapy session parameters"
-                onPress={() => navigation.navigate("SessionSetupScreen",{patientId,age,studyId} )}
+                onPress={() => navigation.navigate("VRSessionsList",{patientId,age,studyId} )}
                 className="bg-[#F6F7F7] border-[#F6F7F7]"
             />
  

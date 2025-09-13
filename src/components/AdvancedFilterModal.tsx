@@ -74,12 +74,18 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View className="flex-1 bg-black bg-opacity-50 justify-center items-center p-5">
-        <View className="w-full max-w-[23rem] max-h-[80%] bg-white rounded-2xl shadow-lg overflow-hidden">
+      <View className="flex-1 justify-center items-center p-5">
+        <View className="w-full max-w-[23rem] max-h-[80%] bg-green-50 rounded-2xl shadow-lg overflow-hidden border-2 border-green-200">
 
           {/* Header */}
-          <View className="pt-6 px-6 pb-4 border-b border-gray-200 flex-row justify-between items-center">
+          <View className="pt-6 px-6 pb-4 border-b border-green-300 flex-row justify-between items-center">
             <Text className="text-lg font-bold text-gray-900 mb-1">Filters</Text>
+            {/* ❌ Close button */}
+            <TouchableOpacity
+              onPress={onClose}
+            >
+              <MaterialIcons name="close" size={26} color="#e03a1d" />
+            </TouchableOpacity>
           </View>
 
           <ScrollView
@@ -201,20 +207,13 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
           </ScrollView>
 
           {/* Footer */}
-          <View className="flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-2">
+          <View className="flex-row justify-end px-6 py-4 border-t border-green-300">
             <Pressable
               onPress={onClose}
               accessibilityLabel="Apply filters and close modal"
             >
               <Text className="text-green-600 font-bold text-base">Done</Text>
             </Pressable>
-            <TouchableOpacity
-              onPress={handleCloseWithClear}
-              accessibilityLabel="Clear filters and close modal"
-              className="p-1"
-            >
-              <MaterialIcons name="close" size={28} color="#e03a1d" />
-            </TouchableOpacity>
           </View>
 
         </View>
