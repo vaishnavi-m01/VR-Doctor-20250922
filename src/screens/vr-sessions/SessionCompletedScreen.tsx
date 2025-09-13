@@ -1,19 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, Pressable } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
 import { Ionicons } from '@expo/vector-icons';
+import Toast from "react-native-toast-message";
+import { apiService } from 'src/services';
+import { UserContext } from 'src/store/context/UserContext';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import { RootStackParamList } from 'src/Navigation/types';
 
-// 1. Define a specific type for the icon names used
-type FeelIconName = 'happy-outline' | 'thumbs-up-outline' | 'thumbs-down-outline' | 'close-circle-outline';
+type FeelIconName =
+  | 'happy-outline'
+  | 'thumbs-up-outline'
+  | 'thumbs-down-outline'
+  | 'close-circle-outline';
 
-// 2. Define an interface for the structure of each feel option
 interface FeelOption {
   label: string;
   icon: FeelIconName;
 }
 
-// 3. Update the FEELS array with the new type and correct icon names
+interface SessionFeedback {
+  FeedbackId: string;
+  ParticipantId: string;   
+  SessionNo: string;
+  FeedbackLevel: string;
+  FeedbackDescription: string;
+  SortOrder: number;
+  Status: number;
+  CreatedBy?: string;
+  CreatedDate?: string;
+  ModifiedBy?: string | null;
+  ModifiedDate?: string | null;
+}
+
+interface FeedbackApiResponse {
+  ResponseData: SessionFeedback[];
+}
+
+// FEELS list for UI
 const FEELS: FeelOption[] = [
   { label: 'Drastic Improvement', icon: 'happy-outline' },
   { label: 'Significant Improvement', icon: 'thumbs-up-outline' },
@@ -21,24 +46,131 @@ const FEELS: FeelOption[] = [
   { label: 'No Improvement', icon: 'close-circle-outline' },
 ];
 
+// Map API values → UI labels
+const feedbackMap: Record<string, string> = {
+  DrasticImprovement: 'Drastic Improvement',
+  SignificantImprovement: 'Significant Improvement',
+  SomeImprovement: 'Some Improvement',
+  NoImprovement: 'No Improvement',
+};
+
+// Map UI labels → API values
+const reverseFeedbackMap: Record<string, string> = {
+  'Drastic Improvement': 'DrasticImprovement',
+  'Significant Improvement': 'SignificantImprovement',
+  'Some Improvement': 'SomeImprovement',
+  'No Improvement': 'NoImprovement',
+};
+
 export default function SessionCompletedScreen() {
   const [feel, setFeel] = useState<string>('Significant Improvement');
   const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [FeedbackId, setFeedbackId] = useState<string>('');
+  const route = useRoute<RouteProp<RootStackParamList, 'SessionCompletedScreen'>>();
+  const { patientId, SessionNo } = route.params;
 
-  const handleSubmit = () => {
-    // Implement feedback submission logic here
-    console.log('Feedback submitted:', { feel, note }); 
+  const { userId } = useContext(UserContext);
+
+useEffect(() => {
+  const fetchFeedback = async () => {
+    try {
+      setLoading(true);
+
+      const response = await apiService.get<FeedbackApiResponse>(
+        `/GetParticipantSessionFeedback?ParticipantId=${patientId}&SessionNo=${SessionNo}`
+      );
+
+      if (response.data.ResponseData?.length > 0) {
+        const feedback = response.data.ResponseData[0];
+
+        // 🔹 Save FeedbackId so we know whether to insert or update
+        setFeedbackId(feedback.FeedbackId || '');
+
+        setFeel(feedbackMap[feedback.FeedbackLevel] || 'Significant Improvement');
+        setNote(feedback.FeedbackDescription || '');
+      } else {
+        // no feedback exists → reset state
+        setFeedbackId('');
+        setFeel('Significant Improvement');
+        setNote('');
+      }
+    } catch (err: any) {
+      console.error('Error fetching feedback:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (patientId && SessionNo) {
+    fetchFeedback();
+  }
+}, [patientId, SessionNo]);
+
+const handleSubmit = async () => {
+  try {
+    setLoading(true);
+
+    const payload = {
+      FeedbackId: FeedbackId || '', // 🔹 Insert if '', update if id exists
+      ParticipantId: patientId,
+      SessionNo,
+      FeedbackLevel: reverseFeedbackMap[feel], // convert label → backend enum
+      FeedbackDescription: note || '',
+      SortOrder: 1,
+      Status: 1,
+      CreatedBy: userId,
+    };
+
+    console.log('Submitting payload:', payload);
+
+    const response = await apiService.post("/AddUpdateParticipantSessionFeedback", payload);
+
+    if (response.status === 200 || response.status === 201) {
+      Toast.show({
+        type: 'success',
+        text1: FeedbackId ? 'Updated' : 'Success',
+        text2: FeedbackId
+          ? 'Feedback updated successfully!'
+          : 'Feedback submitted successfully!',
+        position: 'top',
+        topOffset: 50,
+        visibilityTime: 2000,
+      });
+
+     
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.',
+        position: 'top',
+        topOffset: 50,
+      });
+    }
+  } catch (error: any) {
+    console.error('Feedback submit error:', error.message);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: 'Failed to submit feedback.',
+      position: 'top',
+      topOffset: 50,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View className="flex-1 bg-white">
       <View className="px-4 pt-4"><Header title="Session Completed" /></View>
-      <ScrollView 
-        className="flex-1 p-4 gap-4" 
+      <ScrollView
+        className="flex-1 p-4 gap-4"
         contentContainerStyle={{ paddingBottom: 150 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Session Completed Confirmation Card */}
+        {/* Confirmation Card */}
         <Card className="p-6 items-center">
           <View className="w-16 h-16 rounded-full bg-[#e6f4ed] border-4 border-[#0ea06c] items-center justify-center mb-3">
             <Ionicons name="checkmark" size={32} color="#0ea06c" />
@@ -47,11 +179,12 @@ export default function SessionCompletedScreen() {
           <Text className="text-[#7f938e] text-base mb-1 text-center">Your Virtual Reality Therapy session has ended</Text>
         </Card>
 
-        {/* Feedback Section Card */}
+        {/* Feedback Section */}
         <Card className="p-5">
           <Text className="font-bold text-lg text-[#2f5047] mb-3 text-center">How do you feel?</Text>
+
           <View className="flex flex-row flex-wrap justify-between gap-3 mb-4">
-            {FEELS.map((f, index) => (
+            {FEELS.map((f) => (
               <Pressable
                 key={f.label}
                 onPress={() => setFeel(f.label)}
@@ -65,7 +198,11 @@ export default function SessionCompletedScreen() {
                   size={24}
                   color={feel === f.label ? '#0ea06c' : '#7f938e'}
                 />
-                <Text className={`text-xs font-semibold text-center leading-tight px-1 ${feel === f.label ? 'text-[#0ea06c]' : 'text-[#4c6b63]'}`}>
+                <Text
+                  className={`text-xs font-semibold text-center leading-tight px-1 ${
+                    feel === f.label ? 'text-[#0ea06c]' : 'text-[#4c6b63]'
+                  }`}
+                >
                   {f.label}
                 </Text>
               </Pressable>
@@ -85,15 +222,21 @@ export default function SessionCompletedScreen() {
               borderRadius: 16,
             }}
           />
-          <Pressable 
+
+          <Pressable
             onPress={handleSubmit}
-            className="rounded-xl bg-[#0ea06c] py-4 items-center shadow-sm"
+            disabled={loading}
+            className={`rounded-xl py-4 items-center shadow-sm ${loading ? "bg-gray-400" : "bg-[#0ea06c]"}`}
           >
-            <Text className="text-white font-extrabold text-lg">Submit Feedback</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white font-extrabold text-lg">Submit Feedback</Text>
+            )}
           </Pressable>
         </Card>
         <View className="h-16" />
       </ScrollView>
     </View>
   );
-} 
+}

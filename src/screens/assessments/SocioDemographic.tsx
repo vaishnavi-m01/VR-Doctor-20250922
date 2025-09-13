@@ -40,6 +40,7 @@ interface getLifeStyleData {
 }
 interface ParticipantDetails {
   Age?: number;
+  PhoneNumber?: number;
   Gender?: string;
   MaritalStatus?: string;
   NumberOfChildren?: number;
@@ -103,6 +104,8 @@ type DropdownOption = {
 export default function SocioDemographic() {
   // Personal Information fields
   const [ages, setAge] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
   const [gender, setGender] = useState("");
   const [genderOther, setGenderOther] = useState("");
   const [maritalStatus, setMaritalStatus] = useState("");
@@ -152,6 +155,7 @@ export default function SocioDemographic() {
   const [consentDate, setConsentDate] = useState<string>(today);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
 
 
   const route = useRoute<RouteProp<RootStackParamList, 'SocioDemographic'>>();
@@ -283,6 +287,7 @@ export default function SocioDemographic() {
           if (data) {
             // Personal
             setAge(String(data.Age ?? ""));
+            setPhoneNumber(data.PhoneNumber ? String(data.PhoneNumber) : "");
             setGender(data.Gender ?? "");
             setMaritalStatus(data.MaritalStatus ?? "");
             setNumberOfChildren(String(data.NumberOfChildren ?? ""));
@@ -364,6 +369,11 @@ export default function SocioDemographic() {
     if (!maritalStatus) newErrors.maritalStatus = "Marital status is required";
     if (!cancerDiagnosis) newErrors.cancerDiagnosis = "Cancer diagnosis is required";
     if (!cancerStage) newErrors.cancerStage = "Cancer stage is required";
+    if (!phoneNumber) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!/^[0-9]{10}$/.test(phoneNumber)) {
+      newErrors.phoneNumber = "Enter a valid 10-digit phone number";
+    }
 
     setErrors(newErrors);
 
@@ -384,6 +394,7 @@ export default function SocioDemographic() {
         ParticipantId: patientId,
         StudyId: "CS-0001",
         Age: Number(ages),
+        PhoneNumber: phoneNumber,
         Gender: gender,
         MaritalStatus: maritalStatus,
         NumberOfChildren: numberOfChildren,
@@ -425,7 +436,7 @@ export default function SocioDemographic() {
 
       if (response.status === 200) {
 
-        
+
         Toast.show({
           type: "success",
           text1: isEditMode ? "Updated" : "Success",
@@ -505,6 +516,26 @@ export default function SocioDemographic() {
               <Text className="text-red-500 text-sm mt-2">{errors.ages}</Text>
             )}
           </View>
+
+
+          <View className="mt-6">
+            <Field
+              label="Phone Number"
+              placeholder="__ phone number"
+              value={phoneNumber}
+              keyboardType="phone-pad"
+              maxLength={10}
+              onChangeText={(val) => {
+                const numericVal = val.replace(/[^0-9]/g, ""); 
+                setPhoneNumber(numericVal);
+                setErrors((prev) => ({ ...prev, phoneNumber: "" }));
+              }}
+            />
+            {errors.phoneNumber && (
+              <Text className="text-red-500 text-sm mt-2">{errors.phoneNumber}</Text>
+            )}
+          </View>
+
 
 
           <View className="mt-6">

@@ -168,7 +168,6 @@ export default function InformedConsentForm({
             return;
         }
 
-
         try {
             const requestBody = {
                 PICDID: PICDID || '',
@@ -225,7 +224,7 @@ export default function InformedConsentForm({
                 });
             }
         } catch (error) {
-            console.error("❌ Error saving consent form:", error);
+            console.error(" Error saving consent form:", error);
             Toast.show({
                 type: "error",
                 text1: "Error",

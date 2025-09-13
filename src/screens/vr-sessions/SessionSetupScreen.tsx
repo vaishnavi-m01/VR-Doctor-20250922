@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import Header from '../../components/Header';
 import Card from '../../components/Card';
-import RadioTile from '../../components/RadioTile';
-import PillChip from '../../components/PillChip';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../Navigation/types';
@@ -16,7 +13,7 @@ export default function SessionSetupScreen() {
   const [sess, setSess] = useState('Relaxation');
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'SessionSetupScreen'>>();
-  const { patientId, age, studyId } = route.params as { patientId: number, age: number,studyId:number };
+  const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
 
   const ready = !!cat && !!instr && !!lang && !!sess;
 
@@ -161,12 +158,22 @@ export default function SessionSetupScreen() {
 
             <Pressable
               disabled={!ready}
-              onPress={() => nav.navigate('SessionControlScreen')}
+              onPress={() =>
+                nav.navigate('SessionControlScreen', {
+                  patientId,
+                  studyId,
+                  therapy: cat,
+                  backgroundMusic: instr,
+                  language: lang,
+                  session: sess,
+                })
+              }
               className={`px-6 py-3 rounded-xl ${ready ? 'bg-green-600' : 'bg-gray-300'
                 }`}
             >
               <Text className="text-white font-bold">Start</Text>
             </Pressable>
+
           </View>
         </Card>
       </ScrollView>

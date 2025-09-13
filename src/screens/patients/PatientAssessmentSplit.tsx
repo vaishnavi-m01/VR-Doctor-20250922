@@ -108,9 +108,16 @@ export default function ParticipantAssessmentSplit() {
     await fetchParticipants('');
   };
 
-  // Removed useFocusEffect to prevent reloading participants on every screen focus
-  // Participants are only loaded once on mount and when search/filters change
 
+     useFocusEffect(
+      useCallback(() => {
+        const refreshParticipants = async () => {
+          console.log(" Screen focused: fetching participants...");
+          await fetchParticipants(appliedSearchText);
+        };
+        refreshParticipants();
+      }, [appliedSearchText]) // re-fetch if applied search text changes
+    );
 
   useEffect(() => {
     const loadData = async () => {

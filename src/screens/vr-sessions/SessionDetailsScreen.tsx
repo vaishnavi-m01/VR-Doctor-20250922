@@ -29,11 +29,12 @@ export default function SessionDetailsScreen() {
   
   // Add safety checks for route params
   const params = route.params || {};
-  const { patientId, age, studyId, sessionDetails } = params as { 
+  const { patientId, age, studyId, sessionDetails,SessionNo } = params as { 
     patientId: number, 
     age: number, 
     studyId: number,
-    sessionDetails: SessionDetails 
+    sessionDetails: SessionDetails,
+    SessionNo:string;
   };
 
   // Early return if required data is missing
@@ -60,7 +61,7 @@ export default function SessionDetailsScreen() {
   const ready = !!cat && !!instr && !!lang && !!sess;
 
   const handleStartSession = () => {
-    navigation.navigate('SessionControlScreen', { patientId, age, studyId });
+    navigation.navigate('SessionControlScreen', { patientId, age, studyId,SessionNo });
   };
 
   const handleBackToSessions = () => {

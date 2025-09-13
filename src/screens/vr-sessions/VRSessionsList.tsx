@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { RouteProp } from '@react-navigation/native';
 import { Btn } from '../../components/Button';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { apiService } from 'src/services';
+import { UserContext } from 'src/store/context/UserContext';
 
 interface VRSession {
   SessionNo: string;
@@ -32,6 +33,8 @@ export default function VRSessionsList() {
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [sessionDescription, setSessionDescription] = useState('');
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const { userId } = useContext(UserContext);
+  
 
   // Format date from API response to DD-MM-YYYY
   const formatDate = (dateString: string) => {
@@ -53,7 +56,7 @@ export default function VRSessionsList() {
       setError(null);
       
       const requestPayload = {
-        ParticipantId: "PID-1",
+        ParticipantId: patientId,
         StudyId: "CS-0001"
       };
       
@@ -80,9 +83,11 @@ export default function VRSessionsList() {
   };
 
   // Load sessions on component mount
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     fetchVRSessions();
-  }, [patientId, studyId]);
+  }, [patientId, studyId])
+);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -130,12 +135,12 @@ export default function VRSessionsList() {
       
       const requestPayload = {
         SessionNo: "",
-        ParticipantId: "PID-1",
+        ParticipantId: patientId,
         StudyId: "CS-0001",
         Description: sessionDescription.trim(),
-        SessionStatus: "Complete",
+        SessionStatus: "In progress",
         Status: 1,
-        ModifiedBy: "UH-1000"
+        ModifiedBy: userId
       };
 
       console.log('🔍 Creating new session with payload:', requestPayload);
@@ -170,7 +175,7 @@ export default function VRSessionsList() {
       
       const response = await apiService.post<{ ResponseData: any[] }>('/GetParticipantVRSessionsMainData', {
         SessionNo: session.SessionNo,
-        ParticipantId: "PID-1",
+        ParticipantId: patientId,
         StudyId: "CS-0001"
       });
 
@@ -185,7 +190,8 @@ export default function VRSessionsList() {
           patientId, 
           age, 
           studyId,
-          sessionDetails 
+          sessionDetails, 
+          SessionNo: session.SessionNo, 
         });
       } else {
         console.log('⚠️ No session details found');

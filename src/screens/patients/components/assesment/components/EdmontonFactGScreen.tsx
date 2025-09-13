@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect,useContext } from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import FormCard from "../../../../../components/FormCard";
 import BottomBar from "../../../../../components/BottomBar";
@@ -49,6 +49,10 @@ interface ScoreResults {
   EWB: number;
   FWB: number;
   TOTAL: number;
+}
+
+interface FactGResponse {
+  FinalScore?: number;
 }
 
 const calculateSubscaleScore = (
@@ -175,14 +179,14 @@ export default function EdmontonFactGScreen() {
 
       setAvailableDates(sortedDates);
 
-     const todayFormatted = formatTodayDate();
-    if (sortedDates.includes(todayFormatted)) {
-      setSelectedDate(todayFormatted);
-      setIsDefaultForm(false);
-    } else {
-      setSelectedDate("");
-      setIsDefaultForm(true);
-    }
+      const todayFormatted = formatTodayDate();
+      if (sortedDates.includes(todayFormatted)) {
+        setSelectedDate(todayFormatted);
+        setIsDefaultForm(false);
+      } else {
+        setSelectedDate("");
+        setIsDefaultForm(true);
+      }
 
 
     } catch (error) {
@@ -247,31 +251,31 @@ export default function EdmontonFactGScreen() {
       }
 
       // Improved grouping avoiding duplicate question codes
-  const grouped: Record<string, Subscale> = {};
+      const grouped: Record<string, Subscale> = {};
 
-  questions.forEach((q) => {
-    const catName = q.FactGCategoryName;
-    if (!grouped[catName]) {
-      grouped[catName] = {
-        key: catName,
-        label: catName,
-        shortCode: categoryCodeMapping[catName] || catName.charAt(0),
-        items: [],
-      };
-    }
+      questions.forEach((q) => {
+        const catName = q.FactGCategoryName;
+        if (!grouped[catName]) {
+          grouped[catName] = {
+            key: catName,
+            label: catName,
+            shortCode: categoryCodeMapping[catName] || catName.charAt(0),
+            items: [],
+          };
+        }
 
-    // Check if question code already added for this category
-    const alreadyExists = grouped[catName].items.some((item) => item.code === q.FactGQuestionId);
-    if (!alreadyExists) {
-      grouped[catName].items.push({
-        code: q.FactGQuestionId,
-        text: q.FactGQuestion,
-        FactGCategoryId: q.FactGCategoryId,
-        TypeOfQuestion: q.TypeOfQuestion,
-        value: q.ScaleValue || undefined,
+        // Check if question code already added for this category
+        const alreadyExists = grouped[catName].items.some((item) => item.code === q.FactGQuestionId);
+        if (!alreadyExists) {
+          grouped[catName].items.push({
+            code: q.FactGQuestionId,
+            text: q.FactGQuestion,
+            FactGCategoryId: q.FactGCategoryId,
+            TypeOfQuestion: q.TypeOfQuestion,
+            value: q.ScaleValue || undefined,
+          });
+        }
       });
-    }
-  });
 
 
       const categoryOrder = [
@@ -291,23 +295,23 @@ export default function EdmontonFactGScreen() {
       setSubscales(orderedSubscales);
 
 
-  const existingAnswers: Record<string, number | null> = {};
-    questions.forEach((q) => {
-      if (q.FactGQuestionId) {
-        if (!dateToUse) {
-          existingAnswers[q.FactGQuestionId] = null;  // force empty for new form
-        } else {
-          if (q.ScaleValue !== null && q.ScaleValue !== undefined) {
-            const val = parseInt(q.ScaleValue, 10);
-            existingAnswers[q.FactGQuestionId] = isNaN(val) ? null : val;
+      const existingAnswers: Record<string, number | null> = {};
+      questions.forEach((q) => {
+        if (q.FactGQuestionId) {
+          if (!dateToUse) {
+            existingAnswers[q.FactGQuestionId] = null;  // force empty for new form
           } else {
-            existingAnswers[q.FactGQuestionId] = null;
+            if (q.ScaleValue !== null && q.ScaleValue !== undefined) {
+              const val = parseInt(q.ScaleValue, 10);
+              existingAnswers[q.FactGQuestionId] = isNaN(val) ? null : val;
+            } else {
+              existingAnswers[q.FactGQuestionId] = null;
+            }
           }
         }
-      }
-    });
+      });
 
-    setAnswers(existingAnswers);
+      setAnswers(existingAnswers);
     } catch (err: any) {
       console.error("Failed to fetch FACT-G questions:", err);
       setError("Failed to load FACT-G questions. Please try again.");
@@ -360,7 +364,6 @@ export default function EdmontonFactGScreen() {
           text1: "Warning",
           text2: `Please answer all questions (${answeredQuestions}/${totalQuestions} answered).`,
         });
-        setSaving(false);
         return;
       }
       if (answeredQuestions === 0) {
@@ -369,7 +372,6 @@ export default function EdmontonFactGScreen() {
           text1: "Error",
           text2: "No answers to save. Please answer at least one question.",
         });
-        setSaving(false);
         return;
       }
 
@@ -384,7 +386,7 @@ export default function EdmontonFactGScreen() {
         };
       });
 
-      let createdDate: string | null = null;
+      let createdDate: string | null;
       if (selectedDate) {
         createdDate =
           selectedDate.includes("-") && selectedDate.split("-")[0].length === 2
@@ -394,27 +396,40 @@ export default function EdmontonFactGScreen() {
         createdDate = formatTodayDateForAPI();
       }
 
-      const participantId = `${patientId}`;
-      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
-
       const payload = {
-        StudyId: studyIdFormatted,
-        ParticipantId: participantId,
+        StudyId: studyId ?? "CS-0001",
+        ParticipantId: String(patientId),
         SessionNo: "SessionNo-1",
         FactGData: factGData,
-        FinalScore: score.TOTAL,
-        CreatedBy: userId ?? 'UID-1',
+        CreatedBy: userId ?? "UID-1",
         CreatedDate: createdDate,
       };
 
+      //  Save data
       const response = await apiService.post("/AddParticipantFactGQuestionsWeekly", payload);
+
       if (response.status === 200 || response.status === 201) {
+
         Toast.show({
           type: "success",
           text1: "Success",
           text2: "Created successfully!",
-          onHide: () => navigation.goBack(),
+          onHide: () => {
+            navigation.goBack();
+            const navState = navigation.getState();
+
+            navigation.reset({
+              index: 0,
+              routes: navState.routes.map((r) =>
+                r.name === "PatientScreening"
+                  ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: patientId } }
+                  : r
+              ) as any,
+            });
+
+          },
         });
+
         await fetchAvailableDates();
       } else {
         throw new Error(`Server returned status ${response.status}`);
@@ -516,51 +531,51 @@ export default function EdmontonFactGScreen() {
         </View>
       </View>
 
-        {/* Date Dropdown Menu */}
-        {showDateDropdown && (
-          <>
-            {/* Backdrop to close dropdown */}
+      {/* Date Dropdown Menu */}
+      {showDateDropdown && (
+        <>
+          {/* Backdrop to close dropdown */}
+          <Pressable
+            className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+            onPress={() => setShowDateDropdown(false)}
+          />
+          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
             <Pressable
-              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
-              onPress={() => setShowDateDropdown(false)}
-            />
-            <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
-              <Pressable
-                className="px-3 py-2 border-b border-gray-100"
-                onPress={() => {
-                  setSelectedDate("");
-                  setShowDateDropdown(false);
-                  setIsDefaultForm(true);
-                  setSubscales([]);
-                  setAnswers({});
-                  fetchFactG(null);
-                }}
-              >
-                <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
-              </Pressable>
-              
-              {availableDates.length > 0 ? (
-                availableDates.map((date, index) => (
-                  <Pressable
-                    key={date}
-                    className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
-                    onPress={() => {
-                      setSelectedDate(date);
-                      setShowDateDropdown(false);
-                      setIsDefaultForm(false);
-                    }}
-                  >
-                    <Text className="text-sm text-gray-700">{date}</Text>
-                  </Pressable>
-                ))
-              ) : (
-                <View className="px-3 py-2">
-                  <Text className="text-sm text-gray-500">No saved dates</Text>
-                </View>
-              )}
-            </View>
-          </>
-        )}
+              className="px-3 py-2 border-b border-gray-100"
+              onPress={() => {
+                setSelectedDate("");
+                setShowDateDropdown(false);
+                setIsDefaultForm(true);
+                setSubscales([]);
+                setAnswers({});
+                fetchFactG(null);
+              }}
+            >
+              <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
+            </Pressable>
+
+            {availableDates.length > 0 ? (
+              availableDates.map((date, index) => (
+                <Pressable
+                  key={date}
+                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  onPress={() => {
+                    setSelectedDate(date);
+                    setShowDateDropdown(false);
+                    setIsDefaultForm(false);
+                  }}
+                >
+                  <Text className="text-sm text-gray-700">{date}</Text>
+                </Pressable>
+              ))
+            ) : (
+              <View className="px-3 py-2">
+                <Text className="text-sm text-gray-500">No saved dates</Text>
+              </View>
+            )}
+          </View>
+        </>
+      )}
 
       <ScrollView style={{ flex: 1, padding: 16, paddingBottom: 400 }}>
         <FormCard

@@ -14,7 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { formatForUI } from 'src/utils/date';
-import { UserContext } from "../../store/context/UserContext"; 
+import { UserContext } from "../../store/context/UserContext";
 
 
 interface ClinicalChecklist {
@@ -24,6 +24,8 @@ interface ClinicalChecklist {
   SortKey?: number;
   Status: number;
 }
+
+
 
 export default function PatientScreening() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -35,6 +37,7 @@ export default function PatientScreening() {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState<string>(today);
   const [factGScore, setFactGScore] = useState('');
+  console.log("finalscoreeeeparticpent", factGScore)
   const [pulseRate, setPulseRate] = useState('');
   const [bloodPressure, setBloodPressure] = useState('');
   const [temperature, setTemperature] = useState('');
@@ -51,7 +54,23 @@ export default function PatientScreening() {
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
   const { userId, setUserId } = useContext(UserContext);
-  console.log("userIdd",userId)
+  console.log("userIdd", userId)
+
+  const routes = useRoute();
+  const { CreatedDate: routeCreatedDate, PatientId: routePatientId } = (routes.params as any) ?? {};
+
+  const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? null);
+  const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? null);
+
+  console.log("SelectedCreatedDate:", selectedCreatedDate);
+  console.log("CurrentPatientId:", currentPatientId);
+
+
+  console.log("selectedCreatedDatee", selectedCreatedDate)
+
+
+
+
 
   useEffect(() => {
     apiService
@@ -61,6 +80,46 @@ export default function PatientScreening() {
       })
       .catch((err) => console.error(err));
   }, []);
+
+
+  useEffect(() => {
+    if (currentPatientId) {
+      fetchPatientFinalScore(currentPatientId, selectedCreatedDate);
+    }
+  }, [currentPatientId, selectedCreatedDate]);
+
+  useEffect(() => {
+    if (routeCreatedDate && routeCreatedDate !== selectedCreatedDate) {
+      setSelectedCreatedDate(routeCreatedDate);
+    }
+    if (routePatientId && routePatientId !== currentPatientId) {
+      setCurrentPatientId(routePatientId);
+    }
+  }, [routeCreatedDate, routePatientId]);
+
+
+
+
+
+  const fetchPatientFinalScore = async (pid: string, createdDate?: string | null) => {
+    try {
+      const response = await apiService.post<any>("/getParticipantFactGQuestionWeekly", {
+        ParticipantId: pid,
+        StudyId: studyId,
+        CreatedDate: createdDate ?? undefined,
+      });
+
+      const score = response.data?.FinalScore ?? null;
+      setFactGScore(score);
+    } catch (err) {
+      console.error("Failed to fetch finalScore:", err);
+      setFactGScore("");
+    }
+  };
+
+
+
+
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -274,6 +333,7 @@ export default function PatientScreening() {
                 keyboardType="number-pad"
                 placeholder="0–108"
                 value={factGScore}
+                editable={false}
                 onChangeText={setFactGScore}
               />
             </View>
