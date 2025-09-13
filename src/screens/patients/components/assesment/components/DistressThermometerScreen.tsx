@@ -460,7 +460,7 @@ export default function DistressThermometerScreen() {
             borderBottomColor: "#e5e7eb",
             borderBottomWidth: 1,
             borderRadius: 12,
-            padding: 32,
+            padding: 17,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
@@ -530,7 +530,7 @@ export default function DistressThermometerScreen() {
           <View
             style={{
               position: "absolute",
-              top: 96,
+              top: 80,
               right: 24,
               backgroundColor: "white",
               borderColor: "#e5e7eb",

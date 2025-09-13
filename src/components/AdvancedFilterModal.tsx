@@ -54,6 +54,7 @@ interface AdvancedFilterModalProps {
   onAgeChange: (field: 'ageFrom' | 'ageTo', value: string) => void;
   onGroupTypeChange: (groupType: string) => void;
   onClearFilters: () => Promise<void>;
+  ageRangeError?: string;
 }
 
 const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
@@ -65,6 +66,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   onAgeChange,
   onGroupTypeChange,
   onClearFilters,
+  ageRangeError,
 }) => {
 
   const handleCloseWithClear = async () => {
@@ -164,10 +166,10 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
                 style={{
                   width: "45%",
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
                   borderRadius: 12,
                   paddingVertical: 10,
                   paddingHorizontal: 12,
+                  borderColor: ageRangeError ? "red" : "#d1d5db",
                   textAlign: "center",
                   fontSize: 14,
                   color: "#374151",
@@ -186,7 +188,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
                 style={{
                   width: "45%",
                   borderWidth: 1,
-                  borderColor: "#d1d5db",
+                  borderColor: ageRangeError ? "red" : "#d1d5db",
                   borderRadius: 12,
                   paddingVertical: 10,
                   paddingHorizontal: 12,
@@ -202,7 +204,13 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
                 returnKeyType="done"
                 placeholderTextColor="#999"
               />
+             
             </View>
+             {ageRangeError ? (
+                <Text style={{ color: 'red', marginTop: 4, fontSize: 12 }}>
+                  {ageRangeError}
+                </Text>
+              ) : null}
           </View>
           </ScrollView>
 

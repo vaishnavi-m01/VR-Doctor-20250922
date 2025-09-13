@@ -10,17 +10,17 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../Navigation/types';
-import { apiService } from 'src/services'; 
+import { apiService } from 'src/services';
 
 export type Participant = {
-  id: number;
+  id: string;
   ParticipantId: string;
   name?: string;
   age?: number;
   Gender?: string;
   cancerType?: string;
   stage?: string;
-  GroupType: 'Control' | 'Study' | null;
+  GroupType: 'Controlled' | 'Study' | null;
   PhoneNumber?: string;
   CriteriaStatus?: string;
   StudyId?: string;
@@ -42,13 +42,13 @@ type StudyGroupAssignmentRouteProp = RouteProp<
   'StudyGroupAssignment'
 >;
 
-type AssignDecision = { id: string; group: 'Control' | 'Study' };
+type AssignDecision = { id: string; group: 'Controlled' | 'Study' };
 
 export default function StudyGroupAssignment() {
   const navigation = useNavigation<
     NativeStackNavigationProp<RootStackParamList, 'StudyGroupAssignment'>
   >();
-  
+
   const route = useRoute<StudyGroupAssignmentRouteProp>();
   const { studyId } = route.params;
 
@@ -58,41 +58,43 @@ export default function StudyGroupAssignment() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
+  // Fetch participants with correct filter (only StudyId required, no forced GroupType)
   const fetchParticipants = useCallback(
     async (search: string = '') => {
       try {
         setLoading(true);
         setError(null);
 
-        const requestBody: any = {};
+        const requestBody: any = {
+          StudyId: studyId,
+          CriteriaStatus: null,
+          GroupType: null,
+          SearchString: null,
+          Gender: null,
+          AgeFrom: null,
+          AgeTo: null,
+        };
 
         const trimmedSearch = search.trim();
         const lowerSearch = trimmedSearch.toLowerCase();
-        
+
+        // Add basic filtering only if searching, else return all participants for the studyId
         if (trimmedSearch !== '') {
-          // Add basic filters when searching
-          requestBody.StudyId = studyId;
-          requestBody.CriteriaStatus = 'Included';
-          requestBody.GroupType = 'Trial';
+       
 
           if (['male', 'female', 'other'].includes(lowerSearch)) {
             requestBody.Gender =
               lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1);
           } else if (/^PID-\d+$/i.test(trimmedSearch)) {
-            // Exact PID match (e.g., "PID-25")
             requestBody.SearchString = trimmedSearch;
           } else if (/^\d+$/i.test(trimmedSearch)) {
-            // Number only - search for PID containing this number (e.g., "25" -> search for PID containing "25")
             requestBody.SearchString = `PID-${trimmedSearch}`;
           } else if (!isNaN(Number(trimmedSearch)) && trimmedSearch.length > 2) {
-            // Age search only for numbers longer than 2 digits
             requestBody.AgeFrom = Number(trimmedSearch);
             requestBody.AgeTo = Number(trimmedSearch);
           } else {
             requestBody.CancerDiagnosis = trimmedSearch;
           }
-        } else {
-          // Send empty object to get all records
         }
 
         const response = await apiService.post<any>(
@@ -107,10 +109,19 @@ export default function StudyGroupAssignment() {
               ParticipantId: item.ParticipantId,
               name: item.Name ?? undefined,
               age: Number(item.Age) ?? undefined,
-              Gender: item.Gender && ['Male', 'Female', 'Other'].includes(item.Gender) ? item.Gender : 'Unknown',
+              Gender:
+                item.Gender && ['Male', 'Female', 'Other'].includes(item.Gender)
+                  ? item.Gender
+                  : 'Unknown',
               cancerType: item.CancerDiagnosis || 'N/A',
               stage: item.StageOfCancer || 'N/A',
-              GroupType: item.GroupType || null,
+              GroupType:
+                item.GroupType === 'Controlled' || item.GroupType === 'Controlled'
+                  ? 'Controlled'
+                  : item.GroupType === 'Study'
+                  ? 'Study'
+                  : null,
+
               CriteriaStatus: item.CriteriaStatus,
             })
           );
@@ -135,12 +146,13 @@ export default function StudyGroupAssignment() {
     fetchParticipants(query);
   }, [fetchParticipants, query]);
 
+  // Filter participants by group type accurately
   const unassigned = useMemo(
     () => participants.filter((p) => !p.GroupType),
     [participants]
   );
   const control = useMemo(
-    () => participants.filter((p) => p.GroupType === 'Control'),
+    () => participants.filter((p) => p.GroupType === 'Controlled'),
     [participants]
   );
   const study = useMemo(
@@ -157,7 +169,7 @@ export default function StudyGroupAssignment() {
   async function decideGroups(ids: string[]): Promise<AssignDecision[]> {
     return ids.map((id) => {
       const n = parseInt(String(id).replace(/\D/g, ''), 10);
-      return { id, group: n % 2 === 0 ? 'Control' : 'Study' };
+      return { id, group: n % 2 === 0 ? 'Controlled' : 'Study' };
     });
   }
 
@@ -248,10 +260,10 @@ export default function StudyGroupAssignment() {
         <View>
           <Text className="font-semibold text-gray-800">{p.name ?? p.ParticipantId}</Text>
           <Text className="text-sm text-gray-600">
-            {p.age ?? 'N/A'} years • {p.Gender ?? 'N/A'} 
+            {p.age ?? 'N/A'} years • {p.Gender ?? 'N/A'}
           </Text>
           <Text className="text-xs text-gray-500">
-            {p.cancerType ?? 'N/A'} • Stage: {p.stage ?? 'N/A'} 
+            {p.cancerType ?? 'N/A'} • Stage: {p.stage ?? 'N/A'}
           </Text>
         </View>
       </View>
@@ -288,10 +300,10 @@ export default function StudyGroupAssignment() {
       <View className="px-6 pt-3 pb-2 flex-row gap-2">
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
           <Text className="text-xs text-gray-600">Unassigned</Text>
-          <Text className="font-extrabold">{participants.length}</Text>
+          <Text className="font-extrabold">{unassigned.length}</Text>
         </View>
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
-          <Text className="text-xs text-gray-600">Control</Text>
+          <Text className="text-xs text-gray-600">Controlled</Text>
           <Text className="font-extrabold">{control.length}</Text>
         </View>
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
@@ -305,15 +317,15 @@ export default function StudyGroupAssignment() {
         <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
-            <Text className="text-sm text-gray-600">({participants.length})</Text>
+            <Text className="text-sm text-gray-600">({unassigned.length})</Text>
           </View>
           <ScrollView style={{ maxHeight: 300 }}>
-            {participants.length === 0 ? (
+            {unassigned.length === 0 ? (
               <View className="bg-gray-50 rounded-xl p-6 items-center">
                 <Text className="text-gray-500 text-center">No participants found</Text>
               </View>
             ) : (
-              participants.map((p) => (
+              unassigned.map((p) => (
                 <Row
                   key={p.ParticipantId}
                   p={p}

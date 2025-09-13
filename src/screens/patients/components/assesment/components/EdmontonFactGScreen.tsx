@@ -477,7 +477,7 @@ export default function EdmontonFactGScreen() {
             borderBottomColor: "#e5e7eb",
             borderBottomWidth: 1,
             borderRadius: 12,
-            padding: 32,
+            padding: 17,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
@@ -524,7 +524,7 @@ export default function EdmontonFactGScreen() {
               className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
               onPress={() => setShowDateDropdown(false)}
             />
-            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+            <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
               <Pressable
                 className="px-3 py-2 border-b border-gray-100"
                 onPress={() => {

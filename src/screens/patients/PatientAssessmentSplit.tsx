@@ -55,6 +55,7 @@ export default function ParticipantAssessmentSplit() {
   const [appliedSearchText, setAppliedSearchText] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
+  const [ageRangeError, setAgeRangeError] = useState<string>('');
 
   // Advanced filter state
   const [advFilters, setAdvFilters] = useState<AdvancedFilters>({
@@ -85,8 +86,13 @@ export default function ParticipantAssessmentSplit() {
   const handleAgeChange = (field: 'ageFrom' | 'ageTo', value: string) => {
     if (/^\d{0,3}$/.test(value)) {
       setAdvFilters(prev => ({ ...prev, [field]: value }));
+      // Clear age validation error as user types
+      if (ageRangeError) {
+        setAgeRangeError('');
+      }
     }
   };
+
 
   // Clear filters: reset advFilters, searchText, appliedSearchText and fetch all participants
   const handleClearFilters = async () => {
@@ -136,11 +142,14 @@ export default function ParticipantAssessmentSplit() {
 
 
 
-  // Modal done handler: close modal and refetch participants with current filters/search
-  const handleAdvancedDone = async () => {
-    setShowAdvancedSearch(false);
-    await fetchParticipants(appliedSearchText);
-  };
+ const handleAdvancedDone = async () => {
+  if (!validateAgeRange()) {
+    return; // Prevent closing modal and fetching if validation fails
+  }
+  setShowAdvancedSearch(false);
+  await fetchParticipants(appliedSearchText);
+};
+
 
 
   // Save selected participant ID to AsyncStorage
@@ -285,6 +294,30 @@ export default function ParticipantAssessmentSplit() {
       setLoading(false);
     }
   };
+
+  const validateAgeRange = (): boolean => {
+  const fromFilled = advFilters.ageFrom.trim() !== '';
+  const toFilled = advFilters.ageTo.trim() !== '';
+
+  if ((fromFilled && !toFilled) || (!fromFilled && toFilled)) {
+    setAgeRangeError('Both "From" and "To" age fields are required');
+    return false;
+  }
+
+  // Optional: additional validation like from <= to
+  if (fromFilled && toFilled) {
+    const fromNum = Number(advFilters.ageFrom);
+    const toNum = Number(advFilters.ageTo);
+    if (fromNum > toNum) {
+      setAgeRangeError('"From" age must be less than or equal to "To" age.');
+      return false;
+    }
+  }
+
+  setAgeRangeError('');
+  return true;
+};
+
 
   // Client-side filter function
   const filterParticipants = (list: Patient[], query: string) => {
@@ -463,7 +496,7 @@ export default function ParticipantAssessmentSplit() {
               {/* Search Bar */}
               <View className="flex-row items-center bg-white border border-[#e6eeeb] rounded-2xl px-4 py-3 flex-1">
                 <TextInput
-                  placeholder="Search by Patient ID,Age,Cancer Type"
+                  placeholder="Search by Patient ID,Gender"
                   value={searchText}
                   onChangeText={val => {
                     setSearchText(val);
@@ -497,6 +530,7 @@ export default function ParticipantAssessmentSplit() {
               onAgeChange={handleAgeChange}
               onGroupTypeChange={handleGroupTypeChange}
               onClearFilters={handleClearFilters}
+              ageRangeError={ageRangeError}
             />
             {/* Add Participant Button */}
             <Pressable

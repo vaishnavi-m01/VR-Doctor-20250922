@@ -7,7 +7,7 @@ import Segmented from '@components/Segmented';
 import Chip from '@components/Chip';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
@@ -22,7 +22,23 @@ interface ExitInterviewOptions {
   QuestionText?: string;
 }
 
+interface ExitInterviewQuestion {
+  QuestionId: string;
+  QuestionText: string;
+  QuestionStatus?: number;
+}
+
+interface ExitInterviewResponse<T> {
+  ResponseData: T;
+}
+
 export default function ExitInterview() {
+  const navigation = useNavigation();
+
+  // Get current date in yyyy-mm-dd format
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // States for answers and individual fields
   const [reasons, setReasons] = useState<string[]>([]);
   const [training, setTraining] = useState('');
   const [trainingExplain, setTrainingExplain] = useState('');
@@ -37,20 +53,21 @@ export default function ExitInterview() {
   const [overallRating, setOverallRating] = useState('');
   const [vrHelpful, setVrHelpful] = useState('');
   const [vrChallenging, setVrChallenging] = useState('');
-
   const [otherReasonText, setOtherReasonText] = useState('');
 
   const [participantSignature, setParticipantSignature] = useState('');
   const [interviewerSignature, setInterviewerSignature] = useState('');
-  const [participantDate, setParticipantDate] = useState('');
-  const [interviewerDate, setInterviewerDate] = useState('');
+  // Initialize dates with current date
+  const [participantDate, setParticipantDate] = useState(todayStr);
+  const [interviewerDate, setInterviewerDate] = useState(todayStr);
 
-  const [exitInterviewOptions, setExitInterviewOptions] = useState<
-    ExitInterviewOptions[]
-  >([]);
-  const [answers, setAnswers] = useState<{ [key: string]: string | string[] }>(
-    {}
-  );
+  // Dynamic questions and options
+  const [questions, setQuestions] = useState<ExitInterviewQuestion[]>([]);
+  const [exitInterviewOptions, setExitInterviewOptions] = useState<ExitInterviewOptions[]>([]);
+  const [answers, setAnswers] = useState<{ [key: string]: string | string[] }>({});
+
+  // State for existing interview id to update
+  const [exitInterviewId, setExitInterviewId] = useState<string | null>(null);
 
   const route = useRoute<RouteProp<RootStackParamList, 'ExitInterview'>>();
   const { patientId, age, studyId } = route.params as {
@@ -59,96 +76,165 @@ export default function ExitInterview() {
     studyId: number;
   };
 
+  // Fetch questions
   useEffect(() => {
     apiService
-      .post<{ ResponseData: ExitInterviewOptions[] }>(
-        '/GetExitInterviewOptions'
-      )
-      .then((res) => {
-        setExitInterviewOptions(res.data.ResponseData);
+      .post<ExitInterviewResponse<ExitInterviewQuestion[]>>('/GetExitInterviewQuestions', {
+        QuestionId: null,
+        SearchString: null,
       })
+      .then((res) => setQuestions(res.data.ResponseData))
+      .catch((err) => {
+        console.error('Error fetching questions:', err);
+        Toast.show({ type: 'error', text1: 'Error fetching questions' });
+      });
+  }, []);
+
+  // Fetch options
+  useEffect(() => {
+    apiService
+      .post<ExitInterviewResponse<ExitInterviewOptions[]>>('/GetExitInterviewOptions')
+      .then((res) => setExitInterviewOptions(res.data.ResponseData))
       .catch((err) => console.error(err));
   }, []);
 
-  // Group options by QuestionId
-  const groupedQuestions = exitInterviewOptions.reduce(
-    (acc: any, option: ExitInterviewOptions) => {
-      if (!acc[option.QuestionId]) {
-        acc[option.QuestionId] = {
-          QuestionText: option.QuestionText,
-          options: [],
-        };
-      }
-      acc[option.QuestionId].options.push(option);
-      return acc;
-    },
-    {}
-  );
+  // Fetch existing exit interview data using ParticipantId and StudyId filters
+  useEffect(() => {
+    const filter = {
+      ParticipantId: `${patientId}`,
+      StudyId: `${studyId}`,
+    };
 
+    apiService
+      .get<ExitInterviewResponse<any[]>>('/GetParticipantExitInterviews', filter)
+      .then((res) => {
+        const interviews = res.data.ResponseData;
+        if (interviews && interviews.length > 0) {
+          // Use first interview or any preferred selection logic
+          const interview = interviews[0];
+
+          setExitInterviewId(interview.ExitInterviewId || null);
+
+          // Map answers for checkbox question '1' (reasons)
+          const reasonAnswers = [
+            ...(interview.MedicalReasons ? ['Medical reasons'] : []),
+            ...(interview.TechnicalDifficulties ? ['Technical difficulties'] : []),
+            ...(interview.LackOfBenefit ? ['Lack of perceived benefit'] : []),
+            ...(interview.TimeConstraints ? ['Time/personal reasons'] : []),
+            ...(interview.AdherenceDifficulty ? ['Difficulty adhering to requirements'] : []),
+            ...(interview.OtherReason ? ['Other'] : []),
+          ];
+
+          // Map other answers keyed by questionId
+          setAnswers({
+            '1': reasonAnswers,
+            'EIQID-2': interview.VRExperienceRating || '',
+            'EIQID-9': interview.WouldParticipateAgain || '',
+            'EIQID-11': interview.WantsUpdates || '',
+            'EIQID-10': interview.StudyImprovementSuggestions || '',
+          });
+
+          // Set individual states
+          setTraining(interview.AdequateTrainingReceived || '');
+          setTrainingExplain(interview.AdequateTrainingExplanation || '');
+          setTechnicalIssues(interview.TechnicalDifficultiesExperienced || '');
+          setTechnicalDetails(interview.TechnicalDifficultiesExperienced === 'Yes' ? interview.TechnicalDifficultiesDetails : '');
+          setRequirements(interview.StudyRequirementsReasonable || '');
+          setRequirementsExplain(interview.StudyRequirementsReasonable === 'No' ? interview.StudyRequirementsExplanation : '');
+          setEngagementSuggestions(interview.EngagementImprovementSuggestions || '');
+          setFuture(interview.WouldParticipateAgain || '');
+          setUpdates(interview.WantsUpdates || '');
+          setStudySuggestions(interview.StudyImprovementSuggestions || '');
+          setOverallRating(interview.VRExperienceRating || '');
+          setVrHelpful(interview.VRMostHelpfulAspects || '');
+          setVrChallenging(interview.VRChallengingAspects || '');
+          setParticipantSignature(interview.ParticipantSignature || '');
+          setInterviewerSignature(interview.InterviewerSignature || '');
+          setParticipantDate(interview.ParticipantDate || todayStr);
+          setInterviewerDate(interview.InterviewerDate || todayStr);
+          setOtherReasonText(interview.OtherReasonText || '');
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching exit interviews:', err);
+        Toast.show({ type: 'error', text1: 'Error fetching exit interviews' });
+      });
+  }, [patientId, studyId]);
+
+  // Group options by QuestionId to render dynamic options
+  const groupedQuestions = exitInterviewOptions.reduce((acc: any, option: ExitInterviewOptions) => {
+    if (!acc[option.QuestionId]) {
+      acc[option.QuestionId] = {
+        QuestionText: option.QuestionText,
+        options: [],
+      };
+    }
+    acc[option.QuestionId].options.push(option);
+    return acc;
+  }, {});
+
+  // Helper function to find question by text pattern
+  const findQuestionByPattern = (pattern: string) => {
+    return questions.find((q) =>
+      q.QuestionText?.toLowerCase().includes(pattern.toLowerCase())
+    );
+  };
+
+  // Save handler
   const handleSave = async () => {
     try {
       const body = {
+        ExitInterviewId: exitInterviewId,
         ParticipantId: `${patientId}`,
-        StudyId: studyId,
+        StudyId: `${studyId}`,
         InterviewDate: new Date().toISOString().split('T')[0],
 
-        //  Chips
         MedicalReasons: answers['1']?.includes('Medical reasons') ? 1 : 0,
-        TechnicalDifficulties: answers['1']?.includes('Technical difficulties')
-          ? 1
-          : 0,
-        LackOfBenefit: answers['1']?.includes('Lack of perceived benefit')
-          ? 1
-          : 0,
+        TechnicalDifficulties: answers['1']?.includes('Technical difficulties') ? 1 : 0,
+        LackOfBenefit: answers['1']?.includes('Lack of perceived benefit') ? 1 : 0,
         TimeConstraints: answers['1']?.includes('Time/personal reasons') ? 1 : 0,
-        AdherenceDifficulty: answers['1']?.includes(
-          'Difficulty adhering to requirements'
-        )
-          ? 1
-          : 0,
+        AdherenceDifficulty: answers['1']?.includes('Difficulty adhering to requirements') ? 1 : 0,
         OtherReason: answers['1']?.includes('Other') ? 1 : 0,
         OtherReasonText: otherReasonText,
 
-        // VR experience
         VRExperienceRating: overallRating || null,
         VRMostHelpfulAspects: vrHelpful,
         VRChallengingAspects: vrChallenging,
 
-        // Technical
         TechnicalDifficultiesExperienced: technicalIssues,
-        TechnicalDifficultiesDetails:
-          technicalIssues === 'Yes' ? technicalDetails : null,
+        TechnicalDifficultiesDetails: technicalIssues === 'Yes' ? technicalDetails : null,
 
         AdequateTrainingReceived: training,
         AdequateTrainingExplanation: training === 'No' ? trainingExplain : null,
 
-        // Study
         StudyRequirementsReasonable: requirements,
-        StudyRequirementsExplanation:
-          requirements === 'No' ? requirementsExplain : null,
+        StudyRequirementsExplanation: requirements === 'No' ? requirementsExplain : null,
         EngagementImprovementSuggestions: engagementSuggestions,
 
-        // Future
         WouldParticipateAgain: future,
         StudyImprovementSuggestions: studySuggestions,
         WantsUpdates: updates,
 
-        // Signatures
         InterviewerSignature: interviewerSignature,
         ParticipantSignature: participantSignature,
         ParticipantDate: participantDate,
         InterviewerDate: interviewerDate,
 
         Status: 1,
-        CreatedBy: 'UID-1',
+        CreatedBy: 'UID-3',
       };
 
-      await apiService.post('/AddUpdateParticipantExitInterview', body);
+      console.log('Payload to be sent:', body);
+
+      const response = await apiService.post('/AddUpdateParticipantExitInterview', body);
+
+      console.log('Response from API:', response);
 
       Toast.show({
         type: 'success',
         text1: 'Saved Successfully',
-        text2: 'Exit Interview has been submitted ',
+        text2: 'Exit Interview has been submitted',
+        onHide: () => navigation.goBack(),
       });
     } catch (error) {
       console.error(error);
@@ -164,14 +250,8 @@ export default function ExitInterview() {
     <>
       <View className="px-4 pt-4">
         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">
-            Participant ID: {patientId}
-          </Text>
-
-          <Text className="text-base font-semibold text-green-600">
-            Study ID: {studyId || 'N/A'}
-          </Text>
-
+          <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
+          <Text className="text-base font-semibold text-green-600">Study ID: {studyId || 'N/A'}</Text>
           <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
         </View>
       </View>
@@ -185,32 +265,30 @@ export default function ExitInterview() {
                 label="Participant ID"
                 placeholder={`Participant ID: ${patientId}`}
                 value={`${patientId}`}
-                onChangeText={() => { }}
+                onChangeText={() => {}}
               />
             </View>
             <View className="flex-1">
-              <DateField
-                label="Date"
-                value={participantDate}
-                onChange={setParticipantDate}
-              />
+              <DateField label="Interview Date" value={participantDate} onChange={setParticipantDate} />
             </View>
           </View>
         </FormCard>
 
-        {/* Reason for Discontinuation */}
+        {/* Reason for Discontinuation - Dynamic */}
         {Object.entries(groupedQuestions)
-          .filter(([_, group]: any) => group.QuestionText === 'Reason for Discontinuation')
+          .filter(([_, group]: any) => {
+            const questionText = group.QuestionText?.toLowerCase() || '';
+            return questionText.includes('reason for discontinuation') ||
+              questionText.includes('discontinuation') ||
+              questionText.includes('reason');
+          })
           .map(([questionId, group]: any) => {
             const options = group.options.map((o: ExitInterviewOptions) => o.OptionText);
+            const dynamicQuestion = findQuestionByPattern('reason');
+            const questionText = dynamicQuestion?.QuestionText || group.QuestionText || 'Reason for Discontinuation';
 
             return (
-              <FormCard
-                key={questionId}
-                icon="1"
-                title={group.QuestionText}
-                desc="Select all that apply"
-              >
+              <FormCard key={questionId} icon="1" title={questionText} desc="Select all that apply">
                 <Chip
                   items={options}
                   value={(answers[questionId] as string[]) || []}
@@ -230,20 +308,28 @@ export default function ExitInterview() {
             );
           })}
 
-        {/* VR Experience */}
+        {/* VR Experience - Dynamic */}
         {Object.entries(groupedQuestions)
-          .filter(([_, group]: any) => group.QuestionText.includes('rate'))
+          .filter(([_, group]: any) => {
+            const questionText = group.QuestionText?.toLowerCase() || '';
+            return questionText.includes('rate') || questionText.includes('experience');
+          })
           .map(([questionId, group]: any) => {
             const options = group.options.map((o: ExitInterviewOptions) => o.OptionText);
+            const dynamicQuestion = findQuestionByPattern('rate');
+            const questionText = dynamicQuestion?.QuestionText || group.QuestionText || 'Rate your VR experience';
 
             return (
-              <FormCard key={questionId} icon="2" title={group.QuestionText}>
+              <FormCard key={questionId} icon="2" title={questionText}>
                 <Segmented
                   options={options.map((o) => ({ label: o, value: o }))}
                   value={(answers[questionId] as string) || ''}
-                  onChange={(val) => setAnswers((prev) => ({ ...prev, [questionId]: val }))}
+                  onChange={(val) => {
+                    setAnswers((prev) => ({ ...prev, [questionId]: val }));
+                    setOverallRating(val);
+                  }}
                 />
-                {group.QuestionText.includes('VR-assisted guided imagery') && (
+                {(questionText.toLowerCase().includes('vr') || questionText.toLowerCase().includes('experience')) && (
                   <View className="mt-4 flex-row gap-3">
                     <View className="flex-1">
                       <Field
@@ -267,38 +353,41 @@ export default function ExitInterview() {
             );
           })}
 
-        {/* Technical & Usability */}
+        {/* Technical & Usability - Dynamic */}
         <FormCard icon="3" title="Technical & Usability Issues">
-          <Text className="text-xs text-[#4b5f5a] mb-2">
-            Training/support on using the VR system was adequate?
-          </Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => setTraining('Yes')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ✅
-              </Text>
-              <Text className={`font-medium text-xs ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                Yes
-              </Text>
-            </Pressable>
+          {/* Training Question - Dynamic */}
+          {(() => {
+            const trainingQuestion = findQuestionByPattern('training') || findQuestionByPattern('adequate');
+            const questionText = trainingQuestion?.QuestionText || 'Training/support on using the VR system was adequate?';
 
-            <Pressable
-              onPress={() => setTraining('No')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ❌
-              </Text>
-              <Text className={`font-medium text-xs ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                No
-              </Text>
-            </Pressable>
-          </View>
+            return (
+              <>
+                <Text className="text-xs text-[#4b5f5a] mb-2">{questionText}</Text>
+                <View className="flex-row gap-2">
+                  <Pressable
+                    onPress={() => setTraining('Yes')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      training === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                    <Text className={`font-medium text-xs ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setTraining('No')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      training === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                    <Text className={`font-medium text-xs ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                  </Pressable>
+                </View>
+              </>
+            );
+          })()}
+
           {training === 'No' && (
             <View className="mt-3">
               <Field
@@ -310,36 +399,40 @@ export default function ExitInterview() {
             </View>
           )}
 
-          <Text className="text-xs text-[#4b5f5a] mb-2">
-            Did you experience any technical issues (e.g., glitches, crashes, lag)?
-          </Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => setTechnicalIssues('Yes')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${technicalIssues === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${technicalIssues === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ✅
-              </Text>
-              <Text className={`font-medium text-xs ${technicalIssues === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                Yes
-              </Text>
-            </Pressable>
+          {/* Technical Issues Question - Dynamic */}
+          {(() => {
+            const technicalQuestion = findQuestionByPattern('technical') || findQuestionByPattern('issues');
+            const questionText =
+              technicalQuestion?.QuestionText || 'Did you experience any technical issues (e.g., glitches, crashes, lag)?';
 
-            <Pressable
-              onPress={() => setTechnicalIssues('No')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${technicalIssues === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${technicalIssues === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ❌
-              </Text>
-              <Text className={`font-medium text-xs ${technicalIssues === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                No
-              </Text>
-            </Pressable>
-          </View>
+            return (
+              <>
+                <Text className="text-xs text-[#4b5f5a] mb-2 mt-4">{questionText}</Text>
+                <View className="flex-row gap-2">
+                  <Pressable
+                    onPress={() => setTechnicalIssues('Yes')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      technicalIssues === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${technicalIssues === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                    <Text className={`font-medium text-xs ${technicalIssues === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setTechnicalIssues('No')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      technicalIssues === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${technicalIssues === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                    <Text className={`font-medium text-xs ${technicalIssues === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                  </Pressable>
+                </View>
+              </>
+            );
+          })()}
+
           {technicalIssues === 'Yes' && (
             <View className="mt-3">
               <Field
@@ -352,36 +445,41 @@ export default function ExitInterview() {
           )}
         </FormCard>
 
-        {/* Study Adherence */}
+        {/* Study Adherence - Dynamic */}
         <FormCard icon="4" title="Study Adherence & Protocol">
-          <Text className="text-xs text-[#4b5f5a] mb-2">Were requirements reasonable?</Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => setRequirements('Yes')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ✅
-              </Text>
-              <Text className={`font-medium text-xs ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                Yes
-              </Text>
-            </Pressable>
+          {/* Requirements Question - Dynamic */}
+          {(() => {
+            const requirementsQuestion = findQuestionByPattern('requirements') || findQuestionByPattern('reasonable');
+            const questionText = requirementsQuestion?.QuestionText || 'Were requirements reasonable?';
 
-            <Pressable
-              onPress={() => setRequirements('No')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                }`}
-            >
-              <Text className={`text-lg mr-1 ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                ❌
-              </Text>
-              <Text className={`font-medium text-xs ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                No
-              </Text>
-            </Pressable>
-          </View>
+            return (
+              <>
+                <Text className="text-xs text-[#4b5f5a] mb-2">{questionText}</Text>
+                <View className="flex-row gap-2">
+                  <Pressable
+                    onPress={() => setRequirements('Yes')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      requirements === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                    <Text className={`font-medium text-xs ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => setRequirements('No')}
+                    className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                      requirements === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                    }`}
+                  >
+                    <Text className={`text-lg mr-1 ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                    <Text className={`font-medium text-xs ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                  </Pressable>
+                </View>
+              </>
+            );
+          })()}
+
           {requirements === 'No' && (
             <View className="mt-3">
               <Field
@@ -392,91 +490,110 @@ export default function ExitInterview() {
               />
             </View>
           )}
+
           <View className="mt-3">
-            <Field
-              label="What could have helped you stay engaged?"
-              placeholder="Suggestions…"
-              value={engagementSuggestions}
-              onChangeText={setEngagementSuggestions}
-            />
+            {(() => {
+              const engagementQuestion = findQuestionByPattern('engaged') || findQuestionByPattern('engagement');
+              const questionText = engagementQuestion?.QuestionText || 'What could have helped you stay engaged?';
+
+              return (
+                <Field
+                  label={questionText}
+                  placeholder="Suggestions…"
+                  value={engagementSuggestions}
+                  onChangeText={setEngagementSuggestions}
+                />
+              );
+            })()}
           </View>
         </FormCard>
 
-        {/* Future */}
+        {/* Future - Dynamic */}
         <FormCard icon="5" title="Future Recommendations">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text className="text-xs text-[#4b5f5a] mb-2">
-                Would you join a similar study in future?
-              </Text>
-              <View className="flex-row gap-2">
-                <Pressable
-                  onPress={() => setFuture('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${future === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${future === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    ✅
-                  </Text>
-                  <Text className={`font-medium text-xs ${future === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    Yes
-                  </Text>
-                </Pressable>
+              {(() => {
+                const futureQuestion = findQuestionByPattern('participate') || findQuestionByPattern('similar study');
+                const questionText = futureQuestion?.QuestionText || 'Would you join a similar study in future?';
 
-                <Pressable
-                  onPress={() => setFuture('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${future === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${future === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    ❌
-                  </Text>
-                  <Text className={`font-medium text-xs ${future === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    No
-                  </Text>
-                </Pressable>
-              </View>
+                return (
+                  <>
+                    <Text className="text-xs text-[#4b5f5a] mb-2">{questionText}</Text>
+                    <View className="flex-row gap-2">
+                      <Pressable
+                        onPress={() => setFuture('Yes')}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                          future === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
+                      >
+                        <Text className={`text-lg mr-1 ${future === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                        <Text className={`font-medium text-xs ${future === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => setFuture('No')}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                          future === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
+                      >
+                        <Text className={`text-lg mr-1 ${future === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                        <Text className={`font-medium text-xs ${future === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                );
+              })()}
             </View>
-            <View className="flex-1">
-              <Text className="text-xs text-[#4b5f5a] mb-2">
-                Receive updates on findings/opportunities?
-              </Text>
-              <View className="flex-row gap-2">
-                <Pressable
-                  onPress={() => setUpdates('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${updates === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${updates === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    ✅
-                  </Text>
-                  <Text className={`font-medium text-xs ${updates === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    Yes
-                  </Text>
-                </Pressable>
 
-                <Pressable
-                  onPress={() => setUpdates('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${updates === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${updates === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    ❌
-                  </Text>
-                  <Text className={`font-medium text-xs ${updates === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
-                    No
-                  </Text>
-                </Pressable>
-              </View>
+            <View className="flex-1">
+              {(() => {
+                const updatesQuestion = findQuestionByPattern('updates') || findQuestionByPattern('findings');
+                const questionText = updatesQuestion?.QuestionText || 'Receive updates on findings/opportunities?';
+
+                return (
+                  <>
+                    <Text className="text-xs text-[#4b5f5a] mb-2">{questionText}</Text>
+                    <View className="flex-row gap-2">
+                      <Pressable
+                        onPress={() => setUpdates('Yes')}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                          updates === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
+                      >
+                        <Text className={`text-lg mr-1 ${updates === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                        <Text className={`font-medium text-xs ${updates === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => setUpdates('No')}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
+                          updates === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                        }`}
+                      >
+                        <Text className={`text-lg mr-1 ${updates === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                        <Text className={`font-medium text-xs ${updates === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                );
+              })()}
             </View>
           </View>
+
           <View className="mt-3">
-            <Field
-              label="Suggestions to improve the study"
-              placeholder="Your suggestions…"
-              value={studySuggestions}
-              onChangeText={setStudySuggestions}
-            />
+            {(() => {
+              const suggestionsQuestion = findQuestionByPattern('suggestions') || findQuestionByPattern('improve');
+              const questionText = suggestionsQuestion?.QuestionText || 'Suggestions to improve the study';
+
+              return (
+                <Field
+                  label={questionText}
+                  placeholder="Your suggestions…"
+                  value={studySuggestions}
+                  onChangeText={setStudySuggestions}
+                />
+              );
+            })()}
           </View>
         </FormCard>
 
@@ -492,11 +609,7 @@ export default function ExitInterview() {
               />
             </View>
             <View className="flex-1">
-              <DateField
-                label="Date"
-                value={participantDate}
-                onChange={setParticipantDate}
-              />
+              <DateField label="Interview CreatedDate" value={participantDate} onChange={setParticipantDate} />
             </View>
           </View>
 
@@ -510,11 +623,7 @@ export default function ExitInterview() {
               />
             </View>
             <View className="flex-1">
-              <DateField
-                label="Date"
-                value={interviewerDate}
-                onChange={setInterviewerDate}
-              />
+              <DateField label="Modified Date" value={interviewerDate} onChange={setInterviewerDate} />
             </View>
           </View>
 
