@@ -108,51 +108,82 @@ export default function ExitInterview() {
     apiService
       .get<ExitInterviewResponse<any[]>>('/GetParticipantExitInterviews', filter)
       .then((res) => {
+        console.log('🔍 Exit Interview API Response:', res.data);
         const interviews = res.data.ResponseData;
+        console.log('🔍 Interviews found:', interviews?.length || 0);
         if (interviews && interviews.length > 0) {
-          // Use first interview or any preferred selection logic
-          const interview = interviews[0];
+          // Consolidate all interview records into a single interview object
+          // Each record contains data for one question, we need to merge them
+          const consolidatedInterview = interviews.reduce((acc: any, record: any) => {
+            // Use the first record as the base
+            if (!acc.ExitInterviewId) {
+              acc.ExitInterviewId = record.ExitInterviewId;
+              acc.ParticipantId = record.ParticipantId;
+              acc.StudyId = record.StudyId;
+              acc.InterviewDate = record.InterviewDate;
+              acc.InterviewCreatedDate = record.InterviewCreatedDate;
+              acc.InterviewCreatedBy = record.InterviewCreatedBy;
+              acc.InterviewStatus = record.InterviewStatus;
+              acc.ModifiedBy = record.ModifiedBy;
+              acc.ModifiedDate = record.ModifiedDate;
+            }
+            
+            // Merge all the question-specific data
+            return { ...acc, ...record };
+          }, {});
+          
+          console.log('🔍 Consolidated interview data:', consolidatedInterview);
 
-          setExitInterviewId(interview.ExitInterviewId || null);
+          setExitInterviewId(consolidatedInterview.ExitInterviewId || null);
 
           // Map answers for checkbox question '1' (reasons)
           const reasonAnswers = [
-            ...(interview.MedicalReasons ? ['Medical reasons'] : []),
-            ...(interview.TechnicalDifficulties ? ['Technical difficulties'] : []),
-            ...(interview.LackOfBenefit ? ['Lack of perceived benefit'] : []),
-            ...(interview.TimeConstraints ? ['Time/personal reasons'] : []),
-            ...(interview.AdherenceDifficulty ? ['Difficulty adhering to requirements'] : []),
-            ...(interview.OtherReason ? ['Other'] : []),
+            ...(consolidatedInterview.MedicalReasons ? ['Medical reasons'] : []),
+            ...(consolidatedInterview.TechnicalDifficulties ? ['Technical difficulties'] : []),
+            ...(consolidatedInterview.LackOfBenefit ? ['Lack of perceived benefit'] : []),
+            ...(consolidatedInterview.TimeConstraints ? ['Time/personal reasons'] : []),
+            ...(consolidatedInterview.AdherenceDifficulty ? ['Difficulty adhering to requirements'] : []),
+            ...(consolidatedInterview.OtherReason ? ['Other'] : []),
           ];
 
           // Map other answers keyed by questionId
           setAnswers({
             '1': reasonAnswers,
-            'EIQID-2': interview.VRExperienceRating || '',
-            'EIQID-9': interview.WouldParticipateAgain || '',
-            'EIQID-11': interview.WantsUpdates || '',
-            'EIQID-10': interview.StudyImprovementSuggestions || '',
+            'EIQID-2': consolidatedInterview.VRExperienceRating || '',
+            'EIQID-9': consolidatedInterview.WouldParticipateAgain || '',
+            'EIQID-11': consolidatedInterview.WantsUpdates || '',
+            'EIQID-10': consolidatedInterview.StudyImprovementSuggestions || '',
           });
 
           // Set individual states
-          setTraining(interview.AdequateTrainingReceived || '');
-          setTrainingExplain(interview.AdequateTrainingExplanation || '');
-          setTechnicalIssues(interview.TechnicalDifficultiesExperienced || '');
-          setTechnicalDetails(interview.TechnicalDifficultiesExperienced === 'Yes' ? interview.TechnicalDifficultiesDetails : '');
-          setRequirements(interview.StudyRequirementsReasonable || '');
-          setRequirementsExplain(interview.StudyRequirementsReasonable === 'No' ? interview.StudyRequirementsExplanation : '');
-          setEngagementSuggestions(interview.EngagementImprovementSuggestions || '');
-          setFuture(interview.WouldParticipateAgain || '');
-          setUpdates(interview.WantsUpdates || '');
-          setStudySuggestions(interview.StudyImprovementSuggestions || '');
-          setOverallRating(interview.VRExperienceRating || '');
-          setVrHelpful(interview.VRMostHelpfulAspects || '');
-          setVrChallenging(interview.VRChallengingAspects || '');
-          setParticipantSignature(interview.ParticipantSignature || '');
-          setInterviewerSignature(interview.InterviewerSignature || '');
-          setParticipantDate(interview.ParticipantDate || todayStr);
-          setInterviewerDate(interview.InterviewerDate || todayStr);
-          setOtherReasonText(interview.OtherReasonText || '');
+          console.log('🔍 Setting individual states...');
+          setTraining(consolidatedInterview.AdequateTrainingReceived || '');
+          setTrainingExplain(consolidatedInterview.AdequateTrainingExplanation || '');
+          setTechnicalIssues(consolidatedInterview.TechnicalDifficultiesExperienced || '');
+          setTechnicalDetails(consolidatedInterview.TechnicalDifficultiesExperienced === 'Yes' ? consolidatedInterview.TechnicalDifficultiesDetails : '');
+          setRequirements(consolidatedInterview.StudyRequirementsReasonable || '');
+          setRequirementsExplain(consolidatedInterview.StudyRequirementsReasonable === 'No' ? consolidatedInterview.StudyRequirementsExplanation : '');
+          setEngagementSuggestions(consolidatedInterview.EngagementImprovementSuggestions || '');
+          setFuture(consolidatedInterview.WouldParticipateAgain || '');
+          setUpdates(consolidatedInterview.WantsUpdates || '');
+          setStudySuggestions(consolidatedInterview.StudyImprovementSuggestions || '');
+          setOverallRating(consolidatedInterview.VRExperienceRating || '');
+          setVrHelpful(consolidatedInterview.VRMostHelpfulAspects || '');
+          setVrChallenging(consolidatedInterview.VRChallengingAspects || '');
+          setParticipantSignature(consolidatedInterview.ParticipantSignature || '');
+          setInterviewerSignature(consolidatedInterview.InterviewerSignature || '');
+          setParticipantDate(consolidatedInterview.ParticipantDate || todayStr);
+          setInterviewerDate(consolidatedInterview.InterviewerDate || todayStr);
+          setOtherReasonText(consolidatedInterview.OtherReasonText || '');
+          
+          console.log('🔍 Set values:', {
+            training: consolidatedInterview.AdequateTrainingReceived,
+            technicalIssues: consolidatedInterview.TechnicalDifficultiesExperienced,
+            requirements: consolidatedInterview.StudyRequirementsReasonable,
+            overallRating: consolidatedInterview.VRExperienceRating,
+            vrHelpful: consolidatedInterview.VRMostHelpfulAspects,
+            vrChallenging: consolidatedInterview.VRChallengingAspects
+          });
         }
       })
       .catch((err) => {
@@ -245,6 +276,17 @@ export default function ExitInterview() {
       });
     }
   };
+
+  // Debug current state values
+  console.log('🔍 Current state values:', {
+    training,
+    technicalIssues,
+    requirements,
+    overallRating,
+    vrHelpful,
+    vrChallenging,
+    answers
+  });
 
   return (
     <>

@@ -11,6 +11,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
+import { getParticipantBackgroundColor } from '../../utils/participantColors';
 
 export type Participant = {
   id: string;
@@ -166,6 +167,19 @@ export default function StudyGroupAssignment() {
     );
   };
 
+  const toggleSelectAll = () => {
+    const unassignedIds = unassigned.map(p => p.ParticipantId);
+    const allSelected = unassignedIds.every(id => selectedIds.includes(id));
+    
+    if (allSelected) {
+      // Deselect all unassigned participants
+      setSelectedIds(prev => prev.filter(id => !unassignedIds.includes(id)));
+    } else {
+      // Select all unassigned participants
+      setSelectedIds(prev => [...new Set([...prev, ...unassignedIds])]);
+    }
+  };
+
   async function decideGroups(ids: string[]): Promise<AssignDecision[]> {
     return ids.map((id) => {
       const n = parseInt(String(id).replace(/\D/g, ''), 10);
@@ -229,14 +243,16 @@ export default function StudyGroupAssignment() {
     selected?: boolean;
     onPress?: () => void;
     trailing?: React.ReactNode;
-  }) => (
+  }) => {
+    const participantBgColor = getParticipantBackgroundColor(p.GroupType);
+    return (
     <Pressable
       onPress={onPress}
       disabled={!selectable}
-      className={`flex-row items-center justify-between bg-white border rounded-xl p-4 mb-3 ${
+      className={`flex-row items-center justify-between border rounded-xl p-3 mb-2 ${participantBgColor} ${
         selectable
           ? selected
-            ? 'border-[#0ea06c] bg-[#f0fdf7]'
+            ? 'border-[#0ea06c]'
             : 'border-[#e6eeeb]'
           : 'border-[#e6eeeb]'
       }`}
@@ -244,11 +260,11 @@ export default function StudyGroupAssignment() {
       <View className="flex-row items-center">
         {selectable ? (
           <View
-            className={`w-6 h-6 mr-3 rounded-md border-2 items-center justify-center ${
-              selected ? 'bg-[#0ea06c] border-[#0ea06c]' : 'border-[#cfe0db]'
+            className={`w-8 h-8 mr-3 rounded-lg border-2 items-center justify-center ${
+              selected ? 'bg-[#0ea06c] border-[#0ea06c]' : 'border-[#0ea06c] bg-white'
             }`}
           >
-            {selected && <Text className="text-white text-xs">✓</Text>}
+            {selected && <Text className="text-white text-lg font-bold">✓</Text>}
           </View>
         ) : (
           <View className="w-9 h-9 mr-3 rounded-full bg-[#eaf7f2] border border-[#e3ece9] items-center justify-center">
@@ -269,7 +285,8 @@ export default function StudyGroupAssignment() {
       </View>
       {trailing}
     </Pressable>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -312,14 +329,26 @@ export default function StudyGroupAssignment() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 pb-6">
+      <View className="flex-1 px-6 pb-6">
         {/* Unassigned */}
-        <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
-            <Text className="text-sm text-gray-600">({unassigned.length})</Text>
+        <View className="bg-white rounded-2xl p-3 mb-4 border border-[#e6eeeb]">
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
+              <Text className="text-sm text-gray-600 ml-2">({unassigned.length})</Text>
+            </View>
+            {unassigned.length > 0 && (
+              <Pressable
+                onPress={toggleSelectAll}
+                className="px-3 py-1 rounded-lg bg-[#0ea06c]"
+              >
+                <Text className="text-white text-sm font-semibold">
+                  {unassigned.every(p => selectedIds.includes(p.ParticipantId)) ? 'Deselect All' : 'Select All'}
+                </Text>
+              </Pressable>
+            )}
           </View>
-          <ScrollView style={{ maxHeight: 300 }}>
+          <ScrollView style={{ maxHeight: 350 }}>
             {unassigned.length === 0 ? (
               <View className="bg-gray-50 rounded-xl p-6 items-center">
                 <Text className="text-gray-500 text-center">No participants found</Text>
@@ -354,12 +383,12 @@ export default function StudyGroupAssignment() {
         </View>
 
         {/* Control Group */}
-        <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
-          <View className="flex-row items-center justify-between mb-3">
+        <View className="bg-white rounded-2xl p-3 mb-4 border border-[#e6eeeb]">
+          <View className="flex-row items-center justify-between mb-2">
             <Text className="text-lg font-bold text-gray-800">Control Group</Text>
             <Text className="text-sm text-gray-600">({control.length})</Text>
           </View>
-          <ScrollView style={{ maxHeight: 300 }}>
+          <ScrollView style={{ maxHeight: 200 }}>
             {control.length === 0 ? (
               <View className="bg-gray-50 rounded-xl p-6 items-center">
                 <Text className="text-gray-500 text-center">No participants in this group</Text>
@@ -384,12 +413,12 @@ export default function StudyGroupAssignment() {
         </View>
 
         {/* Study Group */}
-        <View className="bg-white rounded-2xl p-4 mb-6 border border-[#e6eeeb]">
-          <View className="flex-row items-center justify-between mb-3">
+        <View className="bg-white rounded-2xl p-3 mb-4 border border-[#e6eeeb]">
+          <View className="flex-row items-center justify-between mb-2">
             <Text className="text-lg font-bold text-gray-800">Study Group</Text>
             <Text className="text-sm text-gray-600">({study.length})</Text>
           </View>
-          <ScrollView style={{ maxHeight: 300 }}>
+          <ScrollView style={{ maxHeight: 200 }}>
             {study.length === 0 ? (
               <View className="bg-gray-50 rounded-xl p-6 items-center">
                 <Text className="text-gray-500 text-center">No participants in this group</Text>
@@ -412,7 +441,7 @@ export default function StudyGroupAssignment() {
             )}
           </ScrollView>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }

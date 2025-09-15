@@ -370,9 +370,9 @@ export default function SocioDemographic() {
     if (!cancerDiagnosis) newErrors.cancerDiagnosis = "Cancer diagnosis is required";
     if (!cancerStage) newErrors.cancerStage = "Cancer stage is required";
     if (!phoneNumber) {
-      newErrors.phoneNumber = "Phone number is required";
+      newErrors.phoneNumber = "Emergency contact is required";
     } else if (!/^[0-9]{10}$/.test(phoneNumber)) {
-      newErrors.phoneNumber = "Enter a valid 10-digit phone number";
+      newErrors.phoneNumber = "Enter a valid 10-digit emergency contact number";
     }
 
     setErrors(newErrors);
@@ -520,8 +520,8 @@ export default function SocioDemographic() {
 
           <View className="mt-6">
             <Field
-              label="Phone Number"
-              placeholder="__ phone number"
+              label="Emergency Contact"
+              placeholder="__ emergency contact number"
               value={phoneNumber}
               keyboardType="phone-pad"
               maxLength={10}

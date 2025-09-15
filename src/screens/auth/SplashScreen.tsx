@@ -1,15 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 export const SplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        VR Doctor
-      </Text>
-      <Text style={styles.subtitle}>
-        Loading...
-      </Text>
+      {/* Minimal splash screen - no text or menu elements */}
     </View>
   );
 };

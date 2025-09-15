@@ -155,7 +155,6 @@ export default function DistressThermometerScreen() {
       setLoading(true);
       setError(null);
       setCategories([]);
-      setSelectedProblems({});
       setOtherProblems("");
       setPDWSID(null);
 
@@ -201,18 +200,27 @@ export default function DistressThermometerScreen() {
           return;
         }
 
-        // Group questions by category
+        // Group questions by category and deduplicate
         const grouped: Record<string, Category> = {};
+        const seenQuestions = new Set<string>();
+        
         responseData.forEach((item) => {
-          if (item.CategoryName) {
-            if (!grouped[item.CategoryName]) {
-              grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
+          if (item.CategoryName && item.DistressQuestionId) {
+            // Create unique key for deduplication
+            const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
+            
+            if (!seenQuestions.has(questionKey)) {
+              seenQuestions.add(questionKey);
+              
+              if (!grouped[item.CategoryName]) {
+                grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
+              }
+              grouped[item.CategoryName].questions.push({
+                id: item.DistressQuestionId,
+                label: item.Question,
+                PDTWQID: item.PDTWQID || undefined,
+              });
             }
-            grouped[item.CategoryName].questions.push({
-              id: item.DistressQuestionId,
-              label: item.Question,
-              PDTWQID: item.PDTWQID || undefined,
-            });
           }
         });
         setCategories(Object.values(grouped));
@@ -227,13 +235,25 @@ export default function DistressThermometerScreen() {
         return;
       }
 
-      // Fetch questions grouped by categories
+      // Fetch questions grouped by categories - try without date filter first to get all data
       const res = await apiService.post<{ ResponseData: any[] }>(
         "/GetParticipantDistressThermometerWeeklyQA",
-        payload
+        {
+          ParticipantId: participantId,
+          StudyId: studyIdFormatted,
+        }
       );
 
-      const responseData = res.data?.ResponseData || [];
+      let responseData = res.data?.ResponseData || [];
+
+      // Filter data by date if we have a specific date
+      if (apiDate) {
+        responseData = responseData.filter((item) => {
+          const itemDate = item.CreatedDate ? item.CreatedDate.split('T')[0] : null;
+          const itemModifiedDate = item.ModifiedDate ? item.ModifiedDate.split('T')[0] : null;
+          return itemDate === apiDate || itemModifiedDate === apiDate;
+        });
+      }
 
       if (responseData.length === 0) {
         setCategories([]);
@@ -245,27 +265,45 @@ export default function DistressThermometerScreen() {
         return;
       }
 
-      // Group questions by category
+      // Group questions by category and deduplicate, prioritizing records with PDTWQID
       const grouped: Record<string, Category> = {};
+      const seenQuestions = new Map<string, any>();
+      
       responseData.forEach((item) => {
-        if (item.CategoryName) {
-          if (!grouped[item.CategoryName]) {
-            grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
+        if (item.CategoryName && item.DistressQuestionId) {
+          // Create unique key for deduplication
+          const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
+          
+          // If we haven't seen this question, or if this item has PDTWQID and the previous one doesn't
+          if (!seenQuestions.has(questionKey) || 
+              (item.PDTWQID && !seenQuestions.get(questionKey).PDTWQID)) {
+            seenQuestions.set(questionKey, item);
           }
-          grouped[item.CategoryName].questions.push({
-            id: item.DistressQuestionId,
-            label: item.Question,
-            PDTWQID: item.PDTWQID || undefined,
-          });
         }
+      });
+      
+      // Now build the grouped structure from the deduplicated items
+      seenQuestions.forEach((item, questionKey) => {
+        const [categoryName] = questionKey.split('-');
+        if (!grouped[categoryName]) {
+          grouped[categoryName] = { categoryName: categoryName, questions: [] };
+        }
+        grouped[categoryName].questions.push({
+          id: item.DistressQuestionId,
+          label: item.Question,
+          PDTWQID: item.PDTWQID || undefined,
+        });
       });
       setCategories(Object.values(grouped));
 
-      // Set answers for selected problems
+      // Set answers for selected problems (handle duplicates by taking the first "Yes" answer)
       const existingAnswers: Record<string, boolean> = {};
+      const processedQuestions = new Set<string>();
+      
       responseData.forEach((item) => {
-        if (item.DistressQuestionId && item.IsAnswered === "Yes") {
-          existingAnswers[item.DistressQuestionId] = true;
+        if (item.DistressQuestionId && !processedQuestions.has(item.DistressQuestionId)) {
+          processedQuestions.add(item.DistressQuestionId);
+          existingAnswers[item.DistressQuestionId] = item.IsAnswered === "Yes";
         }
       });
       setSelectedProblems(existingAnswers);
@@ -342,7 +380,7 @@ export default function DistressThermometerScreen() {
         cat.questions.some((q) => q.PDTWQID)
       );
 
-      // Prepare distress answers for API
+      // Prepare distress answers for API - include all questions with their answers
       const distressData = categories.flatMap((cat) =>
         cat.questions.map((q) => ({
           DistressQuestionId: q.id,

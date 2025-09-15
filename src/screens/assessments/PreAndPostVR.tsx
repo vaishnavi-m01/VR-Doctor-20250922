@@ -50,7 +50,7 @@ export default function PreAndPostVR() {
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
   const [selectedAssessmentType, setSelectedAssessmentType] = useState<'Pre' | 'Post'>('Pre');
   const [showAssessmentDropdown, setShowAssessmentDropdown] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<string>('Select Session');
+  const [selectedSession, setSelectedSession] = useState<string>('Session 1');
   const [showSessionDropdown, setShowSessionDropdown] = useState(false);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const { userId, setUserId } = useContext(UserContext);
@@ -164,7 +164,10 @@ export default function PreAndPostVR() {
     if (!participantIdInput.trim()) {
       newErrors['participantId'] = 'Participant ID is required';
     }
-    questions.forEach(q => {
+    
+    // Only validate questions that match the selected assessment type
+    const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
+    questionsToValidate.forEach(q => {
       if (!responses[q.PPVRQMID]?.ScaleValue) {
         newErrors[q.PPVRQMID] = 'Answer is required';
       }
@@ -187,7 +190,9 @@ export default function PreAndPostVR() {
 
     setSaving(true);
     try {
-      const questionData = questions.map(q => ({
+      // Only save questions that match the selected assessment type
+      const questionsToSave = questions.filter(q => q.Type === selectedAssessmentType);
+      const questionData = questionsToSave.map(q => ({
         PPPVRId: q.PPPVRId || null,
         QuestionId: q.PPVRQMID,
         ScaleValue: responses[q.PPVRQMID]?.ScaleValue || '',
@@ -205,6 +210,7 @@ export default function PreAndPostVR() {
       };
 
       console.log("Saving PrePost VR session payload:", payload);
+      console.log("Session being saved:", sessionNo, "for assessment type:", selectedAssessmentType);
 
       const response = await apiService.post('/AddUpdateParticipantPrePostVRSessions', payload);
 
@@ -295,6 +301,9 @@ export default function PreAndPostVR() {
                   className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''} ${selectedSession === session ? 'bg-green-50' : ''}`}
                   onPress={() => {
                     setSelectedSession(session);
+                    // Convert session name to session number format
+                    const sessionNumber = session.replace('Session ', 'SessionNo-');
+                    setSessionNo(sessionNumber);
                     setShowSessionDropdown(false);
                   }}
                 >

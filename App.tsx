@@ -29,6 +29,7 @@ import StudyObservation from './src/screens/assessments/StudyObservation';
 import ExitInterview from './src/screens/assessments/ExitInterview';
 import ParticipantDashboard from './src/screens/dashboard/patient_dashboard';
 import DoctorDashboard from './src/screens/dashboard/DoctorDashboard';
+import PhysicianDashboard from './src/screens/dashboard/PhysicianDashboard';
 import SessionSetupScreen from './src/screens/vr-sessions/SessionSetupScreen';
 import ParticipantInfo from './src/screens/patients/components/participant_info';
 import SessionControlScreen from './src/screens/vr-sessions/SessionControlScreen';
@@ -66,7 +67,7 @@ function Splash({ navigation }: { navigation: NativeStackNavigationProp<RootStac
       } catch (error) {
         console.error('Navigation error:', error);
       }
-    }, 3000);
+    }, 2000); // Reduced to 2 seconds
     return () => {
       console.log('Clearing splash timer...');
       clearTimeout(timer);
@@ -76,8 +77,7 @@ function Splash({ navigation }: { navigation: NativeStackNavigationProp<RootStac
   console.log('Rendering SplashScreen component');
   return (
     <View style={{ flex: 1, backgroundColor: '#0e4336', justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ color: 'white', fontSize: 30, fontWeight: 'bold' }}>VR Doctor</Text>
-      <Text style={{ color: 'white', fontSize: 16, marginTop: 10 }}>Loading...</Text>
+      {/* Minimal splash screen - no menu elements */}
     </View>
   );
 }
@@ -312,6 +312,13 @@ export default function App() {
                     name="DoctorDashboard"
                     component={DoctorDashboard}
                     options={{ headerShown: true, title: "Doctor Dashboard" }}
+                  />
+
+                  {/* Physician Dashboard */}
+                  <Stack.Screen
+                    name="PhysicianDashboard"
+                    component={PhysicianDashboard}
+                    options={{ headerShown: true, title: "Physician Dashboard" }}
                   />
 
                   {/* Participant Info */}

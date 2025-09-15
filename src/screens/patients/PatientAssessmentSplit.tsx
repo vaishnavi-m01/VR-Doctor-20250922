@@ -54,6 +54,7 @@ export default function ParticipantAssessmentSplit() {
   const [searchText, setSearchText] = useState('');
   const [appliedSearchText, setAppliedSearchText] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>('All');
 
   const [ageRangeError, setAgeRangeError] = useState<string>('');
 
@@ -105,6 +106,7 @@ export default function ParticipantAssessmentSplit() {
     });
     setSearchText('');
     setAppliedSearchText('');
+    setSelectedGroupFilter('All');
     await fetchParticipants('');
   };
 
@@ -327,10 +329,23 @@ export default function ParticipantAssessmentSplit() {
 
 
   // Client-side filter function
-  const filterParticipants = (list: Patient[], query: string) => {
+  const filterParticipants = (list: Patient[], query: string, groupFilter: string = 'All') => {
+    let filtered = list;
+    
+    // Apply group filter first
+    if (groupFilter !== 'All') {
+      filtered = list.filter(p => {
+        if (groupFilter === 'Study') return p.groupType === 'Study';
+        if (groupFilter === 'Controlled') return p.groupType === 'Controlled';
+        if (groupFilter === 'Unassigned') return p.groupType === null || p.groupType === undefined;
+        return true;
+      });
+    }
+    
+    // Then apply search query
     const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(p => {
+    if (!q) return filtered;
+    return filtered.filter(p => {
       const pidStr = p.ParticipantId.toString().toLowerCase();
       const genderStr = p.gender.toLowerCase();
       const cancerTypeStr = p.cancerType.toLowerCase();
@@ -434,7 +449,15 @@ export default function ParticipantAssessmentSplit() {
     }
   }, [searchText]);
 
-  const filteredParticipants = filterParticipants(participants, appliedSearchText);
+  const filteredParticipants = filterParticipants(participants, appliedSearchText, selectedGroupFilter);
+
+  // Calculate group counts
+  const groupCounts = {
+    All: participants.length,
+    Study: participants.filter(p => p.groupType === 'Study').length,
+    Controlled: participants.filter(p => p.groupType === 'Controlled').length,
+    Unassigned: participants.filter(p => p.groupType === null || p.groupType === undefined).length,
+  };
 
   // Debug logging for GroupType
   if (sel) {
@@ -527,6 +550,87 @@ export default function ParticipantAssessmentSplit() {
                 <MaterialCommunityIcons name="tune" size={24} color="black" />
               </TouchableOpacity>
             </View>
+            
+            {/* Group Filter Buttons - 2x2 Grid */}
+            <View className="mt-3">
+              <View className="flex-row justify-between mb-2">
+                <Pressable
+                  onPress={() => setSelectedGroupFilter('All')}
+                  className={`flex-1 mx-1 py-1.5 px-3 rounded-lg border ${
+                    selectedGroupFilter === 'All'
+                      ? 'bg-green-600 border-green-600'
+                      : 'bg-white border-gray-300'
+                  }`}
+                >
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      selectedGroupFilter === 'All'
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    All ({groupCounts.All})
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSelectedGroupFilter('Study')}
+                  className={`flex-1 mx-1 py-1.5 px-3 rounded-lg border ${
+                    selectedGroupFilter === 'Study'
+                      ? 'bg-green-600 border-green-600'
+                      : 'bg-[#EBF6D6] border-[#EBF6D6]'
+                  }`}
+                >
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      selectedGroupFilter === 'Study'
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    Study ({groupCounts.Study})
+                  </Text>
+                </Pressable>
+              </View>
+              <View className="flex-row justify-between">
+                <Pressable
+                  onPress={() => setSelectedGroupFilter('Controlled')}
+                  className={`flex-1 mx-1 py-1.5 px-3 rounded-lg border ${
+                    selectedGroupFilter === 'Controlled'
+                      ? 'bg-green-600 border-green-600'
+                      : 'bg-[#FFE8DA] border-[#FFE8DA]'
+                  }`}
+                >
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      selectedGroupFilter === 'Controlled'
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    Controlled ({groupCounts.Controlled})
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSelectedGroupFilter('Unassigned')}
+                  className={`flex-1 mx-1 py-1.5 px-3 rounded-lg border ${
+                    selectedGroupFilter === 'Unassigned'
+                      ? 'bg-green-600 border-green-600'
+                      : 'bg-[#D2EBF8] border-[#D2EBF8]'
+                  }`}
+                >
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      selectedGroupFilter === 'Unassigned'
+                        ? 'text-white'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    Unassigned ({groupCounts.Unassigned})
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+            
             {/* Advanced Filter Modal */}
             <AdvancedFilterModal
               visible={showAdvancedSearch}
@@ -557,7 +661,8 @@ export default function ParticipantAssessmentSplit() {
               </Text>
             </Pressable>
           </View>
-          <ScrollView className="flex-1 p-3"
+          <ScrollView className="p-3"
+            style={{ maxHeight: '70%' }}
             contentContainerStyle={{ paddingBottom: 10 }}
             refreshControl={
               <RefreshControl

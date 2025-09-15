@@ -16,7 +16,7 @@ export default function HomeTab() {
       id: 'physician-dashboard',
       title: 'Physician Dashboard',
       subtitle: 'Doctor management and overview',
-      route: 'DoctorDashboard'
+      route: 'PhysicianDashboard'
     },
     {
       id: 'participant-dashboard',

@@ -19,7 +19,7 @@ export default function Dashboard({ patientId,age,studyId }: DashboardProps) {
         icon="👨‍⚕️"
         title="Physician Dashboard"
         subtitle="Access physician tools and Particpant management"
-        onPress={() => navigation.navigate("DoctorDashboard")}
+        onPress={() => navigation.navigate("PhysicianDashboard")}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
       

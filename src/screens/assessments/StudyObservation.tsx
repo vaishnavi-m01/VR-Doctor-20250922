@@ -144,6 +144,30 @@ function getCurrentDateTimeISO() {
   return new Date().toISOString(); 
 }
 
+// Date formatting functions (similar to Fact-G and Distress Thermometer)
+const formatDate = (dateString: string): string => {
+  // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
+const convertDateForAPI = (dateString: string): string => {
+  // Convert DD-MM-YYYY to YYYY-MM-DD for API
+  const [day, month, year] = dateString.split("-");
+  return `${year}-${month}-${day}`;
+};
+
+const formatTodayDate = (): string => {
+  const today = new Date();
+  const dd = today.getDate().toString().padStart(2, "0");
+  const mm = (today.getMonth() + 1).toString().padStart(2, "0");
+  const yyyy = today.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+};
+
 
 export default function StudyObservation() {
   // Dynamic form fields state
@@ -171,6 +195,12 @@ export default function StudyObservation() {
   const [resp, setResp] = useState<string[]>([]);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
+  
+  // Date dropdown states (similar to Fact-G and Distress Thermometer)
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [isDefaultForm, setIsDefaultForm] = useState(true);
 
   const STATIC_OBSERVATION_ID = null;
   const STATIC_DEVICE_ID = 'DEV-001';
@@ -192,12 +222,138 @@ export default function StudyObservation() {
     observationId?: string;
   };
 
+  // Fetch available dates for Study Observation forms
+  const fetchAvailableDates = async () => {
+    try {
+      const participantId = `${routePatientId}`;
+      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
+
+      const response = await apiService.post<ObservationApiResponse>(
+        "/GetParticipantStudyObservationForms",
+        {
+          ParticipantId: participantId,
+          StudyId: studyIdFormatted,
+          ObservationId: null,
+          SessionName: null,
+          DateAndTime: null,
+        }
+      );
+
+      const observationData = response.data?.ResponseData ?? [];
+      const uniqueDatesSet = new Set(observationData.map((item) => item.DateAndTime));
+      const formattedDates = Array.from(uniqueDatesSet)
+        .filter(date => date) // Filter out null/undefined dates
+        .map(formatDate);
+
+      const sortedDates = formattedDates.sort((a, b) => {
+        const dateA = new Date(convertDateForAPI(a));
+        const dateB = new Date(convertDateForAPI(b));
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      setAvailableDates(sortedDates);
+
+      // Always default to "New Form" (empty selectedDate)
+      setSelectedDate("");
+      setIsDefaultForm(true);
+
+    } catch (error) {
+      console.error("Failed to fetch available dates:", error);
+      setAvailableDates([]);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to fetch available dates",
+      });
+    }
+  };
+
+  // Load form data for a specific date
+  const loadFormDataForDate = async (dateString: string) => {
+    try {
+      const participantId = `${routePatientId}`;
+      const studyIdFormatted = studyId ? `${studyId}` : "CS-0001";
+      const apiDate = convertDateForAPI(dateString);
+
+      const payload = {
+        ObservationId: null,
+        ParticipantId: participantId,
+        StudyId: studyIdFormatted,
+        SessionName: null,
+        DateAndTime: apiDate,
+      };
+      
+      const res = await apiService.post<ObservationApiResponse>('/GetParticipantStudyObservationForms', payload);
+      
+      const found = res.data?.ResponseData?.[0];
+      if (found) {
+        // Update form values from response
+        const updatedValues: Record<string, string> = {
+          'SOFID-1': found.DateAndTime || getCurrentDateTimeISO(),
+          'SOFID-2': found.ParticipantId,
+          'SOFID-3': found.DeviceId || 'DEV-001',
+          'SOFID-4': found.ObserverName || 'Dr John',
+          'SOFID-5': found.SessionNumber || '3',
+          'SOFID-6': found.SessionName || 'Chemotherapy',
+          'SOFID-7': found.FACTGScore || factGScore,
+          'SOFID-8': found.DistressThermometerScore || distressScore,
+          'SOFID-9': found.Completed || completed,
+          'SOFID-10': found.ReasonForNotCompleting || '',
+          'SOFID-11': found.TechnicalIssues || tech,
+          'SOFID-12': found.TechnicalIssuesDescription || '',
+          'SOFID-13': found.ParticipantResponse || resp.join(', '),
+          'SOFID-14': found.OtherResponse || '',
+          'SOFID-15': found.TechnicalIssuesDescription || '',
+          'SOFID-16': found.PreVRAssessment || preVRAssessment,
+          'SOFID-17': found.PostVRAssessment || postVRAssessment,
+          'SOFID-18': found.DistressScoreAndFactG || distressScoreAndFactG,
+          'SOFID-19': found.ParticipantFollowInstructions || followInstructions,
+          'SOFID-20': found.ParticipantFollowInstructionsDescription || '',
+          'SOFID-21': found.ParticipantFollowInstructionsDescription || '',
+          'SOFID-22': found.ParticipantDiscomfort || discomfort,
+          'SOFID-23': found.ParticipantDiscomfortDescription || '',
+          'SOFID-24': found.AssistanceProvided || assistance,
+          'SOFID-25': found.AssistanceProvidedDescription || '',
+          'SOFID-26': found.ProtocolDeviations || deviation,
+          'SOFID-27': found.ProtocolDeviationsDescription || '',
+        };
+
+        setFormValues(updatedValues);
+        
+        // Update individual state variables
+        setCompleted(found.Completed || '');
+        setTech(found.TechnicalIssues || '');
+        setDiscomfort(found.ParticipantDiscomfort || '');
+        setDeviation(found.ProtocolDeviations || '');
+        setAssistance(found.AssistanceProvided || '');
+        setFollowInstructions(found.ParticipantFollowInstructions || '');
+        setPreVRAssessment(found.PreVRAssessment || '');
+        setPostVRAssessment(found.PostVRAssessment || '');
+        setDistressScoreAndFactG(found.DistressScoreAndFactG || '');
+        
+        // Parse participant response
+        if (found.ParticipantResponse) {
+          setResp(found.ParticipantResponse.split(',').map(r => r.trim()));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading form data for date:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load form data for selected date',
+      });
+    }
+  };
+
   useEffect(() => {
     if (routeObservationId) {
       setObservationId(routeObservationId);
     } else {
       setObservationId(STATIC_OBSERVATION_ID);
     }
+    // Fetch available dates when component mounts
+    fetchAvailableDates();
   }, [routeObservationId]);
 
   const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());
@@ -985,19 +1141,11 @@ case 'SOFID-7': // FACT-G Score
             <View className="w-32">
               <Pressable
                 className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowWeekDropdown(!showWeekDropdown)}
+                onPress={() => setShowDateDropdown(!showDateDropdown)}
                 style={{ backgroundColor: '#f8f9fa', borderColor: '#e5e7eb', borderRadius: 8 }}
               >
                 <Text className="text-sm text-gray-700">
-                  {selectedWeek === 'week1'
-                    ? 'Week 1'
-                    : selectedWeek === 'week2'
-                      ? 'Week 2'
-                      : selectedWeek === 'week3'
-                        ? 'Week 3'
-                        : selectedWeek === 'week4'
-                          ? 'Week 4'
-                          : 'Select Week'}
+                  {selectedDate ? selectedDate : 'New Form'}
                 </Text>
                 <Text className="text-gray-500 text-xs">▼</Text>
               </Pressable>
@@ -1005,21 +1153,61 @@ case 'SOFID-7': // FACT-G Score
           </View>
         </View>
 
-        {showWeekDropdown && (
-          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
-            {['week1', 'week2', 'week3', 'week4'].map((week, i) => (
+        {/* Date Dropdown Menu (similar to Fact-G and Distress Thermometer) */}
+        {showDateDropdown && (
+          <>
+            {/* Backdrop to close dropdown */}
+            <Pressable
+              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+              onPress={() => setShowDateDropdown(false)}
+            />
+            <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
               <Pressable
-                key={week}
-                className={`px-3 py-2 ${i < 3 ? 'border-b border-gray-100' : ''}`}
+                className={`px-3 py-2 border-b border-gray-100 ${!selectedDate ? 'bg-green-50' : ''}`}
                 onPress={() => {
-                  setSelectedWeek(week);
-                  setShowWeekDropdown(false);
+                  setSelectedDate("");
+                  setShowDateDropdown(false);
+                  setIsDefaultForm(true);
+                  // Clear form values for new form
+                  setFormValues({});
+                  setCompleted('');
+                  setTech('');
+                  setDiscomfort('');
+                  setDeviation('');
+                  setAssistance('');
+                  setFollowInstructions('');
+                  setPreVRAssessment('');
+                  setPostVRAssessment('');
+                  setDistressScoreAndFactG('');
+                  setResp([]);
                 }}
               >
-                <Text className="text-sm text-gray-700">{`Week ${i + 1}`}</Text>
+                <Text className={`text-sm font-semibold ${!selectedDate ? 'text-green-700' : 'text-gray-700'}`}>New Form</Text>
               </Pressable>
-            ))}
-          </View>
+
+              {availableDates.length > 0 ? (
+                availableDates.map((date, index) => (
+                  <Pressable
+                    key={date}
+                    className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''} ${selectedDate === date ? 'bg-green-50' : ''}`}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      setShowDateDropdown(false);
+                      setIsDefaultForm(false);
+                      // Load form data for selected date
+                      loadFormDataForDate(date);
+                    }}
+                  >
+                    <Text className={`text-sm ${selectedDate === date ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>{date}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <View className="px-3 py-2">
+                  <Text className="text-sm text-gray-500">No saved dates</Text>
+                </View>
+              )}
+            </View>
+          </>
         )}
       </View>
 
