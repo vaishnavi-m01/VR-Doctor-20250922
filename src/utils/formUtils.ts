@@ -91,12 +91,22 @@ export const generateAssessmentKey = (assessmentType: string, patientId: number,
   return `${assessmentType}-${patientId}-${assessmentDate}`;
 };
 
-export const formatDate = (date: Date | string): string => {
-  if (typeof date === 'string') {
-    date = new Date(date);
+export const formatDate = (date: Date | string): string | null => {
+  if (!date) return null;
+
+  if (typeof date === "string") {
+    // expect dd/MM/yyyy
+    const [dd, mm, yyyy] = date.split("/");
+    if (!dd || !mm || !yyyy) return null;
+
+    // API expects yyyy-MM-dd
+    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
-  return date.toISOString().split('T')[0];
+
+  // If it's already a Date object
+  return date.toISOString().split("T")[0];
 };
+
 
 export const formatTime = (date: Date | string): string => {
   if (typeof date === 'string') {

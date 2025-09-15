@@ -27,7 +27,7 @@ export default function SessionControlScreen() {
 
   const route = useRoute<RouteProp<RootStackParamList, 'SessionControlScreen'>>();
   const { patientId, studyId, therapy, backgroundMusic, language, session,SessionNo } = route.params;
-
+ console.log("VRSession",therapy,backgroundMusic,language,session,SessionNo)
 
   // Simulate time progression when playing
   useEffect(() => {

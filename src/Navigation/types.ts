@@ -18,7 +18,7 @@ export type RootStackParamList = {
   PhysicianDashboard: undefined;
   SessionSetupScreen: {patientId?:number,age?:number,studyId?:number};
   ParticipantInfo: { patientId: number,age:number,studyId:number };
-  SessionControlScreen: {patientId?: number,studyId?:number; age?:number,therapy?:string; backgroundMusic?:string;language?:string;session?:string,SessionNo:string };
+  SessionControlScreen: {patientId?: number,studyId?:number; age?:number,therapy?:string; backgroundMusic?:string;language?:string;session?:string,SessionNo?:string };
   SessionCompletedScreen: {patientId?:number,SessionNo:string;};
   SocioDemographic: { patientId?: number,age?:number,studyId?:number };
   PatientScreening: { patientId: number,age:number,studyId:number };

@@ -159,6 +159,39 @@ export default function InformedConsentForm({
 
 
     const handleSubmit = async () => {
+
+        const requiredFields = [
+            participantName,
+            ageInput,
+            qualification,
+            signatures.subjectName,
+            subjectSignaturePad,
+            // signatures.subjectDate,
+            signatures.coPIName,
+            coPISignaturePad,
+            // signatures.coPIDate,
+            signatures.investigatorName,
+            signatures.witnessName,
+            witnessSignaturePad,
+            // signatures.witnessDate,
+        ];
+
+        // Check if any are empty
+        const hasEmptyField = requiredFields.some(
+            (f) => !f || f.toString().trim() === ""
+        );
+
+        //  Validate participant info
+        if (!participantName || !ageInput || !qualification) {
+            Toast.show({
+                type: "error",
+                text1: "Validation Error",
+                text2: "Please fill all required participant information fields.",
+            });
+            return;
+        }
+
+        // Validate acknowledgements
         if (!allInitialed) {
             Toast.show({
                 type: "error",
@@ -167,6 +200,17 @@ export default function InformedConsentForm({
             });
             return;
         }
+
+        // Validate signatures
+        if (hasEmptyField) {
+            Toast.show({
+                type: "error",
+                text1: "Validation Error",
+                text2: "Please complete all signature fields (name, signature, date).",
+            });
+            return;
+        }
+
 
         try {
             const requestBody = {
@@ -533,8 +577,8 @@ export default function InformedConsentForm({
                                 nameLabel="Signatory’s Name"
                                 nameValue={signatures.subjectName}
                                 onChangeName={(v) => setSig('subjectName', v)}
-                                signatureValue={subjectSignaturePad}          // new prop
-                                onChangeSignature={setSubjectSignaturePad}    // new prop
+                                signatureValue={subjectSignaturePad}
+                                onChangeSignature={setSubjectSignaturePad}
                                 dateValue={signatures.subjectDate}
                                 onChangeDate={(v) => setSig('subjectDate', v)}
                             />
@@ -544,8 +588,8 @@ export default function InformedConsentForm({
                                 nameLabel="Co-PI Name"
                                 nameValue={signatures.coPIName}
                                 onChangeName={(v) => setSig('coPIName', v)}
-                                signatureValue={coPISignaturePad}            // new prop
-                                onChangeSignature={setCoPISignaturePad}      // new prop
+                                signatureValue={coPISignaturePad}
+                                onChangeSignature={setCoPISignaturePad}
                                 dateValue={signatures.coPIDate}
                                 onChangeDate={(v) => setSig('coPIDate', v)}
                             />

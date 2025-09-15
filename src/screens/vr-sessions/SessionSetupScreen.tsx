@@ -8,8 +8,11 @@ import type { RootStackParamList } from '../../Navigation/types';
 export default function SessionSetupScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [cat, setCat] = useState('Guided imagery');
+  console.log("Therapy", cat)
   const [instr, setInstr] = useState('Flute');
+  console.log("backgroundMusic", instr)
   const [lang, setLang] = useState('English');
+  console.log("language", lang)
   const [sess, setSess] = useState('Relaxation');
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'SessionSetupScreen'>>();
@@ -158,20 +161,30 @@ export default function SessionSetupScreen() {
 
             <Pressable
               disabled={!ready}
-              onPress={() =>
-                nav.navigate('SessionControlScreen', {
+              onPress={() => {
+                console.log("Navigate with:", {
                   patientId,
                   studyId,
                   therapy: cat,
                   backgroundMusic: instr,
                   language: lang,
                   session: sess,
-                })
-              }
+                });
+
+                nav.navigate("SessionControlScreen", {
+                  patientId,
+                  studyId,
+                  therapy: cat,
+                  backgroundMusic: instr,
+                  language: lang,
+                  session: sess,
+                });
+              }}
+
               className={`px-6 py-3 rounded-xl ${ready ? 'bg-green-600' : 'bg-gray-300'
                 }`}
             >
-              <Text className="text-white font-bold">Start</Text>
+              <Text className="text-white font-bold">Startt</Text>
             </Pressable>
 
           </View>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -21,6 +21,7 @@ import {
 } from '../../constants/appConstants';
 import { apiService } from 'src/services';
 import Toast from "react-native-toast-message";
+import { UserContext } from 'src/store/context/UserContext';
 
 
 
@@ -108,6 +109,8 @@ export default function AdverseEventForm() {
     const [selectedSession, setSelectedSession] = useState<string>('Select Session');
     const [showSessionDropdown, setShowSessionDropdown] = useState(false);
     const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+    const { userId } = useContext(UserContext);
+
 
     // Fetch available sessions
     const fetchAvailableSessions = async () => {
@@ -115,10 +118,8 @@ export default function AdverseEventForm() {
             // Mock sessions data - replace with actual API call
             const mockSessions = [
                 'Session 1',
-                'Session 2', 
-                'Session 3',
-                'Session 4',
-                'Session 5'
+                'Session 2',
+                'Session 3'
             ];
             setAvailableSessions(mockSessions);
         } catch (error) {
@@ -148,7 +149,7 @@ export default function AdverseEventForm() {
     useEffect(() => {
         // Fetch sessions first
         fetchAvailableSessions();
-        
+
         apiService
             .post<{ ResponseData: AeSeverity[] }>("/GetAeSeverityMaster")
             .then((res) => {
@@ -183,12 +184,12 @@ export default function AdverseEventForm() {
         try {
 
             if (
-                !reportedBy.trim() ||
                 !Description?.trim() ||
                 !dateOfAE ||
-                !reportDate ||
-                !physicianName ||
-                !investigatorSignature
+                !severity ||
+                outcome.length === 0 ||
+                !physicianName?.trim() ||
+                !investigatorSignature?.trim()
             ) {
                 Toast.show({
                     type: "error",
@@ -235,7 +236,7 @@ export default function AdverseEventForm() {
 
                 SortKey: 0,
                 Status: 1,
-                CreatedBy: "UH-1000",
+                CreatedBy: userId,
             };
 
             console.log("FINAL PAYLOAD", payload);
@@ -356,68 +357,130 @@ export default function AdverseEventForm() {
     return (
         <>
 
-            <View className="px-4 pt-4">
-                <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-                    <Text className="text-lg font-bold text-green-600">
+            <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+                <View
+                    style={{
+                        backgroundColor: "white",
+                        borderBottomColor: "#e5e7eb",
+                        borderBottomWidth: 1,
+                        borderRadius: 12,
+                        padding: 17,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 2 },
+                    }}
+                >
+                    <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>
                         Participant ID: {patientId}
                     </Text>
-
-                    <Text className="text-base font-semibold text-green-600">
-                        Study ID: {studyId || 'N/A'}
+                    <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
+                        Study ID: {studyId ? (typeof studyId === "string" ? studyId : `${studyId}`) : "CS-0001"}
                     </Text>
-
-                    <View className="flex-row items-center gap-3">
-                        <Text className="text-base font-semibold text-gray-700">
-                            Age: {age}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                        <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>
+                            Age: {age || "Not specified"}
                         </Text>
-                        
-                        {/* Sessions Dropdown */}
-                        <View className="w-32">
+
+                        {/* Session Dropdown */}
+                        <View style={{ width: 128 }}>
                             <Pressable
-                                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
                                 style={{
                                     backgroundColor: '#f8f9fa',
                                     borderColor: '#e5e7eb',
+                                    borderWidth: 1,
                                     borderRadius: 8,
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 8,
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
                                 }}
+                                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
                             >
-                                <Text className="text-sm text-gray-700">
-                                    {selectedSession}
+                                <Text style={{ fontSize: 14, color: "#374151" }}>
+                                    {selectedSession || "Select Session"}
                                 </Text>
-                                <Text className="text-gray-500 text-xs">▼</Text>
+                                <Text style={{ color: "#6b7280", fontSize: 12 }}>▼</Text>
                             </Pressable>
                         </View>
                     </View>
                 </View>
+                </View>
 
-                {/* Sessions Dropdown Menu */}
+                {/* Session Dropdown Menu */}
                 {showSessionDropdown && (
                     <>
                         {/* Backdrop to close dropdown */}
                         <Pressable
-                            className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                zIndex: 9998,
+                            }}
                             onPress={() => setShowSessionDropdown(false)}
                         />
-                        <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
-                            {availableSessions.map((session, index) => (
-                                <Pressable
-                                    key={index}
-                                    className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''} ${selectedSession === session ? 'bg-green-50' : ''}`}
-                                    onPress={() => {
-                                        setSelectedSession(session);
-                                        setShowSessionDropdown(false);
-                                    }}
-                                >
-                                    <Text className={`text-sm ${selectedSession === session ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>
-                                        {session}
-                                    </Text>
-                                </Pressable>
-                            ))}
+
+                        <View
+                            style={{
+                                position: "absolute",
+                                top: 80,
+                                right: 24,
+                                backgroundColor: "white",
+                                borderColor: "#e5e7eb",
+                                borderWidth: 1,
+                                borderRadius: 8,
+                                shadowColor: "#000",
+                                shadowOpacity: 0.15,
+                                shadowRadius: 10,
+                                shadowOffset: { width: 0, height: 4 },
+                                zIndex: 9999,
+                                elevation: 10,
+                                width: 128,
+                                maxHeight: 192,
+                            }}
+                        >
+                            {availableSessions.length > 0 ? (
+                                availableSessions.map((session, index) => (
+                                    <Pressable
+                                        key={session}
+                                        style={{
+                                            paddingHorizontal: 12,
+                                            paddingVertical: 8,
+                                            borderBottomColor: index < availableSessions.length - 1 ? "#f3f4f6" : undefined,
+                                            borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
+                                            backgroundColor: selectedSession === session ? "#ecfdf5" : "white",
+                                        }}
+                                        onPress={() => {
+                                            setSelectedSession(session);
+                                            setShowSessionDropdown(false);
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                fontSize: 14,
+                                                color: selectedSession === session ? "#2f855a" : "#374151",
+                                                fontWeight: selectedSession === session ? "600" : "400",
+                                            }}
+                                        >
+                                            {session}
+                                        </Text>
+                                    </Pressable>
+                                ))
+                            ) : (
+                                <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                                    <Text style={{ fontSize: 14, color: "#9ca3af" }}>No sessions available</Text>
+                                </View>
+                            )}
                         </View>
                     </>
                 )}
-            </View>
 
             <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
@@ -501,11 +564,11 @@ export default function AdverseEventForm() {
                                 </Text>
                             </Pressable>
                         </View>
-                        {completed === 'No' && (
+                        {/* {completed === 'No' && (
                             <View className="mt-3">
                                 <Field label="If No, specify reason" placeholder="Reason for not completing…" />
                             </View>
-                        )}
+                        )} */}
                     </View>
                     <DropdownField
                         label="📼 VR Content Type at of AE"

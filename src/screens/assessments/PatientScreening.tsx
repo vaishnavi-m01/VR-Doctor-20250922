@@ -53,7 +53,7 @@ export default function PatientScreening() {
   const [PMSID, setPMSID] = useState<string | null>(null);
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
-  const { userId, setUserId } = useContext(UserContext);
+  const { userId } = useContext(UserContext);
   console.log("userIdd", userId)
 
   const routes = useRoute();
@@ -118,33 +118,39 @@ export default function PatientScreening() {
   };
 
 
-
-
-
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-    if (!pulseRate) newErrors.pulseRate = 'Pulse Rate is required';
-    if (!bloodPressure) newErrors.bloodPressure = 'Blood Pressure is required';
-    if (!temperature) newErrors.temperature = 'Temperature is required';
-    if (!bmi) newErrors.bmi = 'BMI is required';
-    if (!dt) newErrors.dt = 'Distress Thermometer score is required';
-    if (!implants) newErrors.implants = 'Select Yes/No for implants';
-    if (!prosthetics) newErrors.prosthetics = 'Select Yes/No for prosthetics';
+    const requiredFields = [
+      pulseRate,
+      bloodPressure,
+      temperature,
+      bmi,
+      implants,
+      prosthetics,
+      dt?.toString(),        
+      // factGScore?.toString() 
+    ];
 
-    setErrors(newErrors);
+    const hasEmptyField = requiredFields.some(
+      (field) => !field || field.toString().trim() === ""
+    );
 
-    if (Object.keys(newErrors).length > 0) {
+    if (hasEmptyField) {
       Toast.show({
-        type: 'error',
+        type: "error",
         text1: 'Validation Error',
         text2: 'Please fill all required fields',
-        position: 'top',
+        position: "top",
         topOffset: 50,
       });
       return false;
     }
+
     return true;
   };
+
+
+
+
 
 
 
@@ -231,7 +237,7 @@ export default function PatientScreening() {
         AnyMedicalExperience: selectedExperiences,
         SortKey: '1',
         Status: '1',
-        ModifiedBy: 'USER001',
+        ModifiedBy: userId,
       };
 
       console.log('Score Payload:', ParticipantMedicalScreening);
@@ -315,7 +321,7 @@ export default function PatientScreening() {
             </Pressable>
           </View>
           <Thermometer value={dt} onChange={setDt} />
-          {errors.dt && <Text className="text-red-500 text-xs mt-8">{errors.dt}</Text>}
+          {/* {errors.dt && <Text className="text-red-500 text-xs mt-8">{errors.dt}</Text>} */}
 
           <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
@@ -343,19 +349,19 @@ export default function PatientScreening() {
           <View className="flex-row gap-3 mt-3">
             <View className="flex-1">
               <Field label="Pulse Rate (bpm)" placeholder="76" value={pulseRate} onChangeText={setPulseRate} keyboardType="numeric" />
-              {errors.pulseRate && <Text className="text-red-500 text-xs mt-1">{errors.pulseRate}</Text>}
+              {/* {errors.pulseRate && <Text className="text-red-500 text-xs mt-1">{errors.pulseRate}</Text>} */}
             </View>
             <View className="flex-1">
               <Field label="Blood Pressure (mmHg)" placeholder="120/80" value={bloodPressure} onChangeText={setBloodPressure} />
-              {errors.bloodPressure && <Text className="text-red-500 text-xs mt-1">{errors.bloodPressure}</Text>}
+              {/* {errors.bloodPressure && <Text className="text-red-500 text-xs mt-1">{errors.bloodPressure}</Text>} */}
             </View>
             <View className="flex-1">
               <Field label="Temperature (°C)" placeholder="36.8" value={temperature} onChangeText={setTemperature} keyboardType="numeric" />
-              {errors.temperature && <Text className="text-red-500 text-xs mt-1">{errors.temperature}</Text>}
+              {/* {errors.temperature && <Text className="text-red-500 text-xs mt-1">{errors.temperature}</Text>} */}
             </View>
             <View className="flex-1">
               <Field label="BMI" placeholder="22.5" value={bmi} onChangeText={setBmi} keyboardType="numeric" />
-              {errors.bmi && <Text className="text-red-500 text-xs mt-1">{errors.bmi}</Text>}
+              {/* {errors.bmi && <Text className="text-red-500 text-xs mt-1">{errors.bmi}</Text>} */}
             </View>
           </View>
         </FormCard>
@@ -384,7 +390,7 @@ export default function PatientScreening() {
                 </Pressable>
 
               </View>
-              {errors.implants && <Text className="text-red-500 text-xs mb-1">{errors.implants}</Text>}
+              {/* {errors.implants && <Text className="text-red-500 text-xs mb-1">{errors.implants}</Text>} */}
             </View>
 
             <View className="flex-1">
@@ -408,7 +414,7 @@ export default function PatientScreening() {
                   <Text className={`font-medium text-xs ${prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
                 </Pressable>
               </View>
-              {errors.prosthetics && <Text className="text-red-500 text-xs mb-1">{errors.prosthetics}</Text>}
+              {/* {errors.prosthetics && <Text className="text-red-500 text-xs mb-1">{errors.prosthetics}</Text>} */}
             </View>
           </View>
         </FormCard>

@@ -203,15 +203,15 @@ export default function DistressThermometerScreen() {
         // Group questions by category and deduplicate
         const grouped: Record<string, Category> = {};
         const seenQuestions = new Set<string>();
-        
+
         responseData.forEach((item) => {
           if (item.CategoryName && item.DistressQuestionId) {
             // Create unique key for deduplication
             const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
-            
+
             if (!seenQuestions.has(questionKey)) {
               seenQuestions.add(questionKey);
-              
+
               if (!grouped[item.CategoryName]) {
                 grouped[item.CategoryName] = { categoryName: item.CategoryName, questions: [] };
               }
@@ -268,20 +268,20 @@ export default function DistressThermometerScreen() {
       // Group questions by category and deduplicate, prioritizing records with PDTWQID
       const grouped: Record<string, Category> = {};
       const seenQuestions = new Map<string, any>();
-      
+
       responseData.forEach((item) => {
         if (item.CategoryName && item.DistressQuestionId) {
           // Create unique key for deduplication
           const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
-          
+
           // If we haven't seen this question, or if this item has PDTWQID and the previous one doesn't
-          if (!seenQuestions.has(questionKey) || 
-              (item.PDTWQID && !seenQuestions.get(questionKey).PDTWQID)) {
+          if (!seenQuestions.has(questionKey) ||
+            (item.PDTWQID && !seenQuestions.get(questionKey).PDTWQID)) {
             seenQuestions.set(questionKey, item);
           }
         }
       });
-      
+
       // Now build the grouped structure from the deduplicated items
       seenQuestions.forEach((item, questionKey) => {
         const [categoryName] = questionKey.split('-');
@@ -299,7 +299,7 @@ export default function DistressThermometerScreen() {
       // Set answers for selected problems (handle duplicates by taking the first "Yes" answer)
       const existingAnswers: Record<string, boolean> = {};
       const processedQuestions = new Set<string>();
-      
+
       responseData.forEach((item) => {
         if (item.DistressQuestionId && !processedQuestions.has(item.DistressQuestionId)) {
           processedQuestions.add(item.DistressQuestionId);
@@ -361,19 +361,48 @@ export default function DistressThermometerScreen() {
     }
   }, [selectedDate, enteredPatientId]);
 
+
+ const validateForm = () => {
+  // Validate Patient ID
+  if (!enteredPatientId || enteredPatientId.trim() === "") {
+    Toast.show({
+      type: "error",
+      text1: "Validation Error",
+      text2: "Please fill all required fields",
+    });
+    return false;
+  }
+
+  // Validate Distress Thermometer value
+  if (v === null || v === undefined || v === 0) {
+    Toast.show({
+      type: "error",
+      text1: "Validation Error",
+      text2: "Please fill all required fields",
+    });
+    return false;
+  }
+
+  const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
+  if (!hasSelectedProblem) {
+    Toast.show({
+      type: "error",
+      text1: "Validation Error",
+      text2: "Please fill all required fields",
+    });
+    return false;
+  }
+
+  return true;
+};
+
+
   const handleSave = async () => {
+
+    if (!validateForm()) return;
     try {
       setLoading(true);
 
-      if (!enteredPatientId) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Please enter a Participant ID",
-        });
-        setLoading(false);
-        return;
-      }
 
       // Detect if this is an update by presence of PDTWQID (existing data)
       const hasExistingData = categories.some((cat) =>
@@ -514,7 +543,7 @@ export default function DistressThermometerScreen() {
           <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
             Study ID:{" "}
             {studyId
-              ? typeof studyId === "string" 
+              ? typeof studyId === "string"
                 ? studyId
                 : `${studyId}`
               : "CS-0001"}
@@ -693,7 +722,7 @@ export default function DistressThermometerScreen() {
         </View>
 
         {/* Notes Section */}
-        <View className="bg-white rounded-lg p-4 shadow-md mb-4">
+        {/* <View className="bg-white rounded-lg p-4 shadow-md mb-4">
           <Text className="font-bold text-lg text-[#333] mb-4">Notes</Text>
           <TextInput
             className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
@@ -709,7 +738,7 @@ export default function DistressThermometerScreen() {
               textAlignVertical: "top",
             }}
           />
-        </View>
+        </View> */}
 
         {/* Dynamic Problem List */}
         <View className="bg-white rounded-lg p-4 shadow-md mb-4">
@@ -754,7 +783,7 @@ export default function DistressThermometerScreen() {
             </View>
           ))}
 
-          <View className="flex-1 mr-1">
+          {/* <View className="flex-1 mr-1">
             <Text className="text-xs text-[#6b7a77] mb-2">Other Problems</Text>
             <TextInput
               className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
@@ -770,7 +799,7 @@ export default function DistressThermometerScreen() {
                 textAlignVertical: "top",
               }}
             />
-          </View>
+          </View> */}
         </View>
 
         {/* Extra space to prevent content being hidden */}

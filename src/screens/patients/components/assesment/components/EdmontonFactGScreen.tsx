@@ -361,7 +361,7 @@ export default function EdmontonFactGScreen() {
       if (answeredQuestions < totalQuestions) {
         Toast.show({
           type: "error",
-          text1: "Warning",
+          text1: "Validation Error",
           text2: `Please answer all questions (${answeredQuestions}/${totalQuestions} answered).`,
         });
         return;

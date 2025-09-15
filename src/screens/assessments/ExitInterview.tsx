@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useContext } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -12,6 +12,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
+import { UserContext } from 'src/store/context/UserContext';
 
 interface ExitInterviewOptions {
   OptionId?: string;
@@ -60,6 +61,8 @@ export default function ExitInterview() {
   const [interviewerSignature, setInterviewerSignature] = useState('');
   const [participantDate, setParticipantDate] = useState(todayStr);
   const [interviewerDate, setInterviewerDate] = useState(todayStr);
+  const { userId } = useContext(UserContext);
+  
 
   // Dynamic Q&A state
   const [questions, setQuestions] = useState<ExitInterviewQuestion[]>([]);
@@ -240,7 +243,7 @@ export default function ExitInterview() {
     ParticipantDate: participantDate,
     InterviewerDate: interviewerDate,
     Status: 1,
-    CreatedBy: 'UID-3',
+    CreatedBy: userId,
     // flags initialized below
   };
 

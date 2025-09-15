@@ -33,7 +33,7 @@ describe('ParticipantService', () => {
         SortKey: 0,
         StudyId: 'CS-0001',
         Status: 1,
-        CreatedBy: '0',
+        CreatedBy: userId,
         CreatedDate: '2025-08-05T09:14:49.000Z',
         ModifiedBy: userId,
         ModifiedDate: '2025-08-07T15:07:47.000Z',

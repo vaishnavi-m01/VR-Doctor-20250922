@@ -143,12 +143,7 @@ export default function SocioDemographic() {
   const [otherMedicalConditions, setOtherMedicalConditions] = useState("");
   const [currentMedications, setCurrentMedications] = useState("");
 
-  // Lifestyle and Psychological Factors fields
-  const [smokingHistory, setSmokingHistory] = useState("");
-  const [alcoholConsumption, setAlcoholConsumption] = useState("");
-  const [physicalActivityLevel, setPhysicalActivityLevel] = useState("");
-  const [stressLevels, setStressLevels] = useState("");
-  const [technologyExperience, setTechnologyExperience] = useState("");
+
 
   const [participantSignature, setParticipantSignature] = useState("");
   const today = new Date().toISOString().split("T")[0];
@@ -362,22 +357,40 @@ export default function SocioDemographic() {
 
 
   const handleSave = async () => {
-    let newErrors: { [key: string]: string } = {};
+    // List of fields that are always required
+    const requiredFields = [
+      ages,
+      phoneNumber,
+      gender,
+      maritalStatus,
+      KnowledgeIn,
+      cancerDiagnosis,
+      cancerStage,
+      ecogScore,
+      treatmentType,
+      treatmentDuration,
+      educationLevel,
+      employmentStatus,
+      faithWellbeing,
+      practiceReligion,
+      participantSignature,
+      consentDate,
+    ];
 
-    if (!ages) newErrors.age = "Age is required";
-    if (!gender) newErrors.gender = "Gender is required";
-    if (!maritalStatus) newErrors.maritalStatus = "Marital status is required";
-    if (!cancerDiagnosis) newErrors.cancerDiagnosis = "Cancer diagnosis is required";
-    if (!cancerStage) newErrors.cancerStage = "Cancer stage is required";
-    if (!phoneNumber) {
-      newErrors.phoneNumber = "Emergency contact is required";
-    } else if (!/^[0-9]{10}$/.test(phoneNumber)) {
-      newErrors.phoneNumber = "Enter a valid 10-digit emergency contact number";
+    if (maritalStatus === "Married") {
+      requiredFields.push(numberOfChildren);
     }
 
-    setErrors(newErrors);
+    // if (practiceReligion === "Yes") {
+    //   requiredFields.push(religionSpecify);
+    // }
 
-    if (Object.keys(newErrors).length > 0) {
+    const hasEmptyField = requiredFields.some(
+      (field) => !field || field.toString().trim() === ""
+    );
+    const invalidPhone = phoneNumber.length !== 10;
+
+    if (hasEmptyField || invalidPhone) {
       Toast.show({
         type: "error",
         text1: "Validation Error",
@@ -389,7 +402,6 @@ export default function SocioDemographic() {
     }
 
     try {
-
       const payload = {
         ParticipantId: patientId,
         StudyId: "CS-0001",
@@ -397,15 +409,13 @@ export default function SocioDemographic() {
         PhoneNumber: phoneNumber,
         Gender: gender,
         MaritalStatus: maritalStatus,
-        NumberOfChildren: numberOfChildren,
+        NumberOfChildren: maritalStatus === "Married" ? numberOfChildren : null,
         KnowledgeIn: KnowledgeIn,
         FaithContributeToWellBeing: faithWellbeing,
         PracticeAnyReligion: practiceReligion,
-        ReligionType: religionSpecify,
-
+        ReligionType: practiceReligion === "Yes" ? religionSpecify : null, 
         EducationLevel: educationLevel,
         EmploymentStatus: employmentStatus,
-
         CancerDiagnosis: cancerDiagnosis,
         StageOfCancer: cancerStage,
         ScoreOfECOG: ecogScore,
@@ -414,29 +424,17 @@ export default function SocioDemographic() {
         DurationOfTreatmentMonths: Number(treatmentDuration),
         OtherMedicalConditions: otherMedicalConditions,
         CurrentMedications: currentMedications,
-
         Signature: participantSignature,
         SignatureDate: consentDate,
-
-        //   lifestyle section
         LifestyleData: Object.entries(selectedValues).map(([habitId, level]) => ({
           Lifestyle: habitId,
           Level: level,
         })),
       };
 
-
-      let response;
-      if (isEditMode) {
-        response = await apiService.post("/AddUpdateParticipant", payload);
-
-      } else {
-        response = await apiService.post("/AddUpdateParticipant", payload);
-      }
+      const response = await apiService.post("/AddUpdateParticipant", payload);
 
       if (response.status === 200) {
-
-
         Toast.show({
           type: "success",
           text1: isEditMode ? "Updated" : "Success",
@@ -448,17 +446,8 @@ export default function SocioDemographic() {
           visibilityTime: 2000,
           onHide: () => navigation.goBack(),
         });
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "Something went wrong. Please try again.",
-          position: "top",
-          topOffset: 50,
-        });
       }
     } catch (error: any) {
-      console.error("Error saving participant:", error.message);
       Toast.show({
         type: "error",
         text1: "Error",
@@ -468,6 +457,7 @@ export default function SocioDemographic() {
       });
     }
   };
+
 
 
 
@@ -512,9 +502,7 @@ export default function SocioDemographic() {
               }}
             />
 
-            {errors.ages && (
-              <Text className="text-red-500 text-sm mt-2">{errors.ages}</Text>
-            )}
+
           </View>
 
 
@@ -526,14 +514,12 @@ export default function SocioDemographic() {
               keyboardType="phone-pad"
               maxLength={10}
               onChangeText={(val) => {
-                const numericVal = val.replace(/[^0-9]/g, ""); 
+                const numericVal = val.replace(/[^0-9]/g, "");
                 setPhoneNumber(numericVal);
                 setErrors((prev) => ({ ...prev, phoneNumber: "" }));
               }}
             />
-            {errors.phoneNumber && (
-              <Text className="text-red-500 text-sm mt-2">{errors.phoneNumber}</Text>
-            )}
+
           </View>
 
 
@@ -602,7 +588,6 @@ export default function SocioDemographic() {
                 </Text>
               </Pressable>
             </View>
-            {errors.gender && <Text className="text-red-500 text-sm mt-2">{errors.gender}</Text>}
 
             {/* Conditional Specify Field */}
             {gender === 'Other' && (
@@ -691,10 +676,7 @@ export default function SocioDemographic() {
               </Pressable>
             </View>
 
-            {/* Error Message */}
-            {errors.maritalStatus && (
-              <Text className="text-red-500 text-sm mt-2">{errors.maritalStatus}</Text>
-            )}
+
 
             {/* Conditional Number of Children Field */}
             {maritalStatus === "Married" && (
@@ -858,9 +840,7 @@ export default function SocioDemographic() {
             placeholder="Select cancer type"
             onValueChange={(val) => setCancerDiagnosis(val)}
             options={cancerTypeOptions}
-          /> {errors.cancerDiagnosis && (
-            <Text className="text-red-500 text-sm mt-2">{errors.cancerDiagnosis}</Text>
-          )}
+          />
 
 
 
@@ -878,9 +858,7 @@ export default function SocioDemographic() {
               value={cancerStage}
               onChange={setCancerStage}
             />
-            {errors.cancerStage && (
-              <Text className="text-red-500 text-sm mt-2">{errors.cancerStage}</Text>
-            )}
+
           </View>
 
           <View className="mt-6">
@@ -953,8 +931,7 @@ export default function SocioDemographic() {
         <FormCard icon="🧠" title="Section 3: Lifestyle and Psychological Factors">
           {lifeStyleData.map((habit, idx) => {
             const config = habitConfig[habit.HabitID];
-            if (!config) return null; // skip if no config found
-
+            if (!config) return null;
             return (
               <View key={habit.HabitID} className="mt-6">
                 {/* Title */}
@@ -970,7 +947,7 @@ export default function SocioDemographic() {
                       onPress={() =>
                         setSelectedValues((prev) => ({
                           ...prev,
-                          [habit.HabitID]: opt,   // ✅ store by HabitID
+                          [habit.HabitID]: opt,
                         }))
                       }
                       className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${selectedValues[habit.HabitID] === opt
