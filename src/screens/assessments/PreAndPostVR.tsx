@@ -55,6 +55,9 @@ export default function PreAndPostVR() {
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const { userId, setUserId } = useContext(UserContext);
 
+  const [validationError, setValidationError] = useState('');
+
+
   // Fetch available sessions
   const fetchAvailableSessions = async () => {
     try {
@@ -75,7 +78,7 @@ export default function PreAndPostVR() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setErrors({});
+
       try {
         // Fetch sessions first
         await fetchAvailableSessions();
@@ -159,29 +162,31 @@ export default function PreAndPostVR() {
     return symptomQs.some(q => responses[q.PPVRQMID]?.ScaleValue === 'Yes');
   }, [responses, questions]);
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!participantIdInput.trim()) {
-      newErrors['participantId'] = 'Participant ID is required';
-    }
-    
-    // Only validate questions that match the selected assessment type
-    const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
-    questionsToValidate.forEach(q => {
-      if (!responses[q.PPVRQMID]?.ScaleValue) {
-        newErrors[q.PPVRQMID] = 'Answer is required';
-      }
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+const validate = () => {
+  if (!participantIdInput.trim()) {
+    setValidationError('All fields required');
+    return false;
+  }
+
+  const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
+  const allAnswered = questionsToValidate.every(q => responses[q.PPVRQMID]?.ScaleValue);
+
+  if (!allAnswered) {
+    setValidationError('All fields required');
+    return false;
+  }
+
+  setValidationError('');
+  return true;
+};
+
 
   const handleSave = async () => {
     if (!validate()) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: 'Please answer all required questions before saving.',
+        text2: 'All Fields are required',
         position: 'top',
         topOffset: 50,
       });
@@ -204,7 +209,7 @@ export default function PreAndPostVR() {
         StudyId: studyIdFormatted,
         SessionNo: sessionNo,
         Status: 1,
-        CreatedBy: 'UH-1000',
+        CreatedBy: userId,
         ModifiedBy: userId,
         QuestionData: questionData,
       };
@@ -212,13 +217,15 @@ export default function PreAndPostVR() {
       console.log("Saving PrePost VR session payload:", payload);
       console.log("Session being saved:", sessionNo, "for assessment type:", selectedAssessmentType);
 
+      const isAdd = questionData.some((q) => !q.PPPVRId);
+
       const response = await apiService.post('/AddUpdateParticipantPrePostVRSessions', payload);
 
       if (response.status === 200) {
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: 'Responses saved successfully!',
+          text2: isAdd ? 'PreAndPost added successfully!' : 'PreAndPost updated successfully!',
           position: 'top',
           topOffset: 50,
           visibilityTime: 2000,
@@ -322,11 +329,11 @@ export default function PreAndPostVR() {
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Field label="Participant ID" value={participantIdInput} editable={false} />
-              {errors['participantId'] && <Text className="text-red-500 text-xs mt-1">{errors['participantId']}</Text>}
+             
             </View>
             <View className="flex-1">
               <DateField label="Date" value={dateInput} onChange={setDateInput} />
-              {errors['date'] && <Text className="text-red-500 text-xs mt-1">{errors['date']}</Text>}
+            
             </View>
           </View>
           
@@ -406,7 +413,7 @@ export default function PreAndPostVR() {
                     </Pressable>
                   ))}
                 </View>
-                {errors[q.PPVRQMID] && <Text className="text-red-500 text-xs mt-1">{errors[q.PPVRQMID]}</Text>}
+             
 
                 {responses[q.PPVRQMID]?.ScaleValue && (
                   <View className="mt-3">
@@ -445,7 +452,6 @@ export default function PreAndPostVR() {
                     </Pressable>
                   ))}
                 </View>
-                {errors[q.PPVRQMID] && <Text className="text-red-500 text-xs mt-1">{errors[q.PPVRQMID]}</Text>}
 
                 {responses[q.PPVRQMID]?.ScaleValue && (
                   <View className="mt-3">

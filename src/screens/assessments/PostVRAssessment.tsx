@@ -333,6 +333,20 @@ export default function PostVRAssessment() {
 
 
   const handleSave = async () => {
+      const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+        entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
+      );
+
+      if (hasEmptyFields) {
+        Toast.show({
+          type: 'error',
+          text1: 'Validation Error',
+          text2: 'All fields are required',
+          position: 'top',
+          topOffset: 50,
+        });
+        return; 
+      }
     try {
       setSaving(true);
 
@@ -349,7 +363,7 @@ export default function PostVRAssessment() {
               ParticipantId: participantId,
               StudyId: formattedStudyId,
               Status: 1,
-              CreatedBy: 'UH-1000',
+              CreatedBy: userId,
               ModifiedBy: userId,
             }))
             .filter((item) => item.ScaleValue !== null || item.Notes !== null)
@@ -360,11 +374,13 @@ export default function PostVRAssessment() {
         StudyId: formattedStudyId,
         QuestionData: questionData,
         Status: 1,
-        CreatedBy: 'UH-1000',
+        CreatedBy: userId,
         ModifiedBy: userId,
       };
 
       console.log('Saving Assessment Payload:', payload);
+
+       const isAdd = questionData.some((q) => q.PMPVRID === null);
 
       const response = await apiService.post('/AddUpdateParticipantMainPrePostVRAssessment', payload);
 
@@ -372,7 +388,7 @@ export default function PostVRAssessment() {
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: 'Assessment saved successfully!',
+          text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
           position: 'top',
           topOffset: 50,
         });
@@ -476,7 +492,7 @@ export default function PostVRAssessment() {
       <BottomBar>
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn variant="light" onPress={() => fetchAssessmentQuestions(participantId, studyId ? studyId.toString() : '0001')} disabled={loading}>Refresh</Btn>
-        <Btn onPress={handleSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save Assessment'}</Btn>
+        <Btn onPress={handleSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save'}</Btn>
       </BottomBar>
     </>
   );

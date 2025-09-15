@@ -405,6 +405,8 @@ export default function EdmontonFactGScreen() {
         CreatedDate: createdDate,
       };
 
+      const isAdd = !selectedDate || !availableDates.includes(selectedDate);
+
       //  Save data
       const response = await apiService.post("/AddParticipantFactGQuestionsWeekly", payload);
 
@@ -413,7 +415,7 @@ export default function EdmontonFactGScreen() {
         Toast.show({
           type: "success",
           text1: "Success",
-          text2: "Created successfully!",
+          text2: isAdd ? "FactG Added successfully!" : "FactG Updated successfully!",
           onHide: () => {
             navigation.goBack();
             const navState = navigation.getState();
