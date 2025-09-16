@@ -157,6 +157,12 @@ function FactGWithErrorHandling({ patientId }: FactGWithErrorHandlingProps) {
     }));
   }, []);
 
+  const handleClear = () => {
+    setAssessedOn('');
+    setAssessedBy('');
+    setResponses({});
+  };
+
   // Handle save with debouncing
   const handleSave = useCallback(() => {
     const factGData = {
@@ -231,7 +237,8 @@ function FactGWithErrorHandling({ patientId }: FactGWithErrorHandlingProps) {
   return (
     <>
       <ScrollView 
-        className="flex-1 p-4 bg-bg pb-[300px]"
+        className="flex-1 bg-bg pb-[300px]"
+        style={{ paddingLeft: 8, paddingRight: 16, paddingTop: 16 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -306,11 +313,12 @@ function FactGWithErrorHandling({ patientId }: FactGWithErrorHandlingProps) {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn 
           onPress={handleSave} 
           disabled={!isFormComplete || factGLoading}
         >
-          {factGLoading ? 'Saving...' : 'Save Assessment'}
+          {factGLoading ? 'Saving...' : 'Save & Close'}
         </Btn>
       </BottomBar>
     </>

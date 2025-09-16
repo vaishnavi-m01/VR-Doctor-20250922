@@ -62,6 +62,39 @@ export default function SocioDemographicRedux() {
     }
   }, [isEditMode, patientId, dispatch]);
 
+  const handleClear = () => {
+    dispatch(updateParticipant({
+      ...currentParticipant,
+      age: '',
+      phoneNumber: '',
+      gender: '',
+      genderOther: '',
+      maritalStatus: '',
+      numberOfChildren: '',
+      faithContributeToWellBeing: '',
+      practiceAnyReligion: '',
+      religionSpecify: '',
+      educationLevel: '',
+      knowledgeIn: '',
+      employmentStatus: '',
+      currentMedications: '',
+      otherMedicalConditions: '',
+      cancerDiagnosis: '',
+      stageOfCancer: '',
+      typeOfTreatment: '',
+      startDateOfTreatment: '',
+      durationOfTreatmentMonths: '',
+      scoreOfECOG: '',
+      smokingHistory: '',
+      alcoholConsumption: '',
+      physicalActivityLevel: '',
+      stressLevels: '',
+      technologyExperience: '',
+      participantSignature: '',
+      consentDate: '',
+    }));
+  };
+
   const handleSave = async () => {
     if (!currentParticipant) return;
 
@@ -298,8 +331,9 @@ export default function SocioDemographicRedux() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave} disabled={loading}>
-          {loading ? "Saving..." : "Save Information"}
+          {loading ? "Saving..." : "Save & Close"}
         </Btn>
       </BottomBar>
     </>

@@ -355,6 +355,21 @@ export default function SocioDemographic() {
     setKnowledgeIn(language);
   };
 
+  const handleClear = () => {
+    setAge("");
+    setPhoneNumber("");
+    setGender("");
+    setGenderOther("");
+    setMaritalStatus("");
+    setNumberOfChildren("");
+    setFaithWellbeing("");
+    setPracticeReligion("");
+    setReligionSpecify("");
+    setEducationLevel("");
+    setKnowledgeIn("");
+    setSelectedValues({});
+    setErrors({});
+  };
 
   const handleSave = async () => {
     // List of fields that are always required
@@ -533,7 +548,7 @@ export default function SocioDemographic() {
                   setGender("Male");
                   setErrors((prev) => ({ ...prev, gender: "" }));
                 }}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${gender === 'Male'
+                className={`flex-1 flex-row items-center justify-center rounded-full py-2 px-4 ${gender === 'Male'
                   ? 'bg-[#4FC264]'
                   : 'bg-gray-200'
                   }`}
@@ -553,7 +568,7 @@ export default function SocioDemographic() {
               {/* Female Button */}
               <Pressable
                 onPress={() => setGender('Female')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${gender === 'Female'
+                className={`flex-1 flex-row items-center justify-center rounded-full py-2 px-4 ${gender === 'Female'
                   ? 'bg-[#4FC264]'
                   : 'bg-[#EBF6D6]'
                   }`}
@@ -573,7 +588,7 @@ export default function SocioDemographic() {
               {/* Other Button */}
               <Pressable
                 onPress={() => setGender('Other')}
-                className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${gender === 'Other'
+                className={`flex-1 flex-row items-center justify-center rounded-full py-2 px-4 ${gender === 'Other'
                   ? 'bg-[#4FC264]'
                   : 'bg-[#EBF6D6]'
                   }`}
@@ -1004,7 +1019,8 @@ export default function SocioDemographic() {
       </ScrollView>
 
       <BottomBar>
-        <Btn onPress={handleSave}>Save Information</Btn>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
+        <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
     </>
   );

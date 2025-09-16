@@ -180,6 +180,9 @@ const validate = () => {
   return true;
 };
 
+  const handleClear = () => {
+    setResponses({});
+  };
 
   const handleSave = async () => {
     if (!validate()) {
@@ -491,9 +494,10 @@ const validate = () => {
             ⚠︎ Review symptoms
           </Text>
         )}
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn variant="light">Validate</Btn>
         <Btn onPress={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : 'Save & Close'}
         </Btn>
       </BottomBar>
     </>

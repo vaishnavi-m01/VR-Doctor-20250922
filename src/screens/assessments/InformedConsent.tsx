@@ -155,8 +155,15 @@ export default function InformedConsentForm({
         }, [patientId])
     );
 
-
-
+    const handleClear = () => {
+        setParticipantName("");
+        setParticipantSignature("");
+        setConsentDate("");
+        setWitnessName("");
+        setWitnessSignature("");
+        setWitnessDate("");
+        setErrors({});
+    };
 
     const handleSubmit = async () => {
 
@@ -637,7 +644,8 @@ export default function InformedConsentForm({
             </ScrollView>
 
             <BottomBar>
-                <Btn onPress={handleSubmit}>Save Consent Form</Btn>
+                <Btn variant="light" onPress={handleClear}>Clear</Btn>
+                <Btn onPress={handleSubmit}>Save & Close</Btn>
             </BottomBar>
         </>
     );

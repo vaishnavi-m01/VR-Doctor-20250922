@@ -579,7 +579,7 @@ export default function EdmontonFactGScreen() {
         </>
       )}
 
-      <ScrollView style={{ flex: 1, padding: 16, paddingBottom: 400 }}>
+      <ScrollView style={{ flex: 1, paddingLeft: 8, paddingRight: 16, paddingTop: 16, paddingBottom: 400 }}>
         <FormCard
           icon="FG"
           title={`FACT-G (Version 4) ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}
@@ -658,7 +658,7 @@ export default function EdmontonFactGScreen() {
               <Text style={{ color: "white" }}>Saving...</Text>
             </View>
           ) : (
-            "Save"
+            "Save & Close"
           )}
         </Btn>
       </BottomBar>

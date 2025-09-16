@@ -50,6 +50,12 @@ export default function FactGWithRedux() {
     }));
   };
 
+  const handleClear = () => {
+    setAssessedOn('');
+    setAssessedBy('');
+    setAnswers({});
+  };
+
   // Handle save
   const handleSave = async () => {
     try {
@@ -115,7 +121,7 @@ export default function FactGWithRedux() {
 
   return (
     <>
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 bg-bg pb-[400px]" style={{ paddingLeft: 8, paddingRight: 16, paddingTop: 16 }}>
         <FormCard 
           icon="FG" 
           title="FACT-G (Version 4)" 
@@ -215,11 +221,12 @@ export default function FactGWithRedux() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn 
           onPress={handleSave} 
           disabled={!isFormComplete || !assessedOn || !assessedBy || factGLoading}
         >
-          {factGLoading ? 'Saving...' : 'Save Assessment'}
+          {factGLoading ? 'Saving...' : 'Save & Close'}
         </Btn>
       </BottomBar>
     </>

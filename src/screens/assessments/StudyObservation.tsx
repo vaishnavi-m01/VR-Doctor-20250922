@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -13,17 +13,8 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
 import {
-  DEFAULT_PATIENT_INFO,
-  SESSION_CONSTANTS,
-  FORM_LABELS,
-  FORM_PLACEHOLDERS,
-  PARTICIPANT_RESPONSES,
-  ASSESSMENT_CONFIG
+  PARTICIPANT_RESPONSES
 } from '../../constants/appConstants';
-import {
-  getValidationMessage,
-  getSuccessMessage,
-} from '../../utils/formUtils';
 
 
 interface StudyObservationApiModel {
@@ -106,13 +97,7 @@ interface FactGResponse {
   FinalScore: string;
 }
 
-interface WeeklyDateItem {
-  CreatedDate: string;
-}
 
-interface WeeklyDatesResponse {
-  ResponseData: WeeklyDateItem[];
-}
 
 
 // Extract only time e.g. "14:30:00" from a datetime string
@@ -136,15 +121,6 @@ const formatDateTimeForApi = (isoString: string) => {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 };
 
-// Format date to YYYY-MM-DD for API requests
-const formatDateForApi = (dateStr: string) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-};
 
 
 function getCurrentDateTimeISO() {
@@ -196,7 +172,6 @@ export default function StudyObservation() {
   const [distressScoreAndFactG, setDistressScoreAndFactG] = useState('');
   const [resp, setResp] = useState<string[]>([]);
   const [selectedWeek, setSelectedWeek] = useState('');
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -210,7 +185,6 @@ export default function StudyObservation() {
 
   const [observationId, setObservationId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   const route = useRoute<RouteProp<RootStackParamList, 'StudyObservation'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -477,10 +451,6 @@ useEffect(() => {
 
   const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());
 
-  const flag = useMemo(
-    () => completed === 'No' || tech === 'Yes' || discomfort === 'Yes' || deviation === 'Yes',
-    [completed, tech, discomfort, deviation]
-  );
 
   const fetchBaselineScores = async (participantId: string, studyId: string) => {
     setBaselineLoading(true);
@@ -569,7 +539,6 @@ useEffect(() => {
     setFormValues(initialValues);
     setStudyIdState(studyId.toString());
     setObservationId(routeObservationId ?? STATIC_OBSERVATION_ID);
-    setIsLoaded(true);
 
     fetchFormFields();
     
@@ -964,7 +933,6 @@ useEffect(() => {
         
         // Determine if field should be numeric
         const numericFields = ['SOFID-5'];
-        const timeFields = ['SOFID-11', 'SOFID-12'];
         
         return (
           <View key={SOFID} className="w-full md:w-[48%]">
@@ -1023,7 +991,7 @@ useEffect(() => {
 
   // Save handler
   const handleSave = async () => {
-     const hasEmptyFields = Object.entries(formValues).some(([key, value]) => {
+     const hasEmptyFields = Object.entries(formValues).some(([, value]) => {
         return value === null || value.trim() === '';
       });
 
@@ -1298,113 +1266,116 @@ useEffect(() => {
         </>
       )}
 
-      <ScrollView style={{ flex: 1, padding: 16, paddingBottom: 400 }}>
-        <FormCard
-          icon="SO"
+      <ScrollView style={{ flex: 1, paddingLeft: 8, paddingRight: 16, paddingTop: 16, paddingBottom: 400 }}>
+        {/* Header Section with SO Badge */}
+        <FormCard 
+          icon="SO" 
           title={`Study Observation ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}
           desc="Complete the study observation form for the participant's session."
         >
-          {loading && (
-            <View style={{ backgroundColor: "white", borderRadius: 12, padding: 32, marginBottom: 16, alignItems: "center" }}>
-              <ActivityIndicator size="large" color="#2E7D32" />
-              <Text style={{ marginTop: 8, color: "#6b7280" }}>Loading Study Observation...</Text>
-            </View>
-          )}
+          <View />
+        </FormCard>
 
-          {error && (
-            <View style={{ backgroundColor: "#fee2e2", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-              <Text style={{ color: "#b91c1c", textAlign: "center", fontWeight: "600" }}>{error}</Text>
-              <Pressable onPress={() => loadObservationForm(selectedDate || null)} style={{ marginTop: 8 }}>
-                <Text style={{ color: "#2563eb", textAlign: "center", fontWeight: "600" }}>Try Again</Text>
-              </Pressable>
-            </View>
-          )}
+        {loading && (
+          <View style={{ backgroundColor: "white", borderRadius: 12, padding: 32, marginBottom: 16, alignItems: "center" }}>
+            <ActivityIndicator size="large" color="#2E7D32" />
+            <Text style={{ marginTop: 8, color: "#6b7280" }}>Loading Study Observation...</Text>
+          </View>
+        )}
 
-          {fieldsLoading ? (
-            <View className="flex-1 justify-center items-center py-20">
-              <ActivityIndicator size="large" color="#4FC264" />
-              <Text className="mt-4 text-gray-600">Loading form fields...</Text>
-            </View>
-          ) : fieldsError ? (
-            <View className="flex-1 justify-center items-center py-20">
-              <Text style={{ color: 'red', textAlign: 'center', marginVertical: 10 }}>
-                {fieldsError}
-              </Text>
-              <Pressable
-                className="bg-[#4FC264] px-4 py-2 rounded-lg mt-4"
-                onPress={fetchFormFields}
-              >
-                <Text className="text-white font-medium">Retry</Text>
-              </Pressable>
-            </View>
-          ) : (
-            !loading && !error && (
-              <>
-                {/* Basic Information Section */}
-                <FormCard icon={ASSESSMENT_CONFIG.STUDY_OBSERVATION.ICON} title={ASSESSMENT_CONFIG.STUDY_OBSERVATION.TITLE}>
-                  <View className="flex-row flex-wrap gap-3">
-                    {formFields
-                      .filter(field => ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6'].includes(field.SOFID))
-                      .map(field => renderFormField(field))}
+        {error && (
+          <View style={{ backgroundColor: "#fee2e2", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <Text style={{ color: "#b91c1c", textAlign: "center", fontWeight: "600" }}>{error}</Text>
+            <Pressable onPress={() => loadObservationForm(selectedDate || null)} style={{ marginTop: 8 }}>
+              <Text style={{ color: "#2563eb", textAlign: "center", fontWeight: "600" }}>Try Again</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {fieldsLoading ? (
+          <View className="flex-1 justify-center items-center py-20">
+            <ActivityIndicator size="large" color="#4FC264" />
+            <Text className="mt-4 text-gray-600">Loading form fields...</Text>
+          </View>
+        ) : fieldsError ? (
+          <View className="flex-1 justify-center items-center py-20">
+            <Text style={{ color: 'red', textAlign: 'center', marginVertical: 10 }}>
+              {fieldsError}
+            </Text>
+            <Pressable
+              className="bg-[#4FC264] px-4 py-2 rounded-lg mt-4"
+              onPress={fetchFormFields}
+            >
+              <Text className="text-white font-medium">Retry</Text>
+            </Pressable>
+          </View>
+        ) : (
+          !loading && !error && (
+            <>
+              {/* Basic Information Section */}
+              <FormCard icon="K" title="Study Observation">
+                <View className="flex-row flex-wrap gap-3">
+                  {formFields
+                    .filter(field => ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6'].includes(field.SOFID))
+                    .map(field => renderFormField(field))}
+                </View>
+              </FormCard>
+
+              {/* Baseline Assessment Section */}
+              <FormCard icon="1" title="Baseline Assessment">
+                <View className="flex-row gap-3">
+                  {formFields
+                    .filter(field => ['SOFID-7', 'SOFID-8'].includes(field.SOFID))
+                    .map(field => renderFormField(field))}
+                </View>
+              </FormCard>
+
+             {/* Session Details Section */}
+          <FormCard icon="2" title="Session Details">
+            {formFields
+              .filter(field => ['SOFID-9', 'SOFID-10',  'SOFID-13', 'SOFID-14', 'SOFID-15'].includes(field.SOFID))
+              .map(field => renderFormField(field))}
+            
+            <View className="flex-row gap-3 mt-3">
+              {formFields
+                .filter(field => ['SOFID-11', 'SOFID-12'].includes(field.SOFID))
+                .map(field => (
+                  <View key={field.SOFID} className="flex-1">
+                    <Field
+                      label={field.FieldLabel}
+                      placeholder="HH:MM"
+                      value={getFormValue(field.SOFID)}
+                      onChangeText={(value) => updateFormValue(field.SOFID, value)}
+                    />
                   </View>
-                </FormCard>
+                ))}
+            </View>
+          </FormCard>
 
-                {/* Baseline Assessment Section */}
-                <FormCard icon="1" title="Baseline Assessment">
-                  <View className="flex-row gap-3">
-                    {formFields
-                      .filter(field => ['SOFID-7', 'SOFID-8'].includes(field.SOFID))
-                      .map(field => renderFormField(field))}
-                  </View>
-                </FormCard>
-
-               {/* Session Details Section */}
-            <FormCard icon="2" title="Session Details">
+          {/* Counselor Compliance Section */}
+          <FormCard icon="3" title="Dr John">
+            <View className="flex-row gap-3">
               {formFields
-                .filter(field => ['SOFID-9', 'SOFID-10',  'SOFID-13', 'SOFID-14', 'SOFID-15'].includes(field.SOFID))
+                .filter(field => ['SOFID-16', 'SOFID-17', 'SOFID-18'].includes(field.SOFID))
                 .map(field => renderFormField(field))}
-              
-              <View className="flex-row gap-3 mt-3">
-                {formFields
-                  .filter(field => ['SOFID-11', 'SOFID-12'].includes(field.SOFID))
-                  .map(field => (
-                    <View key={field.SOFID} className="flex-1">
-                      <Field
-                        label={field.FieldLabel}
-                        placeholder="HH:MM"
-                        value={getFormValue(field.SOFID)}
-                        onChangeText={(value) => updateFormValue(field.SOFID, value)}
-                      />
-                    </View>
-                  ))}
-              </View>
-            </FormCard>
+            </View>
+            
+            {formFields
+              .filter(field => ['SOFID-20', 'SOFID-21'].includes(field.SOFID))
+              .map(field => renderFormField(field))}
+          </FormCard>
 
-            {/* Counselor Compliance Section */}
-            <FormCard icon="3" title="Dr John">
-              <View className="flex-row gap-3">
-                {formFields
-                  .filter(field => ['SOFID-16', 'SOFID-17', 'SOFID-18'].includes(field.SOFID))
-                  .map(field => renderFormField(field))}
-              </View>
-              
-              {formFields
-                .filter(field => ['SOFID-20', 'SOFID-21'].includes(field.SOFID))
-                .map(field => renderFormField(field))}
-            </FormCard>
+          {/* Additional Observations Section */}
+          <FormCard icon="4" title="Additional Observations & Side Effects">
+            {formFields
+              .filter(field => ['SOFID-22', 'SOFID-23', 'SOFID-24', 'SOFID-25', 'SOFID-26', 'SOFID-27', 'SOFID-28'].includes(field.SOFID))
+              .map(field => renderFormField(field))}
 
-            {/* Additional Observations Section */}
-            <FormCard icon="4" title="Additional Observations & Side Effects">
-              {formFields
-                .filter(field => ['SOFID-22', 'SOFID-23', 'SOFID-24', 'SOFID-25', 'SOFID-26', 'SOFID-27', 'SOFID-28'].includes(field.SOFID))
-                .map(field => renderFormField(field))}
-
-              <View style={{ height: 150 }} />
-            </FormCard>
-          </>
-        )
-    )}
-       </FormCard>
+            <View style={{ height: 150 }} />
+          </FormCard>
+        </>
+      )
+  )}
       </ScrollView>
 
       <BottomBar>
@@ -1416,7 +1387,7 @@ useEffect(() => {
             Validate
           </Btn> */}
           <Btn onPress={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : 'Save & Close'}
           </Btn>
         </View>
       </BottomBar>

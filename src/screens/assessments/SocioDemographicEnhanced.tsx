@@ -152,6 +152,10 @@ function SocioDemographicEnhanced() {
     }
   }, [handleInputChange]);
 
+  const handleClear = () => {
+    reset();
+  };
+
   // Handle form submission
   const handleSave = useCallback(async () => {
     const result = await submitForm(async (data) => {
@@ -614,11 +618,12 @@ function SocioDemographicEnhanced() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn 
           onPress={handleSave} 
           disabled={!isFormReadyToSubmit() || isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : (isEditMode ? 'Update Participant' : 'Save Participant')}
+          {isSubmitting ? 'Saving...' : (isEditMode ? 'Update & Close' : 'Save & Close')}
         </Btn>
       </BottomBar>
     </>

@@ -337,7 +337,7 @@ export default function ParticipantAssessmentSplit() {
       filtered = list.filter(p => {
         if (groupFilter === 'Study') return p.groupType === 'Study';
         if (groupFilter === 'Controlled') return p.groupType === 'Controlled';
-        if (groupFilter === 'Unassigned') return p.groupType === null || p.groupType === undefined;
+        if (groupFilter === 'Unassign') return p.groupType === null || p.groupType === undefined;
         return true;
       });
     }
@@ -456,7 +456,7 @@ export default function ParticipantAssessmentSplit() {
     All: participants.length,
     Study: participants.filter(p => p.groupType === 'Study').length,
     Controlled: participants.filter(p => p.groupType === 'Controlled').length,
-    Unassigned: participants.filter(p => p.groupType === null || p.groupType === undefined).length,
+    Unassign: participants.filter(p => p.groupType === null || p.groupType === undefined).length,
   };
 
   // Debug logging for GroupType
@@ -611,21 +611,21 @@ export default function ParticipantAssessmentSplit() {
                   </Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => setSelectedGroupFilter('Unassigned')}
+                  onPress={() => setSelectedGroupFilter('Unassign')}
                   className={`flex-1 mx-1 py-1.5 px-3 rounded-lg border ${
-                    selectedGroupFilter === 'Unassigned'
+                    selectedGroupFilter === 'Unassign'
                       ? 'bg-green-600 border-green-600'
                       : 'bg-[#D2EBF8] border-[#D2EBF8]'
                   }`}
                 >
                   <Text
                     className={`text-center text-sm font-medium ${
-                      selectedGroupFilter === 'Unassigned'
+                      selectedGroupFilter === 'Unassign'
                         ? 'text-white'
                         : 'text-gray-700'
                     }`}
                   >
-                    Unassigned ({groupCounts.Unassigned})
+                    Unassign ({groupCounts.Unassign})
                   </Text>
                 </Pressable>
               </View>

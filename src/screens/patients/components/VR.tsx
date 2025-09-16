@@ -14,6 +14,16 @@ export default function VR(){
   const [discomfort,setDiscomfort]=useState('No');
   const [complete,setComplete]=useState('Yes');
   const [duration,setDuration]=useState('Just Right');
+
+  const handleClear = () => {
+    setAdjust('No');
+    setAv('Yes');
+    setTechIssue('No');
+    setDiscomfort('No');
+    setComplete('Yes');
+    setDuration('Just Right');
+  };
+
   return (
     <>
     <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
@@ -104,8 +114,9 @@ export default function VR(){
     </ScrollView>
 
     <BottomBar>
+      <Btn variant="light" onPress={handleClear}>Clear</Btn>
       <Btn variant="light" onPress={()=>{}}>Validate</Btn>
-      <Btn onPress={()=>{}}>Save Assessment</Btn>
+      <Btn onPress={()=>{}}>Save & Close</Btn>
     </BottomBar>
     </>
   );

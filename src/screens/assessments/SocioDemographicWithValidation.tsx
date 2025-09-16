@@ -183,6 +183,10 @@ function SocioDemographicWithValidation() {
     updateFormData('consentDate', date);
   }, [updateFormData]);
 
+  const handleClear = () => {
+    reset();
+  };
+
   // Handle form submission
   const handleSave = useCallback(async () => {
     // Validate form
@@ -667,11 +671,12 @@ function SocioDemographicWithValidation() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn 
           onPress={handleSave} 
           disabled={!validationSummary.canSave || isLoading}
         >
-          {isLoading ? 'Saving...' : (isEditMode ? 'Update Participant' : 'Save Participant')}
+          {isLoading ? 'Saving...' : (isEditMode ? 'Update & Close' : 'Save & Close')}
         </Btn>
       </BottomBar>
     </>

@@ -199,8 +199,11 @@ export default function ExitInterview() {
       });
   }, [patientId, studyId, groupedQuestions]);
 
+const handleClear = () => {
+  setResponses({});
+};
 
- const handleSave = async () => {
+const handleSave = async () => {
   const reasonQuestionId = Object.keys(groupedQuestions).find((qid) => {
     const qText = groupedQuestions[qid].QuestionText?.toLowerCase() || '';
     return qText.includes('reason for discontinuation') || qText.includes('reason');
@@ -581,6 +584,7 @@ export default function ExitInterview() {
         >
           Validate
         </Btn>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
     </>

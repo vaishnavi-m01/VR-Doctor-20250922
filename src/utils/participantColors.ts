@@ -9,7 +9,7 @@ export const getParticipantBackgroundColor = (groupType: string | null): string 
   } else if (groupType === 'Controlled') {
     return 'bg-[#FFE8DA]'; // Controlled Group color
   } else {
-    return 'bg-[#D2EBF8]'; // Null/Unassigned color
+    return 'bg-[#D2EBF8]'; // Null/Unassign color
   }
 };
 
@@ -17,5 +17,5 @@ export const getParticipantBackgroundColor = (groupType: string | null): string 
  * Color mapping for reference:
  * - Study Group: bg-[#EBF6D6] (light green)
  * - Controlled Group: bg-[#FFE8DA] (light orange/peach)
- * - Null/Unassigned: bg-[#D2EBF8] (light blue)
+ * - Null/Unassign: bg-[#D2EBF8] (light blue)
  */

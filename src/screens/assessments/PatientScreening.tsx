@@ -196,6 +196,18 @@ export default function PatientScreening() {
     fetchData();
   }, []);
 
+  const handleClear = () => {
+    setAge("");
+    setHeight("");
+    setWeight("");
+    setBloodPressure("");
+    setHeartRate("");
+    setTemperature("");
+    setOxygenSaturation("");
+    setProsthetics("");
+    setConds([]);
+    setErrors({});
+  };
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -323,7 +335,7 @@ export default function PatientScreening() {
           <Thermometer value={dt} onChange={setDt} />
           {/* {errors.dt && <Text className="text-red-500 text-xs mt-8">{errors.dt}</Text>} */}
 
-          <View className="flex-row gap-3 mt-6">
+          {/* <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
                 <Text className="text-xs text-[#4b5f5a]">FACT-G Total Score</Text>
@@ -343,7 +355,7 @@ export default function PatientScreening() {
                 onChangeText={setFactGScore}
               />
             </View>
-          </View>
+          </View> */}
 
           <Text className="text-lg mt-3 font-semibold">Vitals</Text>
           <View className="flex-row gap-3 mt-3">
@@ -426,11 +438,14 @@ export default function PatientScreening() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear} className="py-4">
+          Clear
+        </Btn>
         <Btn variant="light" onPress={() => validateForm()} className="py-4">
           Validate
         </Btn>
         <Btn onPress={handleSave} className="py-4">
-          Save Screening
+          Save & Close
         </Btn>
       </BottomBar>
     </>

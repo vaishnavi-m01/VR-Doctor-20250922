@@ -275,6 +275,40 @@ export default function SocioDemographicRefactored() {
     stressLevels, technologyExperience, participantSignature, consentDate
   ]);
 
+  const handleClear = () => {
+    setFormData({
+      age: '',
+      phoneNumber: '',
+      gender: '',
+      genderOther: '',
+      maritalStatus: '',
+      numberOfChildren: '',
+      faithWellbeing: '',
+      practiceAnyReligion: '',
+      religionSpecify: '',
+      educationLevel: '',
+      knowledgeIn: '',
+      employmentStatus: '',
+      currentMedications: '',
+      otherMedicalConditions: '',
+      cancerDiagnosis: '',
+      stageOfCancer: '',
+      typeOfTreatment: '',
+      startDateOfTreatment: '',
+      durationOfTreatmentMonths: '',
+      scoreOfECOG: '',
+      tobacco: '',
+      alcohol: '',
+      smokingCigarette: '',
+      stressLevels: '',
+      technologyExperience: '',
+      physicalActivityLevel: '',
+      signature: '',
+      signatureDate: '',
+    });
+    setErrors({});
+  };
+
   // Save function
   const handleSave = useCallback(async () => {
     if (!validateForm()) {
@@ -531,8 +565,9 @@ export default function SocioDemographicRefactored() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave}>
-          {isEditMode ? "Update Participant" : "Save Participant"}
+          {isEditMode ? "Update & Close" : "Save & Close"}
         </Btn>
       </BottomBar>
     </>

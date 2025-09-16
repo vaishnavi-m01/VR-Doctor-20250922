@@ -316,7 +316,7 @@ export default function StudyGroupAssignment() {
       {/* Summary chips */}
       <View className="px-6 pt-3 pb-2 flex-row gap-2">
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
-          <Text className="text-xs text-gray-600">Unassigned</Text>
+          <Text className="text-xs text-gray-600">Unassign</Text>
           <Text className="font-extrabold">{unassigned.length}</Text>
         </View>
         <View className="px-3 py-2 bg-white border border-[#e6eeeb] rounded-xl">
@@ -330,11 +330,11 @@ export default function StudyGroupAssignment() {
       </View>
 
       <View className="flex-1 px-6 pb-6">
-        {/* Unassigned */}
+        {/* Unassign */}
         <View className="bg-white rounded-2xl p-3 mb-4 border border-[#e6eeeb]">
           <View className="flex-row items-center justify-between mb-2">
             <View className="flex-row items-center">
-              <Text className="text-lg font-bold text-gray-800">Unassigned Participants</Text>
+              <Text className="text-lg font-bold text-gray-800">Unassign Participants</Text>
               <Text className="text-sm text-gray-600 ml-2">({unassigned.length})</Text>
             </View>
             {unassigned.length > 0 && (
@@ -366,7 +366,7 @@ export default function StudyGroupAssignment() {
             )}
           </ScrollView>
 
-          {/* Assign Button inside Unassigned container */}
+          {/* Assign Button inside Unassign container */}
           <View className="items-end mt-4">
             <Pressable
               onPress={handleAssign}

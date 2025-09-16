@@ -69,7 +69,7 @@ export default function ReportsTab() {
               </View>
               
               <View className="flex-row justify-between">
-                <Text className="text-sm font-medium text-gray-700">Unassigned</Text>
+                <Text className="text-sm font-medium text-gray-700">Unassign</Text>
                 <Text className="text-sm font-semibold text-gray-800">15</Text>
               </View>
               <View className="h-2 bg-gray-200 rounded-full overflow-hidden">

@@ -3,17 +3,35 @@ import { View, Text } from 'react-native';
 
 type Props = PropsWithChildren<{ icon?: string; title?: string; desc?: string; }>
 
+const ICON_COL = 48; // Width of the icon column + padding
+
 export default function FormCard({ icon, title, desc, children }: Props) {
   return (
-  <View className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card p-3 mb-3 mt-4 flex-row items-start gap-3">
-
-      <View className="w-12 h-12 rounded-xl bg-[#eaf7f2] items-center justify-center">
+    <View className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card mb-4 mt-2" style={{ paddingTop: 16, paddingBottom: 16, paddingRight: 16 }}>
+      {/* Absolutely positioned badge */}
+      <View 
+        className="w-12 h-12 rounded-xl bg-[#eaf7f2] items-center justify-center"
+        style={{ 
+          position: 'absolute', 
+          left: 8, 
+          top: 16 
+        }}
+      >
         <Text className="text-ink font-extrabold">{icon || ' '}</Text>
       </View>
-      <View className="flex-1">
-        <Text className="text-base font-semibold mb-1">{title}</Text>
-        {!!desc && <Text className="text-xs text-muted mb-2">{desc}</Text>}
-        {children}
+      
+      {/* Content with left gutter */}
+      <View style={{ paddingLeft: ICON_COL }}>
+        {/* Title and description */}
+        <View className="mb-3">
+          <Text className="text-base font-semibold">{title}</Text>
+          {!!desc && <Text className="text-xs text-muted mt-1">{desc}</Text>}
+        </View>
+        
+        {/* Form content */}
+        <View>
+          {children}
+        </View>
       </View>
     </View>
   );

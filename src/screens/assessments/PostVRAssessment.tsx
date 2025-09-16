@@ -491,8 +491,7 @@ export default function PostVRAssessment() {
 
       <BottomBar>
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
-        <Btn variant="light" onPress={() => fetchAssessmentQuestions(participantId, studyId ? studyId.toString() : '0001')} disabled={loading}>Refresh</Btn>
-        <Btn onPress={handleSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save'}</Btn>
+        <Btn onPress={handleSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save & Close'}</Btn>
       </BottomBar>
     </>
   );

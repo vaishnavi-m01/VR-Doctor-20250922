@@ -20,6 +20,13 @@ export default function Screening(){
   const route = useRoute<RouteProp<RootStackParamList, 'Screening'>>();
   const { patientId } = route.params as { patientId: number };
 
+  const handleClear = () => {
+    setDt(0);
+    setImplants("");
+    setProsthetics("");
+    setConds([]);
+  };
+
   return (
     <>
     <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
@@ -148,8 +155,9 @@ export default function Screening(){
     </ScrollView>
 
     <BottomBar>
+      <Btn variant="light" onPress={handleClear}>Clear</Btn>
       <Btn variant="light" onPress={()=>{}} >Validate</Btn>
-      <Btn onPress={()=>{}}>Save Screening</Btn>
+      <Btn onPress={()=>{}}>Save & Close</Btn>
     </BottomBar>
     </>
   );

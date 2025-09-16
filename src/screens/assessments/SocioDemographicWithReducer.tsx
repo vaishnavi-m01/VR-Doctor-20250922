@@ -94,6 +94,10 @@ export default function SocioDemographicWithReducer() {
     }
   }, [isEditMode, patientId, loadData]);
 
+  const handleClear = () => {
+    reset();
+  };
+
   const handleSave = async () => {
     // Validate the form
     if (!validate()) {
@@ -448,8 +452,9 @@ export default function SocioDemographicWithReducer() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave} disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Information"}
+          {isSubmitting ? "Saving..." : "Save & Close"}
         </Btn>
       </BottomBar>
     </>

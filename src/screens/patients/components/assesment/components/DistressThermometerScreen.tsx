@@ -822,9 +822,6 @@ export default function DistressThermometerScreen() {
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
-        <Btn variant="light" onPress={handleRefresh} disabled={loading}>
-          Refresh
-        </Btn>
         <Btn onPress={handleSave} disabled={loading || categories.length === 0}>
           {loading ? (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -832,7 +829,7 @@ export default function DistressThermometerScreen() {
               <Text style={{ color: "white" }}>Saving...</Text>
             </View>
           ) : (
-            "Save"
+            "Save & Close"
           )}
         </Btn>
       </BottomBar>
