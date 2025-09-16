@@ -32,7 +32,7 @@ export default function PatientScreening() {
   const [implants, setImplants] = useState('');
   const [prosthetics, setProsthetics] = useState('');
 
-  const [participantId, setParticipantId] = useState('');
+  const [_participantId, setParticipantId] = useState('');
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState<string>(today);
   const [factGScore, setFactGScore] = useState('');
@@ -298,18 +298,23 @@ export default function PatientScreening() {
   return (
     <>
       <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+
+        <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">
-            Participant ID: {participantId || patientId}
+            Participant ID: {patientId}
           </Text>
 
-          <Text className="text-base font-semibold text-green-600">Study ID: {studyId || 'N/A'}</Text>
+          <Text className="text-base font-semibold text-green-600">
+            Study ID: {studyId || "N/A"}
+          </Text>
 
-          <Text className="text-base font-semibold text-gray-700">Age: {age || 'Not specified'}</Text>
+          <Text className="text-base font-semibold text-gray-700">
+            Age: {age || "Not specified"}
+          </Text>
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
         <FormCard icon="D" title="Patient Screening">
           <View className="flex-row gap-3">
             <View className="flex-1">

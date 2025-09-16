@@ -319,7 +319,7 @@ export default function InformedConsentForm({
                     witnessName: c.WitnessName || "",
                     witnessDate: c.WitnessDate ? formatDateDDMMYYYY(c.WitnessDate) : "",
                 });
-                
+
                 setSubjectSignaturePad(c.SubjectSignature || "");
                 setCoPISignaturePad(c.CoPrincipalInvestigatorSignature || "");
                 setWitnessSignaturePad(c.WitnessSignature || "");
@@ -353,18 +353,15 @@ export default function InformedConsentForm({
     /* ============================ UI ============================ */
     return (
         <>
-            {/* <Header
-       title="Informed Consent Form" /> */}
+            <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
-            {/* Navigation Bar - Matching Socio-Demographics style */}
-            <View className="px-6 pt-6 pb-4">
                 <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
                     <Text className="text-lg font-bold text-green-600">
                         Participant ID: {patientId}
                     </Text>
 
                     <Text className="text-base font-semibold text-green-600">
-                        Study ID: {studyId || 'N/A'}
+                        Study ID: {studyId || "N/A"}
                     </Text>
 
                     <Text className="text-base font-semibold text-gray-700">

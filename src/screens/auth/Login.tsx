@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
-import AntDesign from '@expo/vector-icons/AntDesign';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from "../../Navigation/types";
-import { WELCOME_MESSAGES, BUTTON_TEXTS, FONT_CONFIG } from "../../constants/appConstants";
+import { WELCOME_MESSAGES, BUTTON_TEXTS, } from "../../constants/appConstants";
 import { Toast } from "../../components/Toast";
 import { apiService } from "src/services";
 
@@ -17,6 +16,7 @@ export interface LoginUser {
     LastName: string;
     Email: string;
     Address: string;
+    token: string;
     Status: number;
     CreatedBy: string;
     CreatedDate: string;
@@ -95,6 +95,8 @@ const Login = () => {
         return isValid;
     };
 
+
+
     const handleLogin = async () => {
         if (!validateForm()) return;
 
@@ -107,23 +109,22 @@ const Login = () => {
             });
 
             const user = response.data.loginUser?.[0];
-            console.log("userr", user)
+            console.log("Login user:", user);
 
             if (user) {
-
                 await AsyncStorage.setItem("user", JSON.stringify(user));
 
-                //  Save email & password only after successful login
                 await AsyncStorage.setItem("login_email", email);
                 await AsyncStorage.setItem("login_password", password);
 
-                if (user?.UserID) {
+                if (user.UserID) {
                     setUserId(user.UserID.toString());
                     await AsyncStorage.setItem("userId", user.UserID.toString());
                 }
 
-
-
+                if (user.token) {
+                    await AsyncStorage.setItem("userToken", user.token);
+                }
 
                 setToast({
                     visible: true,
@@ -134,6 +135,7 @@ const Login = () => {
                 setTimeout(() => {
                     navigation.navigate("Home");
                 }, 1200);
+
             } else {
                 setToast({
                     visible: true,
@@ -141,6 +143,7 @@ const Login = () => {
                     type: "error",
                 });
             }
+
         } catch (error: any) {
             console.log("Login error:", error);
 

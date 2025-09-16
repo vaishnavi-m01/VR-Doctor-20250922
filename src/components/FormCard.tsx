@@ -10,7 +10,7 @@ export default function FormCard({ icon, title, desc, children }: Props) {
     <View className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card mb-4 mt-2" style={{ paddingTop: 16, paddingBottom: 16, paddingRight: 16 }}>
       {/* Absolutely positioned badge */}
       <View 
-        className="w-12 h-12 rounded-xl bg-[#eaf7f2] items-center justify-center"
+        className="w-10 h-10 rounded-xl bg-[#eaf7f2] items-center justify-center"
         style={{ 
           position: 'absolute', 
           left: 8, 

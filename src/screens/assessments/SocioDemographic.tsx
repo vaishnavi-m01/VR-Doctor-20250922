@@ -372,7 +372,7 @@ export default function SocioDemographic() {
 
       selectedValues,
       participantSignature,
-      consentDate,
+      // consentDate,
     ];
 
     if (maritalStatus === "Married") {
@@ -439,7 +439,6 @@ export default function SocioDemographic() {
   };
 
   const handleSave = async () => {
-    // List of fields that are always required
     const requiredFields = [
       ages,
       phoneNumber,
@@ -456,7 +455,7 @@ export default function SocioDemographic() {
       faithWellbeing,
       practiceReligion,
       participantSignature,
-      consentDate,
+      // consentDate,
     ];
 
     if (maritalStatus === "Married") {
@@ -548,7 +547,7 @@ export default function SocioDemographic() {
   return (
     <>
       {isEditMode && (
-        <View className="px-4 pb-1"  style={{ paddingTop: 8 }}>
+        <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
           <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
             <Text className="text-lg font-bold text-green-600">

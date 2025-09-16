@@ -411,23 +411,26 @@ export default function AdverseEventForm() {
     return (
         <>
 
-            <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
                 <View
                     style={{
-                        backgroundColor: "white",
-                        borderBottomColor: "#e5e7eb",
-                        borderBottomWidth: 1,
-                        borderRadius: 12,
-                        padding: 17,
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
+                        backgroundColor: "white",          
+                        borderBottomWidth: 1,              
+                        borderBottomColor: "#e5e7eb",    
+                        borderRadius: 12,                  
+                        padding: 16,                     
+                        flexDirection: "row",              
+                        justifyContent: "space-between",   
+                        alignItems: "center",            
+                        shadowColor: "#000",               
+                        shadowOpacity: 0.05,              
+                        shadowRadius: 4,
                         shadowOffset: { width: 0, height: 2 },
+                        elevation: 1,                       
                     }}
                 >
+
+
                     <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>
                         Participant ID: {patientId}
                     </Text>
@@ -536,7 +539,7 @@ export default function AdverseEventForm() {
                 </>
             )}
 
-            <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
+            <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="📅 Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
