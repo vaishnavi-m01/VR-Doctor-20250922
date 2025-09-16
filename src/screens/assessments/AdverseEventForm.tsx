@@ -1,13 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
-import PillGroup from '@components/PillGroup';
 import Segmented from '@components/Segmented';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DropdownField } from '@components/DropdownField';
 import Chip from '@components/Chip';
 import DateField from '@components/DateField';
@@ -66,22 +64,13 @@ export default function AdverseEventForm() {
     const [reportDate, setReportDate] = useState(today);
     const [dateOfAE, setdateOfAE] = useState(today);
     const [timeOfAE, settimeOfAE] = useState("");
-    const [participantIdField, setParticipantIdField] = useState("");
+    const [_participantIdField, setParticipantIdField] = useState("");
     const [reportedBy, setReportedBy] = useState("");
 
-    const [effect, setEffect] = useState<number | undefined>();
-    const [clarity, setClarity] = useState<number | undefined>();
-    const [confidence, setConfidence] = useState<number | undefined>();
-    const [demo, setDemo] = useState('');
-    const [controls, setControls] = useState('');
     const [guidance, setGuidance] = useState('');
-    const [wear, setWear] = useState('');
-    const [pref, setPref] = useState('');
-    const [qa, setQa] = useState('');
     const [completed, setCompleted] = useState('');
     const [vrContentType, setVrContentType] = useState("");
 
-    const [physicianDateTime, setPhysicianDateTime] = useState("");
     const [physicianName, setPhysicianName] = useState("");
     const [aeRelated, setAeRelated] = useState<string | null>(null);
     const [conditionContribution, setConditionContribution] = useState<string | null>(null);
@@ -99,9 +88,15 @@ export default function AdverseEventForm() {
     const [aeSeverity, setAeServerity] = useState<AeSeverity[]>([]);
     const [severity, setSeverity] = useState<string | null>(null);
     console.log("severityid", severity)
-    const [Description, setdescription] = useState<string | null>("");
-    const [followUpParticipantStatus, setFollowUpParticipantStatus] = useState<string | null>("");
-    const [investigatorSignature, setInvestigatorSignature] = useState<string | null>("");
+    const [Description, setdescription] = useState<string>("");
+    const [investigatorSignature, setInvestigatorSignature] = useState<string | undefined>("");
+    const [followUpParticipantStatus, setFollowUpParticipantStatus] = useState<string | undefined>("");
+
+    const [followUpDate, setFollowUpDate] = useState(today);
+    const [date, setDate] = useState(today);
+    const [physicianDateTime, setPhysicianDateTime] = useState(today);
+
+
     const [AEId, setAEId] = useState<string | null>(null);
     console.log("AEID", AEId)
 
@@ -115,7 +110,6 @@ export default function AdverseEventForm() {
     // Fetch available sessions
     const fetchAvailableSessions = async () => {
         try {
-            // Mock sessions data - replace with actual API call
             const mockSessions = [
                 'Session 1',
                 'Session 2',
@@ -127,17 +121,7 @@ export default function AdverseEventForm() {
         }
     };
 
-    const ready = (() => {
-        const base = (effect && clarity && confidence) ? Math.round(((effect || 0) + (clarity || 0) + (confidence || 0)) / 3) : '—';
-        const extras = Number(demo === 'Yes') + Number(controls === 'Yes') + Number(guidance === 'No');
-        return base === '—' ? '—' : `${base}${extras ? ` (+${extras})` : ''}`;
-    })();
 
-    // const handleSave = async () => {
-    //     const today = new Date().toISOString().split('T')[0];
-    //     await AsyncStorage.setItem(`prevr-${patientId}-${today}`, 'done');
-    //     navigation.goBack();
-    // };
 
 
     const toggleOutcome = (id: string) => {
@@ -147,7 +131,6 @@ export default function AdverseEventForm() {
     };
 
     useEffect(() => {
-        // Fetch sessions first
         fetchAvailableSessions();
 
         apiService
@@ -180,27 +163,90 @@ export default function AdverseEventForm() {
 
 
 
+    const handleValidate = () => {
+        const requiredFields = [
+            reportDate,
+            // dateOfAE,
+            // timeOfAE,
+            reportedBy,
+            Description?.trim(),
+            completed,
+            vrContentType,
+            guidance,
+            physicianDateTime,
+            physicianName?.trim(),
+            aeRelated,
+            conditionContribution,
+            // followUpDate,
+            followUpParticipantStatus?.trim(),
+            investigatorSignature?.trim(),
+            // date,
+            severity,
+            outcome.length > 0 ? "ok" : "",
+            actions.length > 0 ? "ok" : "",
+        ];
+
+        const hasEmptyField = requiredFields.some(
+            (field) => !field || field.toString().trim() === ""
+        );
+
+        if (hasEmptyField) {
+            Toast.show({
+                type: "error",
+                text1: "Validation Error",
+                text2: "Please fill all required fields",
+                position: "top",
+                topOffset: 50,
+            });
+            return false;
+        }
+
+        Toast.show({
+            type: "success",
+            text1: "Validation Passed",
+            text2: "All required fields are valid",
+            position: "top",
+            topOffset: 50,
+        });
+
+        return true;
+    };
+
+
+
+    const handleClear = () => {
+
+        setReportDate("");
+        setdateOfAE("");
+        settimeOfAE("");
+        setParticipantIdField("");
+        setReportedBy("");
+        setGuidance('');
+        setCompleted('');
+        setVrContentType('');
+        setPhysicianDateTime("");
+        setPhysicianName('');
+        setAeRelated(null);
+        setConditionContribution(null);
+        setOutcome([]);
+        setActions([]);
+        setSeverity(null);
+        setdescription('');
+        setFollowUpParticipantStatus('');
+        setFollowUpDate('');
+        setInvestigatorSignature('');
+        setDate('');
+
+        setAEId(null);
+        setSelectedSession('Select Session');
+    };
+
+
+
     const handleSave = async () => {
+
+        if (!handleValidate()) return;
         try {
-
-            if (
-                !Description?.trim() ||
-                !dateOfAE ||
-                !severity ||
-                outcome.length === 0 ||
-                !physicianName?.trim() ||
-                !investigatorSignature?.trim()
-            ) {
-                Toast.show({
-                    type: "error",
-                    text1: "Validation Error",
-                    text2: "Please fill all required fields.",
-                    position: "top",
-                    topOffset: 50,
-                });
-                return;
-            }
-
             const payload = {
                 AEId: AEId || null,
                 ParticipantId: String(patientId),
@@ -214,14 +260,15 @@ export default function AdverseEventForm() {
                 ContentType: vrContentType,
                 SessionInterrupted: guidance,
                 PhysicianNotifiedDateTime:
-                    physicianDateTime || reportDate || new Date().toISOString(),
+                    physicianDateTime
+                    || new Date().toISOString(),
                 PhysicianNotifiedName: physicianName,
                 VRRelated: aeRelated,
                 PreExistingContribution: conditionContribution,
-                FollowUpVisitDate: reportDate || new Date().toISOString(),
+                FollowUpVisitDate: followUpDate || new Date().toISOString(),
                 FollowUpPatientStatus: followUpParticipantStatus,
-                InvestigatorSignature: investigatorSignature,
-                InvestigatorSignDate: reportDate || new Date().toISOString(),
+                InvestigatorSignature: investigatorSignature || "",
+                InvestigatorSignDate: date || new Date().toISOString(),
 
                 SeverityOutcomeData: severity
                     ? outcome.map((outcomeId) => ({
@@ -320,6 +367,13 @@ export default function AdverseEventForm() {
                     setConditionContribution(ae.PreExistingContribution || "");
                     setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
                     setInvestigatorSignature(ae.InvestigatorSignature || "");
+                    setFollowUpDate(
+                        ae.FollowUpVisitDate?.
+                            split("T")[0] || ""
+                    );
+                    setDate(ae.InvestigatorSignDate?.split("T")[0] || "");
+
+
 
                     // -----------------------------
                     // Set severity, outcome, and actions from response
@@ -409,78 +463,78 @@ export default function AdverseEventForm() {
                         </View>
                     </View>
                 </View>
-                </View>
+            </View>
 
-                {/* Session Dropdown Menu */}
-                {showSessionDropdown && (
-                    <>
-                        {/* Backdrop to close dropdown */}
-                        <Pressable
-                            style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                zIndex: 9998,
-                            }}
-                            onPress={() => setShowSessionDropdown(false)}
-                        />
+            {/* Session Dropdown Menu */}
+            {showSessionDropdown && (
+                <>
+                    {/* Backdrop to close dropdown */}
+                    <Pressable
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 9998,
+                        }}
+                        onPress={() => setShowSessionDropdown(false)}
+                    />
 
-                        <View
-                            style={{
-                                position: "absolute",
-                                top: 80,
-                                right: 24,
-                                backgroundColor: "white",
-                                borderColor: "#e5e7eb",
-                                borderWidth: 1,
-                                borderRadius: 8,
-                                shadowColor: "#000",
-                                shadowOpacity: 0.15,
-                                shadowRadius: 10,
-                                shadowOffset: { width: 0, height: 4 },
-                                zIndex: 9999,
-                                elevation: 10,
-                                width: 128,
-                                maxHeight: 192,
-                            }}
-                        >
-                            {availableSessions.length > 0 ? (
-                                availableSessions.map((session, index) => (
-                                    <Pressable
-                                        key={session}
+                    <View
+                        style={{
+                            position: "absolute",
+                            top: 80,
+                            right: 24,
+                            backgroundColor: "white",
+                            borderColor: "#e5e7eb",
+                            borderWidth: 1,
+                            borderRadius: 8,
+                            shadowColor: "#000",
+                            shadowOpacity: 0.15,
+                            shadowRadius: 10,
+                            shadowOffset: { width: 0, height: 4 },
+                            zIndex: 9999,
+                            elevation: 10,
+                            width: 128,
+                            maxHeight: 192,
+                        }}
+                    >
+                        {availableSessions.length > 0 ? (
+                            availableSessions.map((session, index) => (
+                                <Pressable
+                                    key={session}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 8,
+                                        borderBottomColor: index < availableSessions.length - 1 ? "#f3f4f6" : undefined,
+                                        borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
+                                        backgroundColor: selectedSession === session ? "#ecfdf5" : "white",
+                                    }}
+                                    onPress={() => {
+                                        setSelectedSession(session);
+                                        setShowSessionDropdown(false);
+                                    }}
+                                >
+                                    <Text
                                         style={{
-                                            paddingHorizontal: 12,
-                                            paddingVertical: 8,
-                                            borderBottomColor: index < availableSessions.length - 1 ? "#f3f4f6" : undefined,
-                                            borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
-                                            backgroundColor: selectedSession === session ? "#ecfdf5" : "white",
-                                        }}
-                                        onPress={() => {
-                                            setSelectedSession(session);
-                                            setShowSessionDropdown(false);
+                                            fontSize: 14,
+                                            color: selectedSession === session ? "#2f855a" : "#374151",
+                                            fontWeight: selectedSession === session ? "600" : "400",
                                         }}
                                     >
-                                        <Text
-                                            style={{
-                                                fontSize: 14,
-                                                color: selectedSession === session ? "#2f855a" : "#374151",
-                                                fontWeight: selectedSession === session ? "600" : "400",
-                                            }}
-                                        >
-                                            {session}
-                                        </Text>
-                                    </Pressable>
-                                ))
-                            ) : (
-                                <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-                                    <Text style={{ fontSize: 14, color: "#9ca3af" }}>No sessions available</Text>
-                                </View>
-                            )}
-                        </View>
-                    </>
-                )}
+                                        {session}
+                                    </Text>
+                                </Pressable>
+                            ))
+                        ) : (
+                            <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                                <Text style={{ fontSize: 14, color: "#9ca3af" }}>No sessions available</Text>
+                            </View>
+                        )}
+                    </View>
+                </>
+            )}
 
             <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
@@ -522,7 +576,7 @@ export default function AdverseEventForm() {
                         label={`📝 Description (symptoms, severity)`}
                         placeholder="symptoms, context, severity..."
                         multiline
-                        value={Description}
+                        value={Description ?? ""}
                         onChangeText={setdescription}
                     />
                     <View className="mb-3">
@@ -677,7 +731,7 @@ export default function AdverseEventForm() {
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dbe8e3] bg-[#F6F7F7]"
                             >
                                 <View className="w-5 h-5 border border-gray-400 rounded mr-2 items-center justify-center">
-                                    {outcome.includes(item.OutcomeId) && (
+                                    {outcome.includes(item.OutcomeId!) && (
                                         <Text className="text-white text-xs font-bold bg-green-600 w-4 h-4 text-center rounded">
                                             ✓
                                         </Text>
@@ -709,7 +763,7 @@ export default function AdverseEventForm() {
 
 
                     <View className="flex-row gap-3 mt-2">
-                        <DateField label="📅 Date physician notified" value={reportDate} onChange={setReportDate} />
+                        <DateField label="📅 Date physician notified" value={physicianDateTime} onChange={setPhysicianDateTime} />
                         <View className="flex-1"><Field label="🧑‍⚕️ Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} /></View>
                     </View>
                 </FormCard>
@@ -746,7 +800,7 @@ export default function AdverseEventForm() {
                 <FormCard icon="5" title="Follow-Up & Resolution">
                     <View className="flex-row gap-3">
                         <View className="flex-1">
-                            <DateField label="📅 Follow-up visit date" value={reportDate} onChange={setReportDate} />
+                            <DateField label="📅 Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
                         </View>
                         <View className="flex-1">
                             <Field label="🧾 signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} />
@@ -758,7 +812,7 @@ export default function AdverseEventForm() {
                             <Field label="📝 Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} />
                         </View>
                         <View className="flex-1">
-                            <DateField label="📅 Date" value={reportDate} onChange={setReportDate} />
+                            <DateField label="📅 Date" value={date} onChange={setDate} />
                         </View>
                     </View>
                 </FormCard>
@@ -783,9 +837,11 @@ export default function AdverseEventForm() {
             </ScrollView>
 
             <BottomBar>
-                <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">AE Reporting: {String(ready)}</Text>
-                <Btn variant="light" onPress={() => { }}>Save Draft</Btn>
-                <Btn onPress={handleSave}>Submit</Btn>
+                {/* <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">AE Reporting: {String(ready)}</Text> */}
+
+                <Btn variant="light" onPress={handleValidate}>Validate</Btn>
+                <Btn variant="light" onPress={handleClear}>Clear</Btn>
+                <Btn onPress={handleSave}>Save & Close</Btn>
             </BottomBar>
         </>
     );

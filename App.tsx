@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +17,6 @@ import BottomDock from './src/components/BottomDock';
 import HomeScreen from './src/screens/tabs/home_tab';
 import ReportsScreen from './src/screens/tabs/report_tab';
 
-import { SplashScreen } from './src/screens/auth/SplashScreen';
 import Login from './src/screens/auth/Login';
 import PreVR from './src/screens/assessments/PreVR';
 import PostVRAssessment from './src/screens/assessments/PostVRAssessment';
@@ -191,12 +190,7 @@ export default function App() {
                     component={SessionSetupScreen}
                     options={{
                       headerShown: true,
-                      title: "Session Setup",
-                      headerRight: ({ tintColor }) => (
-                        <View className="w-10 h-10 rounded-xl bg-[#0e4336] items-center justify-center mr-6 ">
-                          <Text className="text-white">⋯</Text>
-                        </View>
-                      ),
+                      title: "Session Setup"
                     }}
                   />
 

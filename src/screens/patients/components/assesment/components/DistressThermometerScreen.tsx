@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import  { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -176,7 +176,7 @@ export default function DistressThermometerScreen() {
 
       const payload: any = {
         ParticipantId: participantId,
-        StudyId: studyIdFormatted,
+        // StudyId: studyIdFormatted,
       };
       if (apiDate) {
         payload.CreatedDate = apiDate;
@@ -188,7 +188,7 @@ export default function DistressThermometerScreen() {
           "/GetParticipantDistressThermometerWeeklyQA",
           {
             ParticipantId: participantId,
-            StudyId: studyIdFormatted,
+            // StudyId: studyIdFormatted,
           }
         );
 
@@ -240,7 +240,7 @@ export default function DistressThermometerScreen() {
         "/GetParticipantDistressThermometerWeeklyQA",
         {
           ParticipantId: participantId,
-          StudyId: studyIdFormatted,
+          // StudyId: studyIdFormatted,
         }
       );
 
@@ -520,7 +520,7 @@ export default function DistressThermometerScreen() {
   return (
     <>
       {/* Header with FactG-style dropdown */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
         <View
           style={{
             backgroundColor: "white",

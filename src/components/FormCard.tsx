@@ -24,7 +24,7 @@ export default function FormCard({ icon, title, desc, children }: Props) {
       <View style={{ paddingLeft: ICON_COL }}>
         {/* Title and description */}
         <View className="mb-3">
-          <Text className="text-base font-semibold">{title}</Text>
+          <Text className="text-base pl-4 font-semibold">{title}</Text>
           {!!desc && <Text className="text-xs text-muted mt-1">{desc}</Text>}
         </View>
         

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Pressable, Image, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import FormCard from '@components/FormCard';
 import Segmented from '@components/Segmented';
 import { Field } from '@components/Field';
@@ -8,19 +8,17 @@ import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
-import Header from '@components/Header';
-import axios from "axios";
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
-import apiClient from 'src/services/apiClient';
 import { DropdownField } from '@components/DropdownField';
 import { formatForDB, formatForUI } from 'src/utils/date';
 
 
-interface LifeStyleData {
-  HabitID?: string;
-  Habit?: string;
-}
+type LifeStyleData = {
+  HabitID: string;
+  StudyId: string;
+  Habit: string;
+};
 
 interface ParticipantLifestyle {
   Lifestyle: string;
@@ -28,16 +26,15 @@ interface ParticipantLifestyle {
 }
 
 
-interface getLifeStyleData {
-  HabitID?: string;
-  StudyId?: string;
-  Habit: string;
-  LifestylePsychId?: string;
-  ParticipantId?: string;
-  ParticipantStudyId?: string;
-  Level: string;
-
-}
+// interface getLifeStyleData {
+//   HabitID?: string;
+//   StudyId?: string;
+//   Habit: string;
+//   LifestylePsychId?: string;
+//   ParticipantId?: string;
+//   ParticipantStudyId?: string;
+//   Level: string;
+// }
 interface ParticipantDetails {
   Age?: number;
   PhoneNumber?: number;
@@ -117,7 +114,7 @@ export default function SocioDemographic() {
   const [educationLevel, setEducationLevel] = useState<string>("");
   const [lifeStyleData, setLifeStyleData] = useState<LifeStyleData[]>([]);
   const [selectedValues, setSelectedValues] = useState<{ [key: string]: string }>({});
-  const [getlifeStyleData, setGetLifeStyleData] = useState<getLifeStyleData[]>([]);
+  // const [getlifeStyleData, setGetLifeStyleData] = useState<getLifeStyleData[]>([]);
 
 
   const [employmentStatus, setEmploymentStatus] = useState("");
@@ -149,7 +146,7 @@ export default function SocioDemographic() {
   const today = new Date().toISOString().split("T")[0];
   const [consentDate, setConsentDate] = useState<string>(today);
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [_errors, setErrors] = useState<{ [key: string]: string }>({});
 
 
 
@@ -286,13 +283,14 @@ export default function SocioDemographic() {
             setGender(data.Gender ?? "");
             setMaritalStatus(data.MaritalStatus ?? "");
             setNumberOfChildren(String(data.NumberOfChildren ?? ""));
+            setKnowledgeIn(data.KnowledgeIn ?? "");
+
             setFaithWellbeing(data.FaithContributeToWellBeing ?? "");
             setPracticeReligion(data.PracticeAnyReligion ?? "");
             setReligionSpecify(data.ReligionType ?? "");
 
             setEducationLevel(data.EducationLevel ?? "");
             setEmploymentStatus(data.EmploymentStatus ?? "");
-            setKnowledgeIn(data.KnowledgeIn ?? "");
 
             // Medical
             setCancerDiagnosis(data.CancerDiagnosis ?? "");
@@ -304,13 +302,19 @@ export default function SocioDemographic() {
             setOtherMedicalConditions(data.OtherMedicalConditions ?? "");
             setCurrentMedications(data.CurrentMedications ?? "");
 
-            // Lifestyle
-            // setSmokingHistory(data.SmokingHistory ?? "");
-            // setAlcoholConsumption(data.AlcoholConsumption ?? "");
-            // setPhysicalActivityLevel(data.PhysicalActivityLevel ?? "");
-            // setStressLevels(data.StressLevels ?? "");
-            // setTechnologyExperience(data.TechnologyExperience ?? "");
 
+            //consent and signature
+
+
+            setParticipantSignature(data.Signature ?? "");
+            if (data?.SignatureDate) {
+              const dbDate = new Date(data.SignatureDate)
+                .toISOString()
+                .split("T")[0];
+              setConsentDate(dbDate);
+            } else {
+              setConsentDate("");
+            }
 
             const lifestyleRes = await apiService.post<{ ResponseData: { HabitID: string; Level: string }[] }>(
               "/GetParticipantLifestyleData",
@@ -324,15 +328,7 @@ export default function SocioDemographic() {
               });
               setSelectedValues(lifestyleMap);
             }
-            setParticipantSignature(data.Signature);
-            if (data?.SignatureDate) {
-              const dbDate = new Date(data.SignatureDate)
-                .toISOString()
-                .split("T")[0];
-              setConsentDate(dbDate);
-            } else {
-              setConsentDate("");
-            }
+
 
           }
         } catch (err) {
@@ -355,18 +351,89 @@ export default function SocioDemographic() {
     setKnowledgeIn(language);
   };
 
+
+  const handleValidate = () => {
+    const requiredFields = [
+      ages,
+      phoneNumber,
+      gender,
+      maritalStatus,
+      KnowledgeIn,
+      faithWellbeing,
+      practiceReligion,
+      educationLevel,
+      employmentStatus,
+
+      cancerDiagnosis,
+      cancerStage,
+      ecogScore,
+      treatmentType,
+      treatmentDuration,
+
+      selectedValues,
+      participantSignature,
+      consentDate,
+    ];
+
+    if (maritalStatus === "Married") {
+      requiredFields.push(numberOfChildren);
+    }
+
+    const hasEmptyField = requiredFields.some(
+      (field) => !field || field.toString().trim() === ""
+    );
+    const invalidPhone = phoneNumber.length !== 10;
+
+    if (hasEmptyField || invalidPhone) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please fill all required fields",
+        position: "top",
+        topOffset: 50,
+      });
+      return false;
+    }
+
+    Toast.show({
+      type: "success",
+      text1: "Validation Passed",
+      text2: "All required fields are valid",
+      position: "top",
+      topOffset: 50,
+    });
+
+    return true;
+  };
+
+
   const handleClear = () => {
     setAge("");
     setPhoneNumber("");
     setGender("");
     setGenderOther("");
     setMaritalStatus("");
+    setKnowledgeIn("");
     setNumberOfChildren("");
     setFaithWellbeing("");
     setPracticeReligion("");
     setReligionSpecify("");
     setEducationLevel("");
-    setKnowledgeIn("");
+    setEmploymentStatus("");
+
+    setOtherMedicalConditions("");
+    setCurrentMedications("");
+
+    setCancerDiagnosis("");
+    setCancerStage("");
+    setEcogScore("");
+    setTreatmentType("");
+    setTreatmentStartDate("");
+    setTreatmentDuration("");
+
+    setParticipantSignature("");
+    setConsentDate("")
+
     setSelectedValues({});
     setErrors({});
   };
@@ -428,7 +495,7 @@ export default function SocioDemographic() {
         KnowledgeIn: KnowledgeIn,
         FaithContributeToWellBeing: faithWellbeing,
         PracticeAnyReligion: practiceReligion,
-        ReligionType: practiceReligion === "Yes" ? religionSpecify : null, 
+        ReligionType: practiceReligion === "Yes" ? religionSpecify : null,
         EducationLevel: educationLevel,
         EmploymentStatus: employmentStatus,
         CancerDiagnosis: cancerDiagnosis,
@@ -481,7 +548,8 @@ export default function SocioDemographic() {
   return (
     <>
       {isEditMode && (
-        <View className="px-6 pt-6 pb-4">
+        <View className="px-4 pb-1"  style={{ paddingTop: 8 }}>
+
           <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
             <Text className="text-lg font-bold text-green-600">
               Participant ID: {patientId}
@@ -956,7 +1024,7 @@ export default function SocioDemographic() {
 
                 {/* Options */}
                 <View className="flex-row gap-3">
-                  {config.options.map((opt) => (
+                  {config.options.map((opt: any) => (
                     <Pressable
                       key={opt}
                       onPress={() =>
@@ -1019,6 +1087,9 @@ export default function SocioDemographic() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleValidate}>
+          Validate
+        </Btn>
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>

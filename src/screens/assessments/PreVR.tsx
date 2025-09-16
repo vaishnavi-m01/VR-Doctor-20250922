@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
 import DateField from '@components/DateField';

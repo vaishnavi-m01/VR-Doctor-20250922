@@ -1,10 +1,9 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import Thermometer from '@components/Thermometer';
 import { Field } from '@components/Field';
 import DateField from '@components/DateField';
-import Segmented from '@components/Segmented';
 import Chip from '@components/Chip';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
@@ -42,33 +41,24 @@ export default function PatientScreening() {
   const [bloodPressure, setBloodPressure] = useState('');
   const [temperature, setTemperature] = useState('');
   const [bmi, setBmi] = useState('');
-  const [notes, setNotes] = useState('');
+  // const [notes, setNotes] = useState('');
 
   const [clinicalChecklist, setClinicalChecklist] = useState<ClinicalChecklist[]>([]);
   console.log("clinicalCheckList", clinicalChecklist)
   const [conds, setConds] = useState<string[]>([]);
   console.log("condss", conds)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [_errors, setErrors] = useState<{ [key: string]: string }>({});
   const [PVID, setPVID] = useState<string | null>(null);
   const [PMSID, setPMSID] = useState<string | null>(null);
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
   const { userId } = useContext(UserContext);
-  console.log("userIdd", userId)
 
   const routes = useRoute();
   const { CreatedDate: routeCreatedDate, PatientId: routePatientId } = (routes.params as any) ?? {};
 
   const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? null);
   const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? null);
-
-  console.log("SelectedCreatedDate:", selectedCreatedDate);
-  console.log("CurrentPatientId:", currentPatientId);
-
-
-  console.log("selectedCreatedDatee", selectedCreatedDate)
-
-
 
 
 
@@ -118,42 +108,6 @@ export default function PatientScreening() {
   };
 
 
-  const validateForm = () => {
-    const requiredFields = [
-      pulseRate,
-      bloodPressure,
-      temperature,
-      bmi,
-      implants,
-      prosthetics,
-      dt?.toString(),        
-      // factGScore?.toString() 
-    ];
-
-    const hasEmptyField = requiredFields.some(
-      (field) => !field || field.toString().trim() === ""
-    );
-
-    if (hasEmptyField) {
-      Toast.show({
-        type: "error",
-        text1: 'Validation Error',
-        text2: 'Please fill all required fields',
-        position: "top",
-        topOffset: 50,
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-
-
-
-
-
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -183,7 +137,7 @@ export default function PatientScreening() {
           setProsthetics(s.AnyProstheticsAndOrthoticsDevice || '');
           setConds(
             s.MedicalExperienceTypes
-              ? s.MedicalExperienceTypes.split(',').map(item => item.trim())
+              ? s.MedicalExperienceTypes.split(',').map((item: any) => item.trim())
               : []
           );
         }
@@ -196,17 +150,60 @@ export default function PatientScreening() {
     fetchData();
   }, []);
 
+
+  const validateForm = () => {
+    const requiredFields = [
+      dt?.toString(),
+      pulseRate,
+      bloodPressure,
+      temperature,
+      bmi,
+      implants,
+      prosthetics,
+      conds.length > 0 ? "ok" : ""
+    ];
+
+    const hasEmptyField = requiredFields.some(
+      (field) => !field || field.toString().trim() === ""
+    );
+
+    if (hasEmptyField) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please fill all required fields",
+        position: "top",
+        topOffset: 50,
+      });
+      return false;
+    }
+
+    Toast.show({
+      type: "success",
+      text1: "Validation Passed",
+      text2: "All required fields are valid",
+      position: "top",
+      topOffset: 50,
+    });
+
+    return true;
+  };
+
+
   const handleClear = () => {
-    setAge("");
-    setHeight("");
-    setWeight("");
+    setDt(0);
+    setPulseRate("");
     setBloodPressure("");
-    setHeartRate("");
     setTemperature("");
-    setOxygenSaturation("");
+    setBmi("");
+
+    setImplants("");
     setProsthetics("");
     setConds([]);
     setErrors({});
+    // setFactGScore(""); 
+    // setNotes(""); 
+    setDate(today);
   };
 
   const handleSave = async () => {
@@ -314,11 +311,6 @@ export default function PatientScreening() {
               <DateField label="Date" value={formatForUI(date)} onChange={setDate} />
             </View>
 
-            {/* <DateField
-                            label="Date"
-                            value={formatForUI(consentDate)}
-                            onChange={(val) => setConsentDate(formatForDB(val))}
-                          /> */}
           </View>
         </FormCard>
 
@@ -438,11 +430,11 @@ export default function PatientScreening() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={validateForm} className="py-4">
+          Validate
+        </Btn>
         <Btn variant="light" onPress={handleClear} className="py-4">
           Clear
-        </Btn>
-        <Btn variant="light" onPress={() => validateForm()} className="py-4">
-          Validate
         </Btn>
         <Btn onPress={handleSave} className="py-4">
           Save & Close

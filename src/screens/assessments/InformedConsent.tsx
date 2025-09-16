@@ -5,22 +5,19 @@ import {
     TextInput,
     ScrollView,
     Pressable,
-    Alert,
 } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
-
 import type { RootStackParamList } from '../../Navigation/types';
 import BottomBar from '../../components/BottomBar';
 import { Btn } from '../../components/Button';
 import FormCard from '../../components/FormCard';
-import Header from '../../components/Header';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
 import { formatDate } from 'src/utils/formUtils';
-import { formatDateDDMMYYYY, formatForUI } from 'src/utils/date';
+import { formatDateDDMMYYYY } from 'src/utils/date';
 
 
 interface InformedConsentFormProps {
@@ -30,11 +27,11 @@ interface InformedConsentFormProps {
 }
 
 interface setInformedConsent {
-    ICMID?: string;
-    StudyId?: string;
-    QuestionName?: string;
-    SortKey?: number;
-    Status?: number;
+    ICMID: string;
+    StudyId: string;
+    QuestionName: string;
+    SortKey: number;
+    Status: number;
 }
 
 
@@ -55,26 +52,18 @@ export default function InformedConsentForm({
     const [studyTitle, setStudyTitle] = useState(
         'An exploratory study to assess the effectiveness of Virtual Reality assisted Guided Imagery on QoL of cancer patients undergoing chemo-radiation treatment'
     );
-    const [studyNumber, setStudyNumber] = useState(studyId);
+
+    const [studyNumber, setStudyNumber] = useState<string | number>(studyId ?? "");
 
     /* ------------------ Participant Information ---------------- */
-    const [participantInitials, setParticipantInitials] = useState('');
     const [participantName, setParticipantName] = useState('');
-    const [dateOfBirth, setDateOfBirth] = useState('');
     const [ageInput, setAgeInput] = useState(age ? String(age) : '');
     const [qualification, setQualification] = useState('');
-    const [occupation, setOccupation] = useState('');
-    const [annualIncome, setAnnualIncome] = useState('');
-    const [address, setAddress] = useState('');
     const { userId } = useContext(UserContext);
     const [PICDID, setPICDID] = useState<string | null>(null);
     const [subjectSignaturePad, setSubjectSignaturePad] = useState('');
     const [coPISignaturePad, setCoPISignaturePad] = useState('');
     const [witnessSignaturePad, setWitnessSignaturePad] = useState('');
-
-
-
-
 
     const [informedConsent, setInformedConsent] = useState<setInformedConsent[]>([]);
 
@@ -82,13 +71,7 @@ export default function InformedConsentForm({
 
 
 
-    /* ---------------- Consent Acknowledgements ----------------- */
-    // const [acks, setAcks] = useState({
-    //     i: false,
-    //     ii: false,
-    //     iii: false,
-    //     iv: false,
-    // });
+
 
     const [acks, setAcks] = useState<Record<string, boolean>>({});
 
@@ -155,22 +138,14 @@ export default function InformedConsentForm({
         }, [patientId])
     );
 
-    const handleClear = () => {
-        setParticipantName("");
-        setParticipantSignature("");
-        setConsentDate("");
-        setWitnessName("");
-        setWitnessSignature("");
-        setWitnessDate("");
-        setErrors({});
-    };
 
-    const handleSubmit = async () => {
 
+    const validateForm = () => {
         const requiredFields = [
             participantName,
             ageInput,
             qualification,
+            allInitialed ? "ok" : "",
             signatures.subjectName,
             subjectSignaturePad,
             // signatures.subjectDate,
@@ -181,43 +156,69 @@ export default function InformedConsentForm({
             signatures.witnessName,
             witnessSignaturePad,
             // signatures.witnessDate,
+
         ];
 
-        // Check if any are empty
         const hasEmptyField = requiredFields.some(
-            (f) => !f || f.toString().trim() === ""
+            (field) => !field || field.toString().trim() === ""
         );
 
-        //  Validate participant info
-        if (!participantName || !ageInput || !qualification) {
-            Toast.show({
-                type: "error",
-                text1: "Validation Error",
-                text2: "Please fill all required participant information fields.",
-            });
-            return;
-        }
-
-        // Validate acknowledgements
-        if (!allInitialed) {
-            Toast.show({
-                type: "error",
-                text1: "Incomplete",
-                text2: "Please initial all statements and check the agreement.",
-            });
-            return;
-        }
-
-        // Validate signatures
         if (hasEmptyField) {
             Toast.show({
                 type: "error",
                 text1: "Validation Error",
-                text2: "Please complete all signature fields (name, signature, date).",
+                text2: "Please fill all required fields",
+                position: "top",
+                topOffset: 50,
             });
-            return;
+            return false;
         }
 
+        Toast.show({
+            type: "success",
+            text1: "Validation Passed",
+            text2: "All required fields are valid",
+            position: "top",
+            topOffset: 50,
+        });
+
+        return true;
+    };
+
+
+
+    const handleClear = () => {
+        setStudyNumber("");
+
+        setParticipantName("");
+        setAgeInput("");
+        setQualification("");
+
+        setAcks({});
+        setAgree(false);
+
+        setSignatures({
+            subjectName: "",
+            subjectDate: "",
+            coPIName: "",
+            coPIDate: "",
+            investigatorName: "",
+            witnessName: "",
+            witnessDate: "",
+        });
+
+        setSubjectSignaturePad("");
+        setCoPISignaturePad("");
+        setWitnessSignaturePad("");
+
+        setPICDID(null);
+
+    };
+
+
+    const handleSubmit = async () => {
+
+        if (!validateForm()) return;
 
         try {
             const requestBody = {
@@ -261,7 +262,7 @@ export default function InformedConsentForm({
             if (response.data) {
                 Toast.show({
                     type: "success",
-                    text1: "Consent Saved",
+                    text1: PICDID ? 'Updated Successfully' : 'Added Successfully',
                     text2: "Consent form submitted successfully",
                     onHide: () => navigation.goBack(),
                 });
@@ -301,7 +302,7 @@ export default function InformedConsentForm({
                 // Set acknowledgements
                 const qids = Array.isArray(c.QuestionId) ? c.QuestionId : [c.QuestionId];
                 const savedAcks: Record<string, boolean> = {};
-                qids.forEach((qid) => {
+                qids.forEach((qid: any) => {
                     if (qid) savedAcks[qid] = true;
                 });
                 setAcks(savedAcks);
@@ -318,7 +319,7 @@ export default function InformedConsentForm({
                     witnessName: c.WitnessName || "",
                     witnessDate: c.WitnessDate ? formatDateDDMMYYYY(c.WitnessDate) : "",
                 });
-
+                
                 setSubjectSignaturePad(c.SubjectSignature || "");
                 setCoPISignaturePad(c.CoPrincipalInvestigatorSignature || "");
                 setWitnessSignaturePad(c.WitnessSignature || "");
@@ -328,8 +329,7 @@ export default function InformedConsentForm({
                 if (c.Qualification) setQualification(c.Qualification);
 
                 if (c.Age) setAgeInput(String(c.Age));
-                if (c.DateOfBirth) setDateOfBirth(formatDate(c.DateOfBirth));
-                if (c.Address) setAddress(c.Address);
+
 
                 // Study details
                 if (c.StudyTitle) setStudyTitle(c.StudyTitle);
@@ -458,7 +458,7 @@ export default function InformedConsentForm({
                             </Text>
                             <InputShell>
                                 <TextInput
-                                    value={age}
+                                    value={ageInput}
                                     onChangeText={setAgeInput}
                                     placeholder="Age"
                                     placeholderTextColor="#9ca3af"
@@ -480,39 +480,7 @@ export default function InformedConsentForm({
                     </View>
 
 
-                    {/* Row 3 */}
-                    {/* <View className="flex-row space-x-4 mb-4">
-                        <LabeledInput
-                            label="Occupation"
-                            placeholder="Occupation"
-                            value={occupation}
-                            onChangeText={setOccupation}
-                        />
-                        <LabeledInput
-                            label="Annual Income"
-                            placeholder="Annual income"
-                            value={annualIncome}
-                            onChangeText={setAnnualIncome}
-                        />
-                    </View> */}
 
-                    {/* Address */}
-                    {/* <View className="mb-2">
-                        <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
-                            Address of the Participant
-                        </Text>
-                        <View className="bg-white border border-[#e6eeeb] rounded-2xl p-4 min-h-[84px]">
-                            <TextInput
-                                value={address}
-                                onChangeText={setAddress}
-                                multiline
-                                textAlignVertical="top"
-                                placeholder="House no, Street, City, State, PIN"
-                                placeholderTextColor="#9ca3af"
-                                className="text-base text-[#0b1f1c]"
-                            />
-                        </View>
-                    </View> */}
                 </FormCard>
 
                 {/* Acknowledgements */}
@@ -611,7 +579,7 @@ export default function InformedConsentForm({
                                 <InputShell>
                                     <TextInput
                                         value={signatures.investigatorName}
-                                        onChangeText={(v) => setSig('investigatorName', v)}
+                                        onChangeText={(v: any) => setSig('investigatorName', v)}
                                         placeholder="Enter name"
                                         placeholderTextColor="#9ca3af"
                                         className="text-sm text-[#0b1f1c]"
@@ -644,6 +612,9 @@ export default function InformedConsentForm({
             </ScrollView>
 
             <BottomBar>
+                <Btn variant="light" onPress={validateForm} className="py-4">
+                    Validate
+                </Btn>
                 <Btn variant="light" onPress={handleClear}>Clear</Btn>
                 <Btn onPress={handleSubmit}>Save & Close</Btn>
             </BottomBar>
