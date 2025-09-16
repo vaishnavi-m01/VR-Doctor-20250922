@@ -351,29 +351,73 @@ export default function EdmontonFactGScreen() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
+    const handleValidate = () => {
+    const totalQuestions = subscales.reduce((count, scale) => count + scale.items.length, 0);
+    const answeredQuestions = Object.values(answers).filter(v => v !== null && v !== undefined && v !== '').length;
+
+    if (answeredQuestions === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    if (answeredQuestions < totalQuestions) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: 'Validation Passed',
+        text2: 'All required fields are filled',
+        position: 'top',
+        topOffset: 50,
+      });
+    }
+  };
+
   const handleSave = async () => {
+    const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
+    const answeredQuestions = Object.values(answers).filter(
+      v => v !== null && v !== undefined && v !== ''
+    ).length;
+
+    // No answers at all
+    if (answeredQuestions === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form before saving.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    // Missing at least one answer
+    if (answeredQuestions < totalQuestions) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+      setSaving(false);
+      return;
+    }
+
     try {
       setSaving(true);
-
-      const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
-      const answeredQuestions = Object.keys(answers).filter((k) => answers[k] !== null).length;
-
-      if (answeredQuestions < totalQuestions) {
-        Toast.show({
-          type: "error",
-          text1: "Validation Error",
-          text2: `Please answer all questions (${answeredQuestions}/${totalQuestions} answered).`,
-        });
-        return;
-      }
-      if (answeredQuestions === 0) {
-        Toast.show({
-          type: "error",
-          text1: "Error",
-          text2: "No answers to save. Please answer at least one question.",
-        });
-        return;
-      }
 
       const factGData = Object.entries(answers).map(([code, val]) => {
         const found = subscales.flatMap((s) => s.items).find((i) => i.code === code);
@@ -647,6 +691,10 @@ export default function EdmontonFactGScreen() {
         <Text style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: "#0b362c", color: "white", fontWeight: "800" }}>
           TOTAL {score.TOTAL}
         </Text>
+
+        <Btn variant="light" onPress={handleValidate}>
+          Validate
+        </Btn>
 
         <Btn variant="light" onPress={handleClear}>
           Clear

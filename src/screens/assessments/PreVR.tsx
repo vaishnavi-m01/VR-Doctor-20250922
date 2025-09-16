@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
 import DateField from '@components/DateField';
@@ -60,9 +60,7 @@ export default function PreVR() {
   const route = useRoute<RouteProp<RootStackParamList, 'PostVRAssessment'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { patientId, age, studyId } = route.params;
-  const { userId, setUserId } = useContext(UserContext);
-
-
+  const { userId } = useContext(UserContext);
 
   const formatStudyId = (sid: string | number) => {
     const s = sid.toString();
@@ -151,23 +149,19 @@ export default function PreVR() {
   ) => {
     setResponses((prev) => {
       const questionResponses = prev[questionId] ? [...prev[questionId]] : [];
-      //  array length for index
       while (questionResponses.length <= index) {
         questionResponses.push({ PMPVRID: null, ScaleValue: null, Notes: null });
       }
-
       if (isNotes) {
         questionResponses[index].Notes = value;
       } else {
         questionResponses[index].ScaleValue = value;
       }
-      return {
-        ...prev,
-        [questionId]: questionResponses,
-      };
+      const updated = { ...prev, [questionId]: questionResponses };
+      console.log('Updated responses:', updated);
+      return updated;
     });
   };
-
 
   const getQuestionType = (question: string): string => {
     const lowerQ = question.toLowerCase();
@@ -206,12 +200,14 @@ export default function PreVR() {
             <React.Fragment key={v}>
               <Pressable
                 onPress={() => setResponse(questionId, v.toString(), false, index)}
-                className={`flex-1 py-3 items-center justify-center ${value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
-                  }`}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
               >
                 <Text
-                  className={`font-medium text-sm ${value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
-                    }`}
+                  className={`font-medium text-sm ${
+                    value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
+                  }`}
                 >
                   {v}
                 </Text>
@@ -230,8 +226,9 @@ export default function PreVR() {
       <View className="flex-row gap-2">
         <Pressable
           onPress={() => setResponse(questionId, 'Yes', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-            }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
         >
           <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
           <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
@@ -240,8 +237,9 @@ export default function PreVR() {
         </Pressable>
         <Pressable
           onPress={() => setResponse(questionId, 'No', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-            }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
         >
           <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
           <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
@@ -259,12 +257,14 @@ export default function PreVR() {
             <React.Fragment key={option}>
               <Pressable
                 onPress={() => setResponse(questionId, option, false, index)}
-                className={`flex-1 py-3 items-center justify-center ${value === option ? 'bg-[#4FC264]' : 'bg-white'
-                  }`}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value === option ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
               >
                 <Text
-                  className={`font-medium text-xs text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'
-                    }`}
+                  className={`font-medium text-xs text-center ${
+                    value === option ? 'text-white' : 'text-[#4b5f5a]'
+                  }`}
                 >
                   {option}
                 </Text>
@@ -304,21 +304,9 @@ export default function PreVR() {
         {questionType === 'yes_no' && renderYesNo(questionId, index)}
 
         {questionType === 'comfort_level' &&
-          renderMultipleChoice(questionId, [
-            'Very Comfortable',
-            'Somewhat Comfortable',
-            'Neutral',
-            'Uncomfortable',
-            'Very Uncomfortable',
-          ], index)}
+          renderMultipleChoice(questionId, ['Very Comfortable', 'Somewhat Comfortable', 'Neutral', 'Uncomfortable', 'Very Uncomfortable'], index)}
         {questionType === 'engagement_level' &&
-          renderMultipleChoice(questionId, [
-            'Very Engaging',
-            'Somewhat Engaging',
-            'Neutral',
-            'Not Very Engaging',
-            'Not Engaging at All',
-          ], index)}
+          renderMultipleChoice(questionId, ['Very Engaging', 'Somewhat Engaging', 'Neutral', 'Not Very Engaging', 'Not Engaging at All'], index)}
 
         {questionType === 'text' && (
           <Field
@@ -347,9 +335,22 @@ export default function PreVR() {
     );
   };
 
-  const handleSave = async () => {
-      const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
-      entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
+  const handleValidate = () => {
+    const hasAnyResponse = Object.keys(responses).length > 0;
+
+    if (!hasAnyResponse) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+      entries.some((entry) => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
     );
 
     if (hasEmptyFields) {
@@ -360,8 +361,47 @@ export default function PreVR() {
         position: 'top',
         topOffset: 50,
       });
-      return; 
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: 'Validation Passed',
+        text2: 'All required fields are filled',
+        position: 'top',
+        topOffset: 50,
+      });
     }
+  };
+
+  const handleSave = async () => {
+    const hasAnyResponse = Object.keys(responses).length > 0;
+
+    if (!hasAnyResponse) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form before saving.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+      entries.some((entry) => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
+    );
+
+    if (hasEmptyFields) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+      setSaving(false);
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -389,7 +429,7 @@ export default function PreVR() {
         StudyId: formattedStudyId,
         QuestionData: questionData,
         Status: 1,
-        CreatedBy:userId,
+        CreatedBy: userId,
         ModifiedBy: userId,
       };
 
@@ -464,6 +504,7 @@ export default function PreVR() {
         <FormCard icon="J" title="Pre-VR Assessment & Questionnaires">
           <View className="flex-row gap-3">
             <View className="flex-1">
+              {/* Participant ID input is read-only */}
               <Field label="Participant ID" placeholder="e.g., PID-0234" value={participantId} onChangeText={setParticipantId} editable={false} />
             </View>
             <View className="flex-1">
@@ -503,6 +544,9 @@ export default function PreVR() {
       </ScrollView>
 
       <BottomBar>
+        <Btn variant="light" onPress={handleValidate}>
+          Validate
+        </Btn>
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
