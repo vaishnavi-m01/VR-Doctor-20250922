@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import FormCard from '@components/FormCard';
 import { Field } from '@components/Field';
@@ -19,7 +19,7 @@ type Question = {
   Type: 'Pre' | 'Post';
   SortKey: number;
   Status: number;
-  PPPVRId?: string | null;
+  PPPVRId?: string | null; // id for existing saved response
   ParticipantId?: string | null;
   SessionNo?: string | null;
   ScaleValue?: string | null;
@@ -31,10 +31,8 @@ export default function PreAndPostVR() {
   const route = useRoute<RouteProp<RootStackParamList, 'PreAndPostVR'>>();
   const { patientId, age, studyId } = route.params as { patientId: number | string; age: number; studyId: number | string };
 
-  // Avoid double prefixing PID
+  // Format participantId and studyId to avoid double prefixing
   const participantIdInput = typeof patientId === 'string' && patientId.startsWith('PID-') ? patientId : `PID-${patientId}`;
-
-  // Avoid double prefixing CS-
   const formatStudyId = (sid: string | number) => {
     const s = sid.toString();
     return s.startsWith('CS-') ? s : `CS-${s.padStart(4, '0')}`;
@@ -46,43 +44,35 @@ export default function PreAndPostVR() {
   const [responses, setResponses] = useState<Record<string, { ScaleValue: string; Notes: string }>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
   const [selectedAssessmentType, setSelectedAssessmentType] = useState<'Pre' | 'Post'>('Pre');
   const [showAssessmentDropdown, setShowAssessmentDropdown] = useState(false);
   const [selectedSession, setSelectedSession] = useState<string>('Session 1');
   const [showSessionDropdown, setShowSessionDropdown] = useState(false);
   const [availableSessions, setAvailableSessions] = useState<string[]>([]);
-  const { userId, setUserId } = useContext(UserContext);
-
+  const { userId } = useContext(UserContext);
   const [validationError, setValidationError] = useState('');
 
+  // Assessment type options
+  const assessmentTypes: Array<'Pre' | 'Post'> = ['Pre', 'Post'];
 
-  // Fetch available sessions
+  // Fetch mock available sessions (replace with real api)
   const fetchAvailableSessions = async () => {
     try {
-      // Mock sessions data - replace with actual API call
-      const mockSessions = [
-        'Session 1',
-        'Session 2', 
-        'Session 3',
-        'Session 4',
-        'Session 5'
-      ];
+      const mockSessions = ['Session 1', 'Session 2', 'Session 3', 'Session 4', 'Session 5'];
       setAvailableSessions(mockSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     }
   };
 
+  // Fetch questions and previous responses on mount or change of patient/study/session
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-
       try {
-        // Fetch sessions first
         await fetchAvailableSessions();
-        
+
         const questionsRes = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData");
         const fetchedQuestions = questionsRes.data.ResponseData || [];
 
@@ -93,7 +83,7 @@ export default function PreAndPostVR() {
         });
         const responseData = responsesRes.data.ResponseData || [];
 
-        // Merge PPPVRId and existing answers into questions for update detection
+        // Merge previous response data (PPPVRId, ScaleValue, Notes) into questions
         const mergedQuestions = fetchedQuestions.map((q) => {
           const resp = responseData.find(r => r.PPVRQMID === q.PPVRQMID);
           return {
@@ -106,7 +96,7 @@ export default function PreAndPostVR() {
 
         setQuestions(mergedQuestions);
 
-        // Set responses from existing answers
+        // Set responses state for form controls
         const initialResponses: Record<string, { ScaleValue: string; Notes: string }> = {};
         responseData.forEach((item) => {
           initialResponses[item.PPVRQMID] = {
@@ -131,13 +121,16 @@ export default function PreAndPostVR() {
     fetchData();
   }, [patientId, studyId, sessionNo]);
 
+  // Update answer for question
   const setAnswer = (questionId: string, value: string) => {
     setResponses((prev) => ({
       ...prev,
       [questionId]: { ScaleValue: value, Notes: prev[questionId]?.Notes || '' },
     }));
-    setErrors((prev) => ({ ...prev, [questionId]: '' }));
+    setValidationError('');
   };
+
+  // Update notes for question
   const setNote = (questionId: string, value: string) => {
     setResponses((prev) => ({
       ...prev,
@@ -145,57 +138,59 @@ export default function PreAndPostVR() {
     }));
   };
 
+  // Filtered questions by assessment type
   const preQuestions = questions.filter(q => q.Type === 'Pre').sort((a, b) => a.SortKey - b.SortKey);
   const postQuestions = questions.filter(q => q.Type === 'Post').sort((a, b) => a.SortKey - b.SortKey);
 
-  const delta = useMemo(() => {
-    const preQ = preQuestions.find(q => q.QuestionName.toLowerCase() === 'do you feel good?');
-    const postQ = postQuestions.find(q => q.QuestionName.toLowerCase() === 'do you feel good?');
-    const preVal = preQ ? (responses[preQ.PPVRQMID]?.ScaleValue === 'Yes' ? 1 : 0) : 0;
-    const postVal = postQ ? (responses[postQ.PPVRQMID]?.ScaleValue === 'Yes' ? 1 : 0) : 0;
-    return postVal - preVal;
-  }, [responses, preQuestions, postQuestions]);
-
-  const flag = useMemo(() => {
-    const symptomQs = questions.filter(q =>
-      ['Do you have Headache & Aura?', 'Do you have dizziness?', 'Do you have Blurred Vision?', 'Do you have Vertigo?', 'Do you experience any discomfort?'].includes(q.QuestionName));
-    return symptomQs.some(q => responses[q.PPVRQMID]?.ScaleValue === 'Yes');
-  }, [responses, questions]);
-
-const validate = () => {
-  if (!participantIdInput.trim()) {
-    setValidationError('All fields required');
-    return false;
-  }
-
-  const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
-  const allAnswered = questionsToValidate.every(q => responses[q.PPVRQMID]?.ScaleValue);
-
-  if (!allAnswered) {
-    setValidationError('All fields required');
-    return false;
-  }
-
-  setValidationError('');
-  return true;
-};
-
   const handleClear = () => {
     setResponses({});
+    setValidationError('');
   };
 
-  const handleSave = async () => {
-    if (!validate()) {
+  const handleValidate = () => {
+    const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
+    const invalid = questionsToValidate.some(q =>
+      !(responses[q.PPVRQMID]?.ScaleValue && responses[q.PPVRQMID]?.ScaleValue.trim() !== '')
+    );
+
+    if (invalid) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: 'All Fields are required',
+        text2: 'Please fill all required fields',
         position: 'top',
         topOffset: 50,
       });
-      return;
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: 'Validation Passed',
+        text2: 'All required fields are filled',
+        position: 'top',
+        topOffset: 50,
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    // Validate required fields before save
+    const questionsToSave = questions.filter(q => q.Type === selectedAssessmentType);
+    const unanswered = questionsToSave.filter(q =>
+      !(responses[q.PPVRQMID]?.ScaleValue && responses[q.PPVRQMID]?.ScaleValue.trim() !== '') // Check ScaleValue is non-empty
+    );
+
+    if (unanswered.length > 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+      return; // Do not proceed with save
     }
 
+    setValidationError('');
     setSaving(true);
     try {
       // Only save questions that match the selected assessment type
@@ -259,141 +254,234 @@ const validate = () => {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#4FC264" />
-        <Text className="mt-2">Loading questions…</Text>
+        <Text style={{ marginTop: 8 }}>Loading questions…</Text>
       </View>
     );
   }
 
   return (
     <>
-      <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">Participant ID: {participantIdInput}</Text>
-          <Text className="text-base font-semibold text-green-600">Study ID: {studyIdFormatted}</Text>
-          
-          <View className="flex-row items-center gap-3">
-            <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
-            
+      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        <View style={{
+          backgroundColor: 'white',
+          borderBottomColor: '#e5e7eb',
+          borderBottomWidth: 1,
+          borderRadius: 12,
+          padding: 16,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 2 },
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2f855a' }}>
+            Participant ID: {participantIdInput}
+          </Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#2f855a' }}>
+            Study ID: {studyIdFormatted}
+          </Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#4a5568' }}>
+              Age: {age}
+            </Text>
+
             {/* Sessions Dropdown */}
-            <View className="w-32">
+            <View style={{ width: 128 }}>
               <Pressable
-                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
                 style={{
                   backgroundColor: '#f8f9fa',
                   borderColor: '#e5e7eb',
+                  borderWidth: 1,
                   borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
+                onPress={() => setShowSessionDropdown(!showSessionDropdown)}
               >
-                <Text className="text-sm text-gray-700">
-                  {selectedSession}
-                </Text>
-                <Text className="text-gray-500 text-xs">▼</Text>
+                <Text style={{ fontSize: 14, color: '#374151' }}>{selectedSession}</Text>
+                <Text style={{ color: '#6b7280', fontSize: 12 }}>▼</Text>
               </Pressable>
             </View>
           </View>
         </View>
-
-        {/* Sessions Dropdown Menu */}
-        {showSessionDropdown && (
-          <>
-            {/* Backdrop to close dropdown */}
-            <Pressable
-              className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
-              onPress={() => setShowSessionDropdown(false)}
-            />
-            <View className="absolute top-24 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
-              {availableSessions.map((session, index) => (
-                <Pressable
-                  key={index}
-                  className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''} ${selectedSession === session ? 'bg-green-50' : ''}`}
-                  onPress={() => {
-                    setSelectedSession(session);
-                    // Convert session name to session number format
-                    const sessionNumber = session.replace('Session ', 'SessionNo-');
-                    setSessionNo(sessionNumber);
-                    setShowSessionDropdown(false);
-                  }}
-                >
-                  <Text className={`text-sm ${selectedSession === session ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>
-                    {session}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        )}
       </View>
 
-      <ScrollView className="px-4 pt-4 bg-bg pb-[400px]">
+      {/* Sessions Dropdown Menu */}
+      {showSessionDropdown && (
+        <>
+          {/* Backdrop */}
+          <Pressable
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9998,
+            }}
+            onPress={() => setShowSessionDropdown(false)}
+          />
+          <View style={{
+            position: 'absolute',
+            top: 96,
+            right: 24,
+            backgroundColor: 'white',
+            borderColor: '#e5e7eb',
+            borderWidth: 1,
+            borderRadius: 8,
+            shadowColor: '#000',
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 10,
+            width: 128,
+            maxHeight: 192,
+            zIndex: 9999,
+            overflow: 'hidden',
+          }}>
+            {availableSessions.map((session, index) => (
+              <Pressable
+                key={session}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
+                  borderBottomColor: '#f1f5f9',
+                  backgroundColor: selectedSession === session ? '#e6f4ea' : 'white',
+                }}
+                onPress={() => {
+                  setSelectedSession(session);
+                  // Convert session name to session number format
+                  const sessionNumber = session.replace('Session ', 'SessionNo-');
+                  setSessionNo(sessionNumber);
+                  setShowSessionDropdown(false);
+                }}
+              >
+                <Text style={{
+                  fontSize: 14,
+                  color: selectedSession === session ? '#2f855a' : '#374151',
+                  fontWeight: selectedSession === session ? '600' : undefined,
+                }}>
+                  {session}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
+
+      <ScrollView className="px-4 pt-[0.2rem] bg-bg pb-[400px]">
         <FormCard icon="I" title="Pre & Post VR">
+          <View style={{ paddingBottom: 40}}>
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Field label="Participant ID" value={participantIdInput} editable={false} />
-             
             </View>
             <View className="flex-1">
               <DateField label="Date" value={dateInput} onChange={setDateInput} />
-            
             </View>
           </View>
-          
+
           {/* Assessment Type Dropdown */}
-          <View className="mt-4">
-            <Text className="text-xs text-[#4b5f5a] mb-2">Assessment Type</Text>
-            <View className="w-32 relative">
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ fontSize: 12, color: '#4b5f5a', marginBottom: 8 }}>
+              Assessment Type
+            </Text>
+            <View style={{ width: 128, position: 'relative' }}>
               <Pressable
-                className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
-                onPress={() => setShowAssessmentDropdown(!showAssessmentDropdown)}
                 style={{
                   backgroundColor: '#f8f9fa',
                   borderColor: '#e5e7eb',
+                  borderWidth: 1,
                   borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
+                onPress={() => setShowAssessmentDropdown(!showAssessmentDropdown)}
               >
-                <Text className="text-sm text-gray-700">
-                  {selectedAssessmentType}
-                </Text>
-                <Text className="text-gray-500 text-xs">▼</Text>
+                <Text style={{ fontSize: 14, color: '#374151' }}>{selectedAssessmentType}</Text>
+                <Text style={{ color: '#6b7280', fontSize: 12 }}>▼</Text>
               </Pressable>
 
-              {/* Assessment Type Dropdown Menu */}
               {showAssessmentDropdown && (
                 <>
-                  {/* Backdrop to close dropdown */}
+                  {/* Backdrop */}
                   <Pressable
-                    className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
+                    style={{
+                      position: 'absolute',
+                      top: -200,
+                      left: -200,
+                      right: -200,
+                      bottom: -200,
+                      zIndex: 9998,
+                    }}
                     onPress={() => setShowAssessmentDropdown(false)}
                   />
-                  <View className="absolute top-10 left-0 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
-                    <Pressable
-                      className={`px-3 py-2 border-b border-gray-100 ${selectedAssessmentType === 'Pre' ? 'bg-green-50' : ''}`}
-                      onPress={() => {
-                        setSelectedAssessmentType('Pre');
-                        setShowAssessmentDropdown(false);
-                      }}
-                    >
-                      <Text className={`text-sm ${selectedAssessmentType === 'Pre' ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>Pre</Text>
-                    </Pressable>
-                    
-                    <Pressable
-                      className={`px-3 py-2 ${selectedAssessmentType === 'Post' ? 'bg-green-50' : ''}`}
-                      onPress={() => {
-                        setSelectedAssessmentType('Post');
-                        setShowAssessmentDropdown(false);
-                      }}
-                    >
-                      <Text className={`text-sm ${selectedAssessmentType === 'Post' ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>Post</Text>
-                    </Pressable>
+                  <View style={{
+                    position: 'absolute',
+                    top: 40,
+                    left: 0,
+                    backgroundColor: 'white',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 2 },
+                    elevation: 10,
+                    width: 128,
+                    zIndex: 9999,
+                    overflow: 'hidden',
+                  }}>
+                    {assessmentTypes.map((type, index) => (
+                      <Pressable
+                        key={type}
+                        style={{
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                          borderBottomWidth: index < assessmentTypes.length - 1 ? 1 : 0,
+                          borderBottomColor: '#f1f5f9',
+                          backgroundColor: selectedAssessmentType === type ? '#e6f4ea' : 'white',
+                        }}
+                        onPress={() => {
+                          setSelectedAssessmentType(type);
+                          setShowAssessmentDropdown(false);
+                        }}
+                      >
+                        <Text style={{
+                          fontSize: 14,
+                          color: selectedAssessmentType === type ? '#2f855a' : '#374151',
+                          fontWeight: selectedAssessmentType === type ? '600' : undefined,
+                        }}>
+                          {type}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </>
               )}
             </View>
           </View>
+          </View>
         </FormCard>
 
+        {validationError ? (
+          <Text className="text-red-600 text-center my-2">{validationError}</Text>
+        ) : null}
+
+        {/* Display questions for selected assessment type */}
         {selectedAssessmentType === 'Pre' && preQuestions.length > 0 && (
           <FormCard icon="A" title="Pre Virtual Reality Questions">
             {preQuestions.map((q) => (
@@ -404,8 +492,7 @@ const validate = () => {
                     <Pressable
                       key={opt}
                       onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                        }`}
+                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
                     >
                       <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                         {opt === 'Yes' ? '✅' : '❌'}
@@ -416,7 +503,6 @@ const validate = () => {
                     </Pressable>
                   ))}
                 </View>
-             
 
                 {responses[q.PPVRQMID]?.ScaleValue && (
                   <View className="mt-3">
@@ -443,8 +529,7 @@ const validate = () => {
                     <Pressable
                       key={opt}
                       onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                        }`}
+                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
                     >
                       <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                         {opt === 'Yes' ? '✅' : '❌'}
@@ -471,8 +556,8 @@ const validate = () => {
           </FormCard>
         )}
 
-        {/* Show message when no questions available for selected type */}
-        {((selectedAssessmentType === 'Pre' && preQuestions.length === 0) || 
+        {/* Show message if no questions for selected type */}
+        {((selectedAssessmentType === 'Pre' && preQuestions.length === 0) ||
           (selectedAssessmentType === 'Post' && postQuestions.length === 0)) && (
           <FormCard icon="ℹ️" title={`No ${selectedAssessmentType} Questions Available`}>
             <Text className="text-gray-600 text-center py-4">
@@ -481,21 +566,13 @@ const validate = () => {
           </FormCard>
         )}
 
-        {/* Extra space to ensure content is not hidden by BottomBar */}
+        {/* Spacer so content not hidden behind BottomBar */}
         <View style={{ height: 150 }} />
       </ScrollView>
 
       <BottomBar>
-        <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-          Mood Δ: {delta > 0 ? '+1' : delta < 0 ? '-1' : '0'}
-        </Text>
-        {flag && (
-          <Text className="px-3 py-2 rounded-xl bg-[#0b362c] text-white font-bold">
-            ⚠︎ Review symptoms
-          </Text>
-        )}
+        <Btn variant="light" onPress={handleValidate}>Validate</Btn>
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
-        <Btn variant="light">Validate</Btn>
         <Btn onPress={handleSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save & Close'}
         </Btn>

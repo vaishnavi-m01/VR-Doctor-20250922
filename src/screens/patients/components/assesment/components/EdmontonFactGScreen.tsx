@@ -351,9 +351,9 @@ export default function EdmontonFactGScreen() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-    const handleValidate = () => {
+  const handleValidate = () => {
     const totalQuestions = subscales.reduce((count, scale) => count + scale.items.length, 0);
-    const answeredQuestions = Object.values(answers).filter(v => v !== null && v !== undefined && v !== '').length;
+    const answeredQuestions = Object.values(answers).filter(v => v !== null && v !== undefined ).length;
 
     if (answeredQuestions === 0) {
       Toast.show({
@@ -388,7 +388,7 @@ export default function EdmontonFactGScreen() {
   const handleSave = async () => {
     const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
     const answeredQuestions = Object.values(answers).filter(
-      v => v !== null && v !== undefined && v !== ''
+      v => v !== null && v !== undefined 
     ).length;
 
     // No answers at all
@@ -460,20 +460,38 @@ export default function EdmontonFactGScreen() {
           type: "success",
           text1: "Success",
           text2: isAdd ? "FactG Added successfully!" : "FactG Updated successfully!",
-          onHide: () => {
+          // onHide: () => {
+          //   navigation.goBack();
+          //   const navState = navigation.getState();
+
+          //   navigation.reset({
+          //     index: 0,
+          //     routes: navState.routes.map((r) =>
+          //       r.name === "PatientScreening"
+          //         ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: patientId } }
+          //         : r
+          //     ) as any,
+          //   });
+
+          // },
+          
+           onHide: () => {
             navigation.goBack();
             const navState = navigation.getState();
 
-            navigation.reset({
-              index: 0,
-              routes: navState.routes.map((r) =>
-                r.name === "PatientScreening"
-                  ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: patientId } }
-                  : r
-              ) as any,
-            });
-
+            // Check if navState exists before using it
+            if (navState && navState.routes) {
+              navigation.reset({
+                index: 0,
+                routes: navState.routes.map((r) =>
+                  r.name === "PatientScreening"
+                    ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: patientId } }
+                    : r
+                ) as any,
+              });
+            }
           },
+
         });
 
         await fetchAvailableDates();
@@ -531,7 +549,7 @@ export default function EdmontonFactGScreen() {
 
   return (
     <>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
         <View
           style={{
             backgroundColor: "white",
@@ -548,10 +566,13 @@ export default function EdmontonFactGScreen() {
             shadowOffset: { width: 0, height: 2 },
           }}
         >
-          <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>Participant ID: {patientId}</Text>
-          <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
-            Study ID: {studyId ? `${studyId}` : "CS-0001"}
+          <Text style={{ color: 'rgba(22,163,74,1)', fontWeight: '700', fontSize: 18 }}>
+            Participant ID: {patientId}
           </Text>
+          <Text style={{ color: 'rgba(22,163,74,1)', fontWeight: '600', fontSize: 16 }}>
+            Study ID: {studyId ? `${studyId}` : 'CS-0001'}
+          </Text>
+
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Text style={{ color: "#4a5568", fontSize: 16, fontWeight: "600" }}>Age: {age || "Not specified"}</Text>
 
@@ -623,7 +644,9 @@ export default function EdmontonFactGScreen() {
         </>
       )}
 
-      <ScrollView style={{ flex: 1, paddingLeft: 8, paddingRight: 16, paddingTop: 16, paddingBottom: 400 }}>
+      {/* <ScrollView style={{ flex: 1, paddingVertical: 5, paddingHorizontal: 16 }}> */}
+        <ScrollView style={{ flex: 1, paddingTop: '0.4rem', paddingBottom: 5, paddingHorizontal: 16 }}>
+
         <FormCard
           icon="FG"
           title={`FACT-G (Version 4) ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}
@@ -652,7 +675,7 @@ export default function EdmontonFactGScreen() {
                 {scale.items.map((item, index) => (
                   <View key={item.code}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                      <Text style={{ width: 64, fontWeight: "700", color: "#1f2937" }}>{item.code}</Text>
+                      <Text style={{ width: 64, fontWeight: "700", color: "#1f2937" , marginLeft: 13}}>{item.code}</Text>
                       <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>
@@ -699,16 +722,7 @@ export default function EdmontonFactGScreen() {
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
-        <Btn onPress={handleSave} disabled={saving || loading}>
-          {saving ? (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
-              <Text style={{ color: "white" }}>Saving...</Text>
-            </View>
-          ) : (
-            "Save & Close"
-          )}
-        </Btn>
+        <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
     </>
   );

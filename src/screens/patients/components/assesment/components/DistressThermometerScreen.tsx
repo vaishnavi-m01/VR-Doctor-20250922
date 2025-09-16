@@ -362,44 +362,72 @@ export default function DistressThermometerScreen() {
   }, [selectedDate, enteredPatientId]);
 
 
- const validateForm = () => {
-  // Validate Patient ID
-  if (!enteredPatientId || enteredPatientId.trim() === "") {
-    Toast.show({
-      type: "error",
-      text1: "Validation Error",
-      text2: "Please fill all required fields",
-    });
-    return false;
-  }
 
-  // Validate Distress Thermometer value
-  if (v === null || v === undefined || v === 0) {
-    Toast.show({
-      type: "error",
-      text1: "Validation Error",
-      text2: "Please fill all required fields",
-    });
-    return false;
-  }
+  const handleValidate = () => {
+    
+    const hasDistressScore = v > 0;
+    // Check if any problem checkbox is selected
+    const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
 
-  const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
-  if (!hasSelectedProblem) {
-    Toast.show({
-      type: "error",
-      text1: "Validation Error",
-      text2: "Please fill all required fields",
-    });
-    return false;
-  }
+    if (!hasDistressScore && !hasSelectedProblem) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "No responses entered. Please fill the form.",
+        position: "top",
+        topOffset: 50,
+      });
+      return;
+    }
 
-  return true;
-};
+    if (!hasDistressScore) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please rate your distress (0-10).",
+        position: "top",
+        topOffset: 50,
+      });
+      return;
+    }
+
+    if (!hasSelectedProblem) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please select at least one problem.",
+        position: "top",
+        topOffset: 50,
+      });
+      return;
+    }
+
+    Toast.show({
+      type: "success",
+      text1: "Validation Passed",
+      text2: "All required fields are filled",
+      position: "top",
+      topOffset: 50,
+    });
+  };
 
 
   const handleSave = async () => {
 
-    if (!validateForm()) return;
+    const hasDistressScore = v > 0;
+      const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
+
+      if (!hasDistressScore || !hasSelectedProblem) {
+        Toast.show({
+          type: "error",
+          text1: "Validation Error",
+          text2: "All fields are required",
+          position: "top",
+          topOffset: 50,
+        });
+        return; 
+      }
+
     try {
       setLoading(true);
 
@@ -493,6 +521,7 @@ export default function DistressThermometerScreen() {
       setLoading(false);
     }
   };
+
 
   const handleClear = () => {
     setV(0);
@@ -664,7 +693,7 @@ export default function DistressThermometerScreen() {
       {/* Main content ScrollView */}
       <ScrollView className="flex-1 bg-gray-100 p-4 pb-[200px]">
         {/* Distress Thermometer Card */}
-        <View className="bg-white rounded-lg p-4 shadow-md mb-4">
+        <View className="bg-white rounded-lg p-4 mb-4">
           <View className="flex-row items-center mb-4">
             <View className="flex-row items-center">
               <View className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center mr-2">
@@ -714,7 +743,7 @@ export default function DistressThermometerScreen() {
         </View>
 
         {/* Rate Distress */}
-        <View className="bg-white rounded-lg p-4 shadow-md mb-4">
+        <View className="bg-white rounded-lg p-4 mb-4">
           <Text className="font-bold text-lg text-[#333] mb-4">Rate Your Distress (0-10)</Text>
           <FormCard icon="DT" title="Distress Thermometer">
             <Thermometer value={v} onChange={setV} />
@@ -741,15 +770,15 @@ export default function DistressThermometerScreen() {
         </View> */}
 
         {/* Dynamic Problem List */}
-        <View className="bg-white rounded-lg p-4 shadow-md mb-4">
+        <View className="bg-white rounded-lg p-4 mb-4">
           <Text className="font-bold text-lg text-[#333] mb-4">Problem List</Text>
 
-          {loading && (
+          {/* {loading && (
             <View className="items-center py-4">
               <ActivityIndicator size="large" color="#2E7D32" />
               <Text className="text-gray-500 mt-2">Loading questions...</Text>
             </View>
-          )}
+          )} */}
           {error && (
             <View className="bg-red-50 p-3 rounded-lg mb-4">
               <Text className="text-red-600 text-center">{error}</Text>
@@ -819,19 +848,13 @@ export default function DistressThermometerScreen() {
         >
           Distress: {v}
         </Text>
+         <Btn variant="light" onPress={handleValidate}>
+          Validate
+        </Btn>
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
-        <Btn onPress={handleSave} disabled={loading || categories.length === 0}>
-          {loading ? (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
-              <Text style={{ color: "white" }}>Saving...</Text>
-            </View>
-          ) : (
-            "Save & Close"
-          )}
-        </Btn>
+       <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
     </>
   );

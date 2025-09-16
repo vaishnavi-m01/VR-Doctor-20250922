@@ -55,11 +55,9 @@ interface StudyObservationApiModel {
   ModifiedBy:string;
 }
 
-
 interface ObservationApiResponse {
   ResponseData: StudyObservationApiModel[];
 }
-
 
 interface FormField {
   SOFID: string;
@@ -98,15 +96,12 @@ interface FactGResponse {
 }
 
 
-
-
 // Extract only time e.g. "14:30:00" from a datetime string
 const extractTime = (dateTimeStr?: string | null) => {
   if (!dateTimeStr) return '';
   const match = dateTimeStr.match(/(\d{2}:\d{2}(:\d{2})?)/);
   return match ? match[1] : '';
 };
-
 
 // Convert ISO datetime string to "YYYY-MM-DD HH:mm:ss" format for API
 const formatDateTimeForApi = (isoString: string) => {
@@ -120,7 +115,6 @@ const formatDateTimeForApi = (isoString: string) => {
   const ss = String(d.getSeconds()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 };
-
 
 
 function getCurrentDateTimeISO() {
@@ -367,7 +361,7 @@ const fetchAvailableDates = async () => {
 
         setObservationId(found.ObservationId ?? null);
         setFormValues(updatedValues);
-        setIsDefaultForm(false); // FIXED: Set to false when loading existing form
+        setIsDefaultForm(false); 
         
         // Update individual state variables
         setCompleted(found.SessionCompleted || '');
@@ -446,7 +440,7 @@ useEffect(() => {
       loadObservationForm(null);
     }
   }
-}, [selectedDate, routePatientId, factGScore, distressScore]); // Added scores as dependencies
+}, [selectedDate, routePatientId, factGScore, distressScore]); 
 
 
   const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());
@@ -948,39 +942,6 @@ useEffect(() => {
     }
   };
 
-  // Validation handler
-  // const handleValidate = () => {
-  //   if (completed === 'No' && !getFormValue('SOFID-10').trim()) {
-  //     Alert.alert('Validation Error', getValidationMessage('SPECIFY_REASON'));
-  //     return;
-  //   }
-  //   if (tech === 'Yes' && !getFormValue('SOFID-15').trim()) {
-  //     Alert.alert('Validation Error', getValidationMessage('DESCRIBE_TECH_ISSUES'));
-  //     return;
-  //   }
-  //   if (discomfort === 'Yes' && !getFormValue('SOFID-23').trim()) {
-  //     Alert.alert('Validation Error', getValidationMessage('DESCRIBE_DISCOMFORT'));
-  //     return;
-  //   }
-  //   if (deviation === 'Yes' && !getFormValue('SOFID-27').trim()) {
-  //     Alert.alert('Validation Error', getValidationMessage('EXPLAIN_DEVIATIONS'));
-  //     return;
-  //   }
-  //   if (assistance === 'Yes' && !getFormValue('SOFID-25').trim()) {
-  //     Alert.alert('Validation Error', 'Please explain the assistance provided.');
-  //     return;
-  //   }
-  //   if (resp.includes('Other') && !getFormValue('SOFID-13-OTHER').trim()) {
-  //     Alert.alert('Validation Error', getValidationMessage('DESCRIBE_OTHER_RESPONSE'));
-  //     return;
-  //   }
-  //   if (followInstructions === 'No' && !getFormValue('SOFID-21').trim()) {
-  //     Alert.alert('Validation Error', 'Please explain why the patient could not follow instructions.');
-  //     return;
-  //   }
-  //   Alert.alert('Success', getValidationMessage('VALIDATION_PASSED'));
-  // };
-
   const formatTodayDateForAPI = (): string => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -989,29 +950,97 @@ useEffect(() => {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // Save handler
-  const handleSave = async () => {
-     const hasEmptyFields = Object.entries(formValues).some(([, value]) => {
-        return value === null || value.trim() === '';
-      });
+  // Helper function to validate time in HH:MM:SS format (24-hour)
+  const isValidTime = (time: string): boolean => {
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/;
+    return timeRegex.test(time);
+  };
 
-      if (hasEmptyFields) {
+  const handleValidate = () => {
+    const hasAnyResponse =
+      Object.values(formValues).some(value => value.trim() !== '') ||
+      completed !== '' ||
+      tech !== '' ||
+      discomfort !== '' ||
+      deviation !== '' ||
+      assistance !== '' ||
+      followInstructions !== '' ||
+      distressScoreAndFactG !== '' ||
+      preVRAssessment !== '' ||
+      postVRAssessment !== '' ||
+      resp.length > 0;
+
+    if (!hasAnyResponse) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    // Patient Response During Session must have at least one selection
+    if (resp.length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please select at least one response for Patient Response During Session.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    // Required text fields including start/end time
+    const requiredTextFields = ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6', 'SOFID-11', 'SOFID-12'];
+
+    for (const field of requiredTextFields) {
+      const value = formValues[field];
+      if (!value || value.trim() === '') {
+        const fieldLabel = formFields.find(f => f.SOFID === field)?.FieldLabel || field;
         Toast.show({
           type: 'error',
           text1: 'Validation Error',
-          text2: 'All fields are required',
+          text2: `${fieldLabel} is required.`,
           position: 'top',
           topOffset: 50,
         });
-        setSaving(false);
         return;
       }
-      
+
+      // Additional check for time fields format
+      if ((field === 'SOFID-11' || field === 'SOFID-12') && !isValidTime(value.trim())) {
+        const fieldLabel = formFields.find(f => f.SOFID === field)?.FieldLabel || field;
+        Toast.show({
+          type: 'error',
+          text1: 'Validation Error',
+          text2: `${fieldLabel} must be in HH:MM:SS format.`,
+          position: 'top',
+          topOffset: 50,
+        });
+        return;
+      }
+    }
+
+    // If all validations pass, show success Toast
+    Toast.show({
+      type: 'success',
+      text1: 'Validation Passed',
+      text2: 'All required fields are filled.',
+      position: 'top',
+      topOffset: 50,
+    });
+  };
+
+  const handleSave = async () => {
     setSaving(true);
+
     try {
+      // Obtain participantId and dateTimeFormatted safely from form
       const participantId = getFormValue('SOFID-2');
       const dateTime = getFormValue('SOFID-1');
-
       if (!participantId || !studyIdState || !dateTime) {
         Toast.show({
           type: 'error',
@@ -1026,23 +1055,43 @@ useEffect(() => {
 
       const dateTimeFormatted = formatDateTimeForApi(dateTime);
 
-      // Validation similar to FACT-G
-      const requiredFields = formFields.filter(f => 
-        ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6'].includes(f.SOFID)
-      );
-      
-      for (const field of requiredFields) {
-        if (!getFormValue(field.SOFID).trim()) {
-          Toast.show({
-            type: 'error',
-            text1: 'Validation Error',
-            text2: `${field.FieldLabel} is required`,
-          });
-          setSaving(false);
-          return;
-        }
+      // Validation arrays
+      const requiredTextFields = ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6', 'SOFID-11', 'SOFID-12'];
+      const requiredYesNoStates = [
+        completed,
+        tech,
+        followInstructions,
+        discomfort,
+        assistance,
+        deviation,
+        preVRAssessment,
+        postVRAssessment,
+        distressScoreAndFactG,
+      ];
+      const isPatientResponseEmpty = resp.length === 0;
+
+      // Validate required text fields
+      const anyTextFieldEmpty = requiredTextFields.some(field => {
+        const value = formValues[field];
+        return !value || value.trim() === '';
+      });
+
+      // Validate yes/no states
+      const anyYesNoEmpty = requiredYesNoStates.some(state => state !== 'Yes' && state !== 'No');
+
+      if (anyTextFieldEmpty || anyYesNoEmpty || isPatientResponseEmpty) {
+        Toast.show({
+          type: 'error',
+          text1: 'Validation Error',
+          text2: 'All fields are required.',
+          position: 'top',
+          topOffset: 50,
+        });
+        setSaving(false);
+        return;
       }
 
+      // Construct payload
       const payload: StudyObservationApiModel = {
         ObservationId: observationId,
         ParticipantId: participantId,
@@ -1071,7 +1120,8 @@ useEffect(() => {
         PreVRAssessmentCompleted: preVRAssessment,
         PostVRAssessmentCompleted: postVRAssessment,
         DistressScoreAndFACTGCompleted: distressScoreAndFactG,
-        SessionStoppedMidwayReason: completed === 'No' ? getFormValue('SOFID-19') || getFormValue('SOFID-10') : null,
+        SessionStoppedMidwayReason:
+          completed === 'No' ? getFormValue('SOFID-19') || getFormValue('SOFID-10') : null,
         PatientAbleToFollowInstructions: followInstructions,
         PatientInstructionsExplanation:
           followInstructions === 'No' && getFormValue('SOFID-21').trim() !== ''
@@ -1101,13 +1151,14 @@ useEffect(() => {
 
       console.log('Saving observation payload:', payload);
 
+      // API call to save data
       const response = await apiService.post('/AddUpdateParticipantStudyObservationForm', payload);
 
       if (response.status === 200 || response.status === 201) {
         let createdDate: string | null;
         if (selectedDate) {
           createdDate =
-            selectedDate.includes("-") && selectedDate.split("-")[0].length === 2
+            selectedDate.includes('-') && selectedDate.split('-')[0].length === 2
               ? convertDateForAPI(selectedDate)
               : selectedDate;
         } else {
@@ -1127,7 +1178,7 @@ useEffect(() => {
             navigation.reset({
               index: 0,
               routes: navState.routes.map((r) =>
-                r.name === "PatientScreening"
+                r.name === 'PatientScreening'
                   ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: routePatientId } }
                   : r
               ) as any,
@@ -1156,7 +1207,7 @@ useEffect(() => {
   return (
     <>
       {/* Enhanced Header with Date Dropdown (matching FACT-G design) */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
         <View
           style={{
             backgroundColor: "white",
@@ -1266,7 +1317,7 @@ useEffect(() => {
         </>
       )}
 
-      <ScrollView style={{ flex: 1, paddingLeft: 8, paddingRight: 16, paddingTop: 16, paddingBottom: 400 }}>
+      <ScrollView style={{ flex: 1, paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>
         {/* Header Section with SO Badge */}
         <FormCard 
           icon="SO" 
@@ -1276,12 +1327,12 @@ useEffect(() => {
           <View />
         </FormCard>
 
-        {loading && (
+        {/* {loading && (
           <View style={{ backgroundColor: "white", borderRadius: 12, padding: 32, marginBottom: 16, alignItems: "center" }}>
             <ActivityIndicator size="large" color="#2E7D32" />
             <Text style={{ marginTop: 8, color: "#6b7280" }}>Loading Study Observation...</Text>
           </View>
-        )}
+        )} */}
 
         {error && (
           <View style={{ backgroundColor: "#fee2e2", borderRadius: 12, padding: 16, marginBottom: 16 }}>
@@ -1343,7 +1394,7 @@ useEffect(() => {
                   <View key={field.SOFID} className="flex-1">
                     <Field
                       label={field.FieldLabel}
-                      placeholder="HH:MM"
+                      placeholder="HH:MM:SS"
                       value={getFormValue(field.SOFID)}
                       onChangeText={(value) => updateFormValue(field.SOFID, value)}
                     />
@@ -1380,12 +1431,13 @@ useEffect(() => {
 
       <BottomBar>
         <View className="flex-row gap-3">
+          <Btn variant="light" onPress={handleValidate}>
+            Validate
+          </Btn>
           <Btn variant="light" onPress={handleClear}>
             Clear
           </Btn>
-          {/* <Btn variant="light" onPress={handleValidate}>
-            Validate
-          </Btn> */}
+
           <Btn onPress={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save & Close'}
           </Btn>

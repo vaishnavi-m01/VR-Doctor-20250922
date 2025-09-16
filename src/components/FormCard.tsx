@@ -25,7 +25,7 @@ export default function FormCard({ icon, title, desc, children }: Props) {
         {/* Title and description */}
         <View className="mb-3">
           <Text className="text-base pl-4 font-semibold">{title}</Text>
-          {!!desc && <Text className="text-xs text-muted mt-1">{desc}</Text>}
+          {!!desc && <Text className="text-xs text-muted mt-1 ml-[14px]">{desc}</Text>}
         </View>
         
         {/* Form content */}
