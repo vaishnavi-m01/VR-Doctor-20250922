@@ -549,7 +549,7 @@ export default function EdmontonFactGScreen() {
 
   return (
     <>
-      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View
           style={{
             backgroundColor: "white",
@@ -645,7 +645,7 @@ export default function EdmontonFactGScreen() {
       )}
 
       {/* <ScrollView style={{ flex: 1, paddingVertical: 5, paddingHorizontal: 16 }}> */}
-        <ScrollView style={{ flex: 1, paddingTop: '0.4rem', paddingBottom: 5, paddingHorizontal: 16 }}>
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
 
         <FormCard
           icon="FG"

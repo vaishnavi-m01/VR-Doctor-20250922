@@ -542,9 +542,9 @@ export default function AdverseEventForm() {
             <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
-                        <DateField label="📅 Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
+                        <DateField label="Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
                         <View className="flex-1"><Field
-                            label="👤 Participant ID (Optional)"
+                            label="Participant ID (Optional)"
                             placeholder="e.g., PT-0234"
                             value={String(patientId)}
                             onChangeText={setParticipantIdField}
@@ -552,7 +552,7 @@ export default function AdverseEventForm() {
                         </View>
                     </View>
                     <Field
-                        label="👩 Reported By (Name & Role) (Optional)"
+                        label="Reported By (Name & Role) (Optional)"
                         placeholder="e.g., Dr. John (Investigator)"
                         multiline
                         value={reportedBy}
@@ -567,23 +567,23 @@ export default function AdverseEventForm() {
 
                 <FormCard icon="1" title="Adverse Event Details">
                     <View className="flex-row gap-3">
-                        <DateField label="📌 Date of AE onset" value={dateOfAE} onChange={setdateOfAE} />
+                        <DateField label="Date of AE onset" value={dateOfAE} onChange={setdateOfAE} />
                         <Field
-                            label="🕒 Time of AE onset"
+                            label="Time of AE onset"
                             placeholder={FORM_PLACEHOLDERS.TIME}
                             value={timeOfAE}
                             onChangeText={settimeOfAE}
                         />
                     </View>
                     <Field
-                        label={`📝 Description (symptoms, severity)`}
+                        label={`Description (symptoms, severity)`}
                         placeholder="symptoms, context, severity..."
                         multiline
                         value={Description ?? ""}
                         onChangeText={setdescription}
                     />
                     <View className="mb-3">
-                        <Text className="text-xs text-[#4b5f5a] mb-2">🎧 VR session in progress?</Text>
+                        <Text className="text-xs text-[#4b5f5a] mb-2">VR session in progress?</Text>
                         <View className="flex-row gap-2">
                             {/* Yes Button */}
                             <Pressable
@@ -628,7 +628,7 @@ export default function AdverseEventForm() {
                         )} */}
                     </View>
                     <DropdownField
-                        label="📼 VR Content Type at of AE"
+                        label="VR Content Type at of AE"
                         value={vrContentType}
                         onValueChange={(val) => setVrContentType(val)}
                         options={[
@@ -687,7 +687,7 @@ export default function AdverseEventForm() {
                 <FormCard icon="2" title=" Severity & Impact Assessment">
 
                     <Text className="text-sm font-medium text-gray-700 mb-2">
-                        🌡️ AE Severity Level (Check One):
+                        AE Severity Level (Check One):
                     </Text>
                     <View className="space-y-2">
                         {aeSeverity.map((item, index) => (
@@ -719,7 +719,7 @@ export default function AdverseEventForm() {
 
                     {/* Outcome of AE */}
                     <Text className="text-sm font-medium text-gray-700 mb-2">
-                        🔄 Outcome of AE:
+                        Outcome of AE:
                     </Text>
                     <View className="flex flex-wrap flex-row gap-2">
                         {aeOutcome.map((item, index) => (
@@ -748,7 +748,7 @@ export default function AdverseEventForm() {
                 </FormCard>
                 <FormCard icon="3" title="Action Taken">
                     <Text className="text-sm font-medium text-gray-700 mb-2">
-                        ✅ Immediate Action Taken (Check all that apply):
+                         Immediate Action Taken (Check all that apply):
                     </Text>
                     <Chip
                         items={aeImmediateAction.map((item) => ({
@@ -766,15 +766,15 @@ export default function AdverseEventForm() {
 
 
                     <View className="flex-row gap-3 mt-2">
-                        <DateField label="📅 Date physician notified" value={physicianDateTime} onChange={setPhysicianDateTime} />
-                        <View className="flex-1"><Field label="🧑‍⚕️ Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} /></View>
+                        <DateField label="Date physician notified" value={physicianDateTime} onChange={setPhysicianDateTime} />
+                        <View className="flex-1"><Field label="Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} /></View>
                     </View>
                 </FormCard>
 
 
                 <FormCard icon="4" title="Causality Assessment">
                     <View className="mb-4">
-                        <Text className="text-xs text-[#4b5f5a] mb-1">🔍 AE related to VR use?</Text>
+                        <Text className="text-xs text-[#4b5f5a] mb-1">AE related to VR use?</Text>
                         <Segmented
                             options={[
                                 { label: "Yes", value: "Yes" },
@@ -787,7 +787,7 @@ export default function AdverseEventForm() {
                     </View>
 
                     <View>
-                        <Text className="text-xs text-[#4b5f5a] mb-1">🩺 Pre-existing condition contribution?</Text>
+                        <Text className="text-xs text-[#4b5f5a] mb-1">Pre-existing condition contribution?</Text>
                         <Segmented
                             options={[
                                 { label: "Yes", value: "Yes" },
@@ -803,19 +803,19 @@ export default function AdverseEventForm() {
                 <FormCard icon="5" title="Follow-Up & Resolution">
                     <View className="flex-row gap-3">
                         <View className="flex-1">
-                            <DateField label="📅 Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
+                            <DateField label="Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
                         </View>
                         <View className="flex-1">
-                            <Field label="🧾 signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} />
+                            <Field label="signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} />
                         </View>
                     </View>
 
                     <View className="flex-row gap-3 mt-2">
                         <View className="flex-1">
-                            <Field label="📝 Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} />
+                            <Field label="Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} />
                         </View>
                         <View className="flex-1">
-                            <DateField label="📅 Date" value={date} onChange={setDate} />
+                            <DateField label="Date" value={date} onChange={setDate} />
                         </View>
                     </View>
                 </FormCard>

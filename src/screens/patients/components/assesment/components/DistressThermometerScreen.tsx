@@ -1,4 +1,4 @@
-import  { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
 import { UserContext } from "src/store/context/UserContext";
+import { Field } from "@components/Field";
 
 type Question = {
   id: string;
@@ -364,7 +365,7 @@ export default function DistressThermometerScreen() {
 
 
   const handleValidate = () => {
-    
+
     const hasDistressScore = v > 0;
     // Check if any problem checkbox is selected
     const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
@@ -415,18 +416,18 @@ export default function DistressThermometerScreen() {
   const handleSave = async () => {
 
     const hasDistressScore = v > 0;
-      const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
+    const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
 
-      if (!hasDistressScore || !hasSelectedProblem) {
-        Toast.show({
-          type: "error",
-          text1: "Validation Error",
-          text2: "All fields are required",
-          position: "top",
-          topOffset: 50,
-        });
-        return; 
-      }
+    if (!hasDistressScore || !hasSelectedProblem) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "All fields are required",
+        position: "top",
+        topOffset: 50,
+      });
+      return;
+    }
 
     try {
       setLoading(true);
@@ -549,7 +550,7 @@ export default function DistressThermometerScreen() {
   return (
     <>
       {/* Header with FactG-style dropdown */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View
           style={{
             backgroundColor: "white",
@@ -691,56 +692,42 @@ export default function DistressThermometerScreen() {
       )}
 
       {/* Main content ScrollView */}
-      <ScrollView className="flex-1 bg-gray-100 p-4 pb-[200px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
         {/* Distress Thermometer Card */}
-        <View className="bg-white rounded-lg p-4 mb-4">
-          <View className="flex-row items-center mb-4">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center mr-2">
-                <Text className="font-bold text-xl text-[#2E7D32]">DT</Text>
-              </View>
-              <View>
-                <Text className="font-bold text-lg text-[#333]">
-                  Distress Thermometer{" "}
-                  {isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}
-                </Text>
-                <Text className="text-xs text-[#6b7a77]">
-                  "Considering the past week, including today."
-                </Text>
-              </View>
-            </View>
-          </View>
-          <View className="flex-row justify-between mb-2">
+        <FormCard icon="DT" title={`Distress Thermometer ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}>
+          <Text className="text-[12px] text-gray-500 mb-3">
+            Considering the past week, including today.
+          </Text>
+          <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
-              <Text className="text-xs text-[#6b7a77] mb-2">Participant ID</Text>
-              <View className="flex-row items-center gap-2">
-                <TextInput
-                  className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700 flex-1"
-                  value={enteredPatientId}
-                  onChangeText={setEnteredPatientId}
-                  placeholder="Enter Patient ID"
-                  style={{
-                    backgroundColor: "#f8f9fa",
-                    borderColor: "#e5e7eb",
-                    borderRadius: 16,
-                  }}
-                />
-                <Pressable
-                  onPress={handleRefresh}
-                  className="bg-blue-500 rounded-lg px-3 py-3 flex-row items-center"
-                  disabled={loading}
-                >
-                  {loading && (
-                    <ActivityIndicator size="small" color="white" className="mr-1" />
-                  )}
-                  <Text className="text-white text-xs font-semibold">
-                    {loading ? "Loading..." : "Refresh"}
-                  </Text>
-                </Pressable>
-              </View>
+              <Field
+                label="Participant ID"
+                placeholder="Enter Patient ID"
+                value={enteredPatientId}
+                onChangeText={setEnteredPatientId}
+              />
             </View>
+
+            <Pressable
+              onPress={handleRefresh}
+              disabled={loading}
+              className="bg-blue-500 rounded-xl px-2 flex items-center justify-center self-end"
+              style={{
+                height: 48,
+                minWidth: 100,
+                top: 18
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text className="text-white text-sm font-semibold">Refresh</Text>
+              )}
+            </Pressable>
           </View>
-        </View>
+
+        </FormCard>
+
 
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 mb-4">
@@ -848,13 +835,13 @@ export default function DistressThermometerScreen() {
         >
           Distress: {v}
         </Text>
-         <Btn variant="light" onPress={handleValidate}>
+        <Btn variant="light" onPress={handleValidate}>
           Validate
         </Btn>
         <Btn variant="light" onPress={handleClear}>
           Clear
         </Btn>
-       <Btn onPress={handleSave}>Save & Close</Btn>
+        <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
     </>
   );

@@ -208,13 +208,22 @@ useFocusEffect(
   return (
     <View className="flex-1 bg-white">
       {/* Participant Info Header */}
-      <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
-          <Text className="text-base font-semibold text-green-600">Study ID: {studyId}</Text>
-          <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>
+       <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
+
+          <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+            <Text className="text-lg font-bold text-green-600">
+              Participant ID: {patientId}
+            </Text>
+
+            <Text className="text-base font-semibold text-green-600">
+              Study ID: {studyId || "N/A"}
+            </Text>
+
+            <Text className="text-base font-semibold text-gray-700">
+              Age: {age || "Not specified"}
+            </Text>
+          </View>
         </View>
-      </View>
 
       {/* New Session Button */}
       <View className="px-4 pt-4 pb-2">

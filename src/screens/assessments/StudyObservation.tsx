@@ -1207,7 +1207,7 @@ useEffect(() => {
   return (
     <>
       {/* Enhanced Header with Date Dropdown (matching FACT-G design) */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View
           style={{
             backgroundColor: "white",
@@ -1317,7 +1317,7 @@ useEffect(() => {
         </>
       )}
 
-      <ScrollView style={{ flex: 1, paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
         {/* Header Section with SO Badge */}
         <FormCard 
           icon="SO" 
