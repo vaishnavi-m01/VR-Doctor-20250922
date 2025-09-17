@@ -1,14 +1,27 @@
-import  { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Alert, Image, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { RootStackParamList } from '../../Navigation/types';
-import { apiService } from 'src/services';
-import { useAuth } from '../../hooks/useAuth';
-import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  ActivityIndicator,
+  Modal,
+} from "react-native";
 
-type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RootStackParamList } from "../../Navigation/types";
+import { apiService } from "src/services";
+import { useAuth } from "../../hooks/useAuth";
+import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
+
+type ProfileScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Profile"
+>;
 
 interface UserProfile {
   name: string;
@@ -23,32 +36,20 @@ export default function Profile() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
-    name: '',
-    email: '',
+    name: "",
+    email: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
   }, []);
 
-  // const loadUserProfile = async () => {
-  //   try {
-  //     // In a real app, this would fetch from API or local storage
-  //     const savedProfile = await AsyncStorage.getItem('user_profile');
-  //     if (savedProfile) {
-  //       setProfile(JSON.parse(savedProfile));
-  //     }
-  //   } catch (error) {
-  //     console.log('Error loading profile:', error);
-  //   }
-  // };
-
   const loadUserProfile = async () => {
     try {
       setIsLoading(true);
 
-      // Use user data from auth service if available
       if (user) {
         setProfile({
           name: `${user.FirstName} ${user.LastName}`,
@@ -61,22 +62,18 @@ export default function Profile() {
         return;
       }
 
-      // Fallback: Get UserId from AsyncStorage
       const userId = await AsyncStorage.getItem("userId");
-
       if (!userId) {
         console.warn("UserId not found in AsyncStorage");
         setIsLoading(false);
         return;
       }
 
-      //  Call API with UserId in request body
-      const response = await apiService.post<any>('/GetUsersMaster', {
+      const response = await apiService.post<any>("/GetUsersMaster", {
         UserID: userId,
       });
 
       const users = response.data.ResponseData;
-
       if (users && users.length > 0) {
         const firstUser = users[0];
         setProfile({
@@ -88,57 +85,59 @@ export default function Profile() {
         });
       }
     } catch (error) {
-      console.log('Error loading profile:', error);
+      console.log("Error loading profile:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const confirmLogout = async () => {
+    setIsLoading(true);
+    try {
+      const userId = await AsyncStorage.getItem("userId");
 
+      const response = await apiService.post<any>("/Logout", {
+        UserID: userId || "UID-1",
+      });
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Confirm Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              // Use the auth service logout method
-              await logout();
+      const message =
+        response?.data?.logoutUser?.[0]?.message || "Logout successful";
 
-              // Navigate to login screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (error) {
-              console.log('Error during logout:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+      Toast.show({
+        type: "success",
+        text1: message,
+      });
+
+      await logout();
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    } catch (error) {
+      console.log("Error during logout:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to logout. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+      setShowLogoutModal(false);
+    }
   };
 
   const handleEditProfile = () => {
-    // TODO: Implement edit profile functionality
-    Alert.alert('Edit Profile', 'Profile editing will be available in the next update.');
+    Toast.show({
+      type: "info",
+      text1: "Edit Profile feature coming soon!",
+    });
   };
 
   const handleChangePassword = () => {
-    // TODO: Implement change password functionality
-    Alert.alert('Change Password', 'Password change will be available in the next update.');
+    Toast.show({
+      type: "info",
+      text1: "Change Password feature coming soon!",
+    });
   };
 
   if (isLoading && !profile.name) {
@@ -152,7 +151,7 @@ export default function Profile() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Modern Header */}
+      {/* Header */}
       <View className="bg-white px-6 pt-12 pb-6 shadow-sm">
         <View className="flex-row items-center justify-between mb-6">
           <Pressable
@@ -161,19 +160,24 @@ export default function Profile() {
           >
             <Ionicons name="arrow-back" size={20} color="#374151" />
           </Pressable>
-          <Text className="text-xl font-bold text-gray-800">Profile & Settings</Text>
+          <Text className="text-xl font-bold text-gray-800">
+            Profile & Settings
+          </Text>
           <View className="w-10" />
         </View>
 
-        {/* Enhanced Profile Header */}
+        {/* Profile Avatar */}
         <View className="items-center">
           <View className="relative mb-4">
-            <View className="w-28 h-28 rounded-full bg-gradient-to-br from-green-400 to-green-600 items-center justify-center shadow-lg">
+            <View className="w-28 h-28 rounded-full bg-green-500 items-center justify-center shadow-lg">
               {profile.avatar ? (
-                <Image source={{ uri: profile.avatar }} className="w-28 h-28 rounded-full" />
+                <Image
+                  source={{ uri: profile.avatar }}
+                  className="w-28 h-28 rounded-full"
+                />
               ) : (
                 <Text className="text-white text-4xl font-bold">
-                  {profile.name.charAt(0) || 'U'}
+                  {profile.name.charAt(0) || "U"}
                 </Text>
               )}
             </View>
@@ -181,77 +185,73 @@ export default function Profile() {
               <Ionicons name="camera" size={16} color="#0ea06c" />
             </Pressable>
           </View>
-          
-          <Text className="text-2xl font-bold text-gray-800 mb-1">{profile.name || 'User'}</Text>
-          <Text className="text-green-600 font-semibold text-base mb-1">{profile.role || 'User Role'}</Text>
-          <Text className="text-gray-500 text-sm text-center">{profile.organization || 'Organization'}</Text>
+
+          <Text className="text-2xl font-bold text-gray-800 mb-1">
+            {profile.name || "User"}
+          </Text>
+          <Text className="text-green-600 font-semibold text-base mb-1">
+            {profile.role || "User Role"}
+          </Text>
+          <Text className="text-gray-500 text-sm text-center">
+            {profile.organization || "Organization"}
+          </Text>
         </View>
       </View>
 
-      <ScrollView 
-        className="flex-1 px-6" 
+      {/* Content */}
+      <ScrollView
+        className="flex-1 px-6"
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Personal Information Card */}
+        {/* Personal Information */}
         <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
           <View className="flex-row items-center mb-6">
             <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-4">
               <Ionicons name="person" size={20} color="#3b82f6" />
             </View>
-            <Text className="text-lg font-bold text-gray-800">Personal Information</Text>
+            <Text className="text-lg font-bold text-gray-800">
+              Personal Information
+            </Text>
           </View>
 
-          <View className="space-y-4">
-            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
+          {[
+            { label: "Full Name", value: profile.name, icon: "person-outline" },
+            { label: "Email", value: profile.email, icon: "mail-outline" },
+            { label: "Phone", value: profile.phone, icon: "call-outline" },
+            { label: "Role", value: profile.role, icon: "briefcase-outline" },
+            {
+              label: "Organization",
+              value: profile.organization,
+              icon: "business-outline",
+            },
+          ].map((item, index) => (
+            <View
+              key={index}
+              className={`flex-row items-center justify-between py-4 ${
+                index !== 4 ? "border-b border-gray-100" : ""
+              }`}
+            >
               <View className="flex-row items-center">
-                <Ionicons name="person-outline" size={20} color="#6b7280" />
-                <Text className="text-gray-600 ml-3">Full Name</Text>
+                <Ionicons name={item.icon as any} size={20} color="#6b7280" />
+                <Text className="text-gray-600 ml-3">{item.label}</Text>
               </View>
-              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">{profile.name || 'Not provided'}</Text>
+              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">
+                {item.value || "Not provided"}
+              </Text>
             </View>
-
-            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
-              <View className="flex-row items-center">
-                <Ionicons name="mail-outline" size={20} color="#6b7280" />
-                <Text className="text-gray-600 ml-3">Email</Text>
-              </View>
-              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">{profile.email || 'Not provided'}</Text>
-            </View>
-
-            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
-              <View className="flex-row items-center">
-                <Ionicons name="call-outline" size={20} color="#6b7280" />
-                <Text className="text-gray-600 ml-3">Phone</Text>
-              </View>
-              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">{profile.phone || 'Not provided'}</Text>
-            </View>
-
-            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
-              <View className="flex-row items-center">
-                <Ionicons name="briefcase-outline" size={20} color="#6b7280" />
-                <Text className="text-gray-600 ml-3">Role</Text>
-              </View>
-              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">{profile.role || 'Not provided'}</Text>
-            </View>
-
-            <View className="flex-row items-center justify-between py-4">
-              <View className="flex-row items-center">
-                <Ionicons name="business-outline" size={20} color="#6b7280" />
-                <Text className="text-gray-600 ml-3">Organization</Text>
-              </View>
-              <Text className="font-semibold text-gray-800 text-right flex-1 ml-4">{profile.organization || 'Not provided'}</Text>
-            </View>
-          </View>
+          ))}
         </View>
 
-        {/* Account Settings Card */}
+        {/* Account Settings */}
         <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
           <View className="flex-row items-center mb-6">
             <View className="w-10 h-10 rounded-full bg-purple-100 items-center justify-center mr-4">
               <Ionicons name="settings" size={20} color="#8b5cf6" />
             </View>
-            <Text className="text-lg font-bold text-gray-800">Account Settings</Text>
+            <Text className="text-lg font-bold text-gray-800">
+              Account Settings
+            </Text>
           </View>
 
           <View className="space-y-2">
@@ -263,7 +263,9 @@ export default function Profile() {
                 <View className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center mr-4">
                   <Ionicons name="create-outline" size={18} color="#3b82f6" />
                 </View>
-                <Text className="text-gray-700 font-medium text-base">Edit Profile</Text>
+                <Text className="text-gray-700 font-medium text-base">
+                  Edit Profile
+                </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </Pressable>
@@ -274,18 +276,23 @@ export default function Profile() {
             >
               <View className="flex-row items-center">
                 <View className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center mr-4">
-                  <Ionicons name="lock-closed-outline" size={18} color="#f97316" />
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color="#f97316"
+                  />
                 </View>
-                <Text className="text-gray-700 font-medium text-base">Change Password</Text>
+                <Text className="text-gray-700 font-medium text-base">
+                  Change Password
+                </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </Pressable>
-
           </View>
         </View>
 
-        {/* App Information Card */}
-        <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+
+  <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
           <View className="flex-row items-center mb-6">
             <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-4">
               <Ionicons name="information-circle" size={20} color="#6b7280" />
@@ -317,24 +324,59 @@ export default function Profile() {
         </View>
 
 
-        {/* Logout Section */}
+        {/* Logout */}
         <View className="bg-white rounded-2xl p-6 shadow-sm">
           <Pressable
-            onPress={handleLogout}
+            onPress={() => setShowLogoutModal(true)}
             disabled={isLoading}
             className="flex-row items-center justify-center py-4 px-6 rounded-xl bg-red-50 border border-red-200 active:bg-red-100"
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#dc2626" />
-            ) : (
-              <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-            )}
+            <Ionicons name="log-out-outline" size={20} color="#dc2626" />
             <Text className="text-red-600 font-semibold text-base ml-3">
-              {isLoading ? 'Logging out...' : 'Logout'}
+              Logout
             </Text>
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* Logout Modal */}
+      <Modal transparent visible={showLogoutModal} animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-white p-6 rounded-2xl w-80">
+            <Text className="text-lg font-bold text-center mb-3">
+              Confirm Logout
+            </Text>
+            <Text className="text-gray-600 text-center mb-6">
+              Are you sure you want to logout?
+            </Text>
+
+            <View className="flex-row justify-between">
+              <Pressable
+                onPress={() => setShowLogoutModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 flex-1 mr-2"
+              >
+                <Text className="text-center text-gray-700 font-semibold">
+                  Cancel
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={confirmLogout}
+                disabled={isLoading}
+                className="px-4 py-2 rounded-lg bg-red-500 flex-1 ml-2"
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-center text-white font-semibold">
+                    Yes, Logout
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>``
+      </Modal>
     </View>
   );
 }
