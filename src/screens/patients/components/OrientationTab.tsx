@@ -5,6 +5,7 @@ import {
   Pressable,
   Modal,
   TouchableOpacity,
+  ScrollView
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -67,7 +68,8 @@ export default function OrientationTab({
   };
 
   return (
-    <>
+   <>
+     <ScrollView className="flex-1 p-4">
       {/* Assess Items */}
       <AssessItem
         icon="📊"
@@ -99,6 +101,7 @@ export default function OrientationTab({
         }}
         className="bg-[#F6F7F7] border-[#F6F7F7]"
       />
+      </ScrollView>
 
       {/* Non-blocking Modal Overlay */}
       <Modal
