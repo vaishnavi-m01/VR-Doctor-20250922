@@ -370,7 +370,7 @@ export default function InformedConsentForm({
                 </View>
             </View>
 
-            <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
+            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
                 {/* Study Details */}
                 <FormCard icon="A" title="Study Details">
                     <View className="mb-4">

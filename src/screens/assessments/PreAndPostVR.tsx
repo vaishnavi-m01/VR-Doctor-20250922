@@ -269,7 +269,7 @@ export default function PreAndPostVR() {
           borderBottomColor: '#e5e7eb',
           borderBottomWidth: 1,
           borderRadius: 12,
-          padding: 16,
+          padding:24,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',

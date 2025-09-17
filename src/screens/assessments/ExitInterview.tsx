@@ -408,7 +408,7 @@ const validateForm = (): boolean => {
         style={{ paddingTop: 8, paddingBottom: '0.25rem' }}
       >
         <View className="bg-white border-b border-gray-200 rounded-xl flex-row justify-between items-center shadow-sm"
-        style={{ padding: 17}}
+        style={{ padding: 24}}
         >
           <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>Participant ID: {patientId}</Text>
           <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>

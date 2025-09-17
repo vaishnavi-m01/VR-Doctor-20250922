@@ -209,7 +209,7 @@ useFocusEffect(
     <View className="flex-1 bg-white">
       {/* Participant Info Header */}
       <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {patientId}</Text>
           <Text className="text-base font-semibold text-green-600">Study ID: {studyId}</Text>
           <Text className="text-base font-semibold text-gray-700">Age: {age}</Text>

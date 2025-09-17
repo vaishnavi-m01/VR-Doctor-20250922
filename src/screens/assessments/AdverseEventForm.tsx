@@ -418,7 +418,7 @@ export default function AdverseEventForm() {
                         borderBottomWidth: 1,              
                         borderBottomColor: "#e5e7eb",    
                         borderRadius: 12,                  
-                        padding: 16,                     
+                        padding: 17,                     
                         flexDirection: "row",              
                         justifyContent: "space-between",   
                         alignItems: "center",            
@@ -539,7 +539,7 @@ export default function AdverseEventForm() {
                 </>
             )}
 
-            <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
+            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="📅 Date of Report (Optional)" value={reportDate} onChange={setReportDate} />

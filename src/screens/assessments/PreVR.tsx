@@ -493,7 +493,7 @@ export default function PreVR() {
         className="px-4"
         style={{ paddingTop: 8, paddingBottom: '0.25rem' }}
       >
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {participantId}</Text>
           <Text className="text-base font-semibold text-green-600">
             Study ID: {studyId ? formatStudyId(studyId) : 'CS-0001'}

@@ -12,13 +12,12 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
 
-
 interface AssessmentQuestion {
   AssessmentId: string;
   AssessmentTitle: string;
   StudyId: string;
   AssignmentQuestion: string;
-  Type: string; // "Pre" or "Post"
+  Type: string; // "Post" only now
   SortKey: number;
   Status: number;
   CreatedBy: string;
@@ -37,12 +36,12 @@ interface ApiResponse {
   ResponseData: AssessmentQuestion[];
 }
 
-// ResponsesState stores multiple responses keyed by AssessmentId and PMPVRID
 interface ResponseEntry {
   PMPVRID: string | null;
   ScaleValue: string | null;
   Notes: string | null;
 }
+
 type ResponsesState = Record<string /*AssessmentId*/, ResponseEntry[]>;
 
 export default function PostVRAssessment() {
@@ -52,17 +51,14 @@ export default function PostVRAssessment() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [preQuestions, setPreQuestions] = useState<AssessmentQuestion[]>([]);
   const [postQuestions, setPostQuestions] = useState<AssessmentQuestion[]>([]);
   const [responses, setResponses] = useState<ResponsesState>({});
 
   const route = useRoute<RouteProp<RootStackParamList, 'PostVRAssessment'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { patientId, age, studyId } = route.params;
-    const { userId } = useContext(UserContext);
-  
+  const { userId } = useContext(UserContext);
 
-  // Format studyId with CS- prefix and 4-digit padding
   const formatStudyId = (sid: string | number) => {
     const s = sid.toString();
     return s.startsWith('CS-') ? s : `CS-${s.padStart(4, '0')}`;
@@ -74,7 +70,6 @@ export default function PostVRAssessment() {
       fetchAssessmentQuestions(patientId.toString(), studyId.toString());
     }
   }, [patientId, studyId]);
-
 
   const fetchAssessmentQuestions = async (participantIdParam: string, studyIdParam: string) => {
     try {
@@ -91,32 +86,31 @@ export default function PostVRAssessment() {
       const { ResponseData } = response.data;
 
       if (ResponseData && ResponseData.length > 0) {
-        // Separate Pre and Post questions
-        const preQs = ResponseData.filter((q) => q.Type === 'Pre' && q.StudyId === formattedStudyId).sort((a, b) => a.SortKey - b.SortKey);
+        // Only keep Post questions
         const postQs = ResponseData.filter((q) => q.Type === 'Post' && q.StudyId === formattedStudyId).sort((a, b) => a.SortKey - b.SortKey);
 
-        setPreQuestions(preQs);
         setPostQuestions(postQs);
 
         const groupedResponses: ResponsesState = {};
 
         ResponseData.forEach((q) => {
-          if (!groupedResponses[q.AssessmentId]) {
-            groupedResponses[q.AssessmentId] = [];
+          if (q.Type === 'Post') {
+            if (!groupedResponses[q.AssessmentId]) {
+              groupedResponses[q.AssessmentId] = [];
+            }
+            groupedResponses[q.AssessmentId].push({
+              PMPVRID: q.PMPVRID,
+              ScaleValue: q.ScaleValue,
+              Notes: q.Notes,
+            });
           }
-          groupedResponses[q.AssessmentId].push({
-            PMPVRID: q.PMPVRID,
-            ScaleValue: q.ScaleValue,
-            Notes: q.Notes,
-          });
         });
 
         setResponses(groupedResponses);
       } else {
-        setPreQuestions([]);
         setPostQuestions([]);
         setResponses({});
-        setError('No assessment questions found for this participant.');
+        setError('No post assessment questions found for this participant.');
       }
     } catch (err) {
       console.error('Failed to load assessment questions', err);
@@ -332,140 +326,139 @@ export default function PostVRAssessment() {
   };
 
   const handleValidate = () => {
-  const hasAnyResponse = Object.keys(responses).length > 0;
+    const hasAnyResponse = Object.keys(responses).length > 0;
 
-  if (!hasAnyResponse) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'No responses entered. Please fill the form.',
-      position: 'top',
-      topOffset: 50,
-    });
-    return;
-  }
-
-  const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
-    entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
-  );
-
-  if (hasEmptyFields) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'All fields are required',
-      position: 'top',
-      topOffset: 50,
-    });
-  } else {
-    Toast.show({
-      type: 'success',
-      text1: 'Validation Passed',
-      text2: 'All required fields are filled',
-      position: 'top',
-      topOffset: 50,
-    });
-  }
-};
-
-  const handleSave = async () => {
-  const hasAnyResponse = Object.keys(responses).length > 0;
-
-  if (!hasAnyResponse) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'No responses entered. Please fill the form before saving.',
-      position: 'top',
-      topOffset: 50,
-    });
-    return;
-  }
-
-  const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
-    entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
-  );
-
-  if (hasEmptyFields) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'All fields are required',
-      position: 'top',
-      topOffset: 50,
-    });
-    return; 
-  }
-
-  try {
-    setSaving(true);
-
-    const formattedStudyId = formatStudyId(studyId ?? '0001');
-
-    const questionData = Object.entries(responses)
-      .flatMap(([questionId, entries]) =>
-        entries
-          .map((entry) => ({
-            PMPVRID: entry.PMPVRID,
-            AssessmentQuestionId: questionId,
-            ScaleValue: entry.ScaleValue === '' ? null : entry.ScaleValue,
-            Notes: entry.Notes === '' ? null : entry.Notes,
-            ParticipantId: participantId,
-            StudyId: formattedStudyId,
-            Status: 1,
-            CreatedBy: userId,
-            ModifiedBy: userId,
-          }))
-          .filter((item) => item.ScaleValue !== null || item.Notes !== null)
-      );
-
-    const payload = {
-      ParticipantId: participantId,
-      StudyId: formattedStudyId,
-      QuestionData: questionData,
-      Status: 1,
-      CreatedBy: userId,
-      ModifiedBy: userId,
-    };
-
-    console.log('Saving Assessment Payload:', payload);
-
-    const isAdd = questionData.some((q) => q.PMPVRID === null);
-
-    const response = await apiService.post('/AddUpdateParticipantMainPrePostVRAssessment', payload);
-
-    if (response.status === 200) {
+    if (!hasAnyResponse) {
       Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form.',
         position: 'top',
         topOffset: 50,
       });
-      navigation.goBack();
-    } else {
+      return;
+    }
+
+    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+      entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
+    );
+
+    if (hasEmptyFields) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Something went wrong. Please try again.',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+    } else {
+      Toast.show({
+        type: 'success',
+        text1: 'Validation Passed',
+        text2: 'All required fields are filled',
         position: 'top',
         topOffset: 50,
       });
     }
-  } catch (error: any) {
-    console.error('Error saving assessment:', error.message);
-    Toast.show({
-      type: 'error',
-      text1: 'Error',
-      text2: 'Failed to save assessment.',
-      position: 'top',
-      topOffset: 50,
-    });
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
+  const handleSave = async () => {
+    const hasAnyResponse = Object.keys(responses).length > 0;
+
+    if (!hasAnyResponse) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form before saving.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+      entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
+    );
+
+    if (hasEmptyFields) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const formattedStudyId = formatStudyId(studyId ?? '0001');
+
+      const questionData = Object.entries(responses)
+        .flatMap(([questionId, entries]) =>
+          entries
+            .map((entry) => ({
+              PMPVRID: entry.PMPVRID,
+              AssessmentQuestionId: questionId,
+              ScaleValue: entry.ScaleValue === '' ? null : entry.ScaleValue,
+              Notes: entry.Notes === '' ? null : entry.Notes,
+              ParticipantId: participantId,
+              StudyId: formattedStudyId,
+              Status: 1,
+              CreatedBy: userId,
+              ModifiedBy: userId,
+            }))
+            .filter((item) => item.ScaleValue !== null || item.Notes !== null)
+        );
+
+      const payload = {
+        ParticipantId: participantId,
+        StudyId: formattedStudyId,
+        QuestionData: questionData,
+        Status: 1,
+        CreatedBy: userId,
+        ModifiedBy: userId,
+      };
+
+      console.log('Saving Assessment Payload:', payload);
+
+      const isAdd = questionData.some((q) => q.PMPVRID === null);
+
+      const response = await apiService.post('/AddUpdateParticipantMainPrePostVRAssessment', payload);
+
+      if (response.status === 200) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
+          position: 'top',
+          topOffset: 50,
+        });
+        navigation.goBack();
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Something went wrong. Please try again.',
+          position: 'top',
+          topOffset: 50,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error saving assessment:', error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save assessment.',
+        position: 'top',
+        topOffset: 50,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleClear = () => {
     setResponses({});
@@ -487,14 +480,14 @@ export default function PostVRAssessment() {
         className="px-4"
         style={{ paddingTop: 8, paddingBottom: '0.25rem' }}
       >
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">Participant ID: {participantId}</Text>
           <Text className="text-base font-semibold text-green-600">Study ID: {formatStudyId(studyId ?? '0001')}</Text>
           <Text className="text-base font-semibold text-gray-700">Age: {age ?? 'Not specified'}</Text>
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: '0.2rem' }}>
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]" style={{ paddingTop: '0.2rem' }}>
         {/* Main Assessment Card */}
         <FormCard icon="J" title="Post‑VR Assessment & Questionnaires">
           <View className="flex-row gap-3">
@@ -517,18 +510,13 @@ export default function PostVRAssessment() {
           </View>
         )}
 
-        {/* Pre-VR Questions */}
-        {preQuestions.length > 0 && (
-          <FormCard icon="A" title="Pre-VR Assessment">{preQuestions.map(renderQuestion)}</FormCard>
-        )}
-
         {/* Post-VR Questions */}
         {postQuestions.length > 0 && (
           <FormCard icon="B" title="Post-VR Assessment">{postQuestions.map(renderQuestion)}</FormCard>
         )}
 
         {/* Instructions */}
-        {!error && (preQuestions.length > 0 || postQuestions.length > 0) && (
+        {!error && postQuestions.length > 0 && (
           <View className="bg-blue-50 rounded-lg p-4 shadow-md mb-4">
             <Text className="font-semibold text-sm text-blue-800 mb-2">Instructions:</Text>
             <Text className="text-xs text-blue-700">
@@ -539,7 +527,6 @@ export default function PostVRAssessment() {
           </View>
         )}
 
-        {/* Extra space to ensure content is not hidden by BottomBar */}
         <View style={{ height: 150 }} />
       </ScrollView>
 
