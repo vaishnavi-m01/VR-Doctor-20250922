@@ -193,7 +193,7 @@ const Login = () => {
                             }`}
                         keyboardType="email-address"
                         value={email}
-                        onChangeText={(text) => {
+                        onChangeText={(text:any) => {
                             setEmail(text);
                             if (emailError) setEmailError('');
                             // Real-time validation
@@ -226,7 +226,7 @@ const Login = () => {
                         className={`font-zen border rounded-xl p-4 mb-2 w-full max-w-md self-center text-base ${passwordError ? 'border-error' : 'border-gray-300 focus:border-brand-accent-green'
                             }`}
                         value={password}
-                        onChangeText={(text) => {
+                        onChangeText={(text:any) => {
                             setPassword(text);
                             if (passwordError) setPasswordError('');
                             // Real-time validation

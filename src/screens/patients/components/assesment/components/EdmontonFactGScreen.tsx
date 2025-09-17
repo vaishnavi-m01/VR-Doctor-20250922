@@ -88,7 +88,7 @@ export default function EdmontonFactGScreen() {
   const [answers, setAnswers] = useState<Record<string, number | null>>({});
   const [subscales, setSubscales] = useState<Subscale[]>([]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [_saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");

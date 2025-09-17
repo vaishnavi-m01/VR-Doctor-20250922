@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { AssessmentResponse, ParticipantResponse } from './apiClient';
+import {  ParticipantResponse } from './apiClient';
 
 // Assessment data interfaces
 export interface FactGData {

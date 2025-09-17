@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native"
-import { NativeStackNavigationOptions, NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
-import { act, useMemo, useState } from "react";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native"
 import { RootStackParamList } from "src/Navigation/types";
 

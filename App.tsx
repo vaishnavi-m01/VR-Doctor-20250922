@@ -83,7 +83,7 @@ function Splash({ navigation }: { navigation: NativeStackNavigationProp<RootStac
 
 // Main App
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState<string>('Splash');
+  const [currentRoute, setCurrentRoute] = useState<keyof RootStackParamList>("Splash");
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   // Load fonts in background

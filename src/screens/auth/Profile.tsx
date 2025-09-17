@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../../Navigation/types';
-import { Btn } from '../../components/Button';
-import FormCard from '../../components/FormCard';
 import { apiService } from 'src/services';
 import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';

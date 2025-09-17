@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl, Alert } from 'react-native';
-import Header from '../../components/Header';
 import SearchBar from '../../components/SearchBar';
 import KPI from '../../components/KPI';
 import PatientCard from '../../components/PatientCard';

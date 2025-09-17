@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import  { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -528,7 +528,7 @@ export default function ParticipantAssessmentSplit() {
                 <TextInput
                   placeholder="Search by Patient ID,Gender"
                   value={searchText}
-                  onChangeText={val => {
+                  onChangeText={(val:any) => {
                     setSearchText(val);
                     // Clearing handled by useEffect on searchText above
                   }}

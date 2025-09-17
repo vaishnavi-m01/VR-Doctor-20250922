@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
 import Toggle from '../../components/Toggle';
@@ -13,13 +13,11 @@ import { formatDateDDMMYYYY } from 'src/utils/date';
 export default function SessionControlScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [cast, setCast] = useState(true);
-  const [progress, setProgress] = useState(0.63);
-  const [music, setMusic] = useState(0.3);
-  const [voice, setVoice] = useState(0.6);
-  const [intensity, setIntensity] = useState(0.75);
+  const [voice, _setVoice] = useState(0.6);
+  const [intensity, _setIntensity] = useState(0.75);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(10.5);
+  const [totalDuration, _setTotalDuration] = useState(10.5);
 
   const [age, setAge] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("");

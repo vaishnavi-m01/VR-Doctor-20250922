@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import { getParticipantBackgroundColor } from '../../utils/participantColors';
+import { UserContext } from 'src/store/context/UserContext';
+import Toast from 'react-native-toast-message';
 
 export type Participant = {
   id: string;
@@ -46,9 +47,9 @@ type StudyGroupAssignmentRouteProp = RouteProp<
 type AssignDecision = { id: string; group: 'Controlled' | 'Study' };
 
 export default function StudyGroupAssignment() {
-  const navigation = useNavigation<
-    NativeStackNavigationProp<RootStackParamList, 'StudyGroupAssignment'>
-  >();
+  // const navigation = useNavigation<
+  //   NativeStackNavigationProp<RootStackParamList, 'StudyGroupAssignment'>
+  // >();
 
   const route = useRoute<StudyGroupAssignmentRouteProp>();
   const { studyId } = route.params;
@@ -58,6 +59,8 @@ export default function StudyGroupAssignment() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const { userId } = useContext(UserContext);
+
 
   // Fetch participants with correct filter (only StudyId required, no forced GroupType)
   const fetchParticipants = useCallback(
@@ -81,7 +84,7 @@ export default function StudyGroupAssignment() {
 
         // Add basic filtering only if searching, else return all participants for the studyId
         if (trimmedSearch !== '') {
-       
+
 
           if (['male', 'female', 'other'].includes(lowerSearch)) {
             requestBody.Gender =
@@ -120,8 +123,8 @@ export default function StudyGroupAssignment() {
                 item.GroupType === 'Controlled' || item.GroupType === 'Controlled'
                   ? 'Controlled'
                   : item.GroupType === 'Study'
-                  ? 'Study'
-                  : null,
+                    ? 'Study'
+                    : null,
 
               CriteriaStatus: item.CriteriaStatus,
             })
@@ -170,7 +173,7 @@ export default function StudyGroupAssignment() {
   const toggleSelectAll = () => {
     const unassignedIds = unassigned.map(p => p.ParticipantId);
     const allSelected = unassignedIds.every(id => selectedIds.includes(id));
-    
+
     if (allSelected) {
       // Deselect all unassigned participants
       setSelectedIds(prev => prev.filter(id => !unassignedIds.includes(id)));
@@ -187,28 +190,82 @@ export default function StudyGroupAssignment() {
     });
   }
 
+  // const handleAssign = async () => {
+  //   if (selectedIds.length === 0) {
+  //     Alert.alert('No Selection', 'Please select participants to assign.');
+  //     return;
+  //   }
+  //   try {
+  //     setLoading(true);
+  //     const decisions = await decideGroups(selectedIds);
+  //     setParticipants((prev) =>
+  //       prev.map((p) =>
+  //         decisions.some((d) => d.id === p.ParticipantId)
+  //           ? {
+  //               ...p,
+  //               GroupType:
+  //                 decisions.find((d) => d.id === p.ParticipantId)?.group ?? null,
+  //             }
+  //           : p
+  //       )
+  //     );
+  //     setSelectedIds([]);
+  //     setQuery('');
+  //     Alert.alert('Assigned', `Assigned ${decisions.length} participant(s).`);
+  //   } catch (e) {
+  //     console.error('Assign error', e);
+  //     Alert.alert('Error', 'Failed to assign participants. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleAssign = async () => {
     if (selectedIds.length === 0) {
-      Alert.alert('No Selection', 'Please select participants to assign.');
+      Toast.show({
+        type: 'error',
+        text1: 'No Selection',
+        text2: 'Please select participants to assign.',
+      });
       return;
     }
     try {
       setLoading(true);
+
       const decisions = await decideGroups(selectedIds);
+
+
+      const requestBody = {
+        StudyId: studyId,
+        ModifiedBy: userId,
+        MaxParticipants: selectedIds.length,
+      };
+
+
+      const response = await apiService.post(
+        "/BulkUpdateParticipantGroupAssignment",
+        requestBody
+      );
+
+      console.log("Bulk update response:", response.data);
+
       setParticipants((prev) =>
         prev.map((p) =>
           decisions.some((d) => d.id === p.ParticipantId)
             ? {
-                ...p,
-                GroupType:
-                  decisions.find((d) => d.id === p.ParticipantId)?.group ?? null,
-              }
+              ...p,
+              GroupType:
+                decisions.find((d) => d.id === p.ParticipantId)?.group ?? null,
+            }
             : p
         )
       );
       setSelectedIds([]);
       setQuery('');
-      Alert.alert('Assigned', `Assigned ${decisions.length} participant(s).`);
+      Alert.alert(
+        'Assigned',
+        `Assigned ${decisions.length} participant(s).`
+      );
     } catch (e) {
       console.error('Assign error', e);
       Alert.alert('Error', 'Failed to assign participants. Please try again.');
@@ -216,6 +273,7 @@ export default function StudyGroupAssignment() {
       setLoading(false);
     }
   };
+
 
   const handleUnassign = async (id: string) => {
     try {
@@ -246,45 +304,43 @@ export default function StudyGroupAssignment() {
   }) => {
     const participantBgColor = getParticipantBackgroundColor(p.GroupType);
     return (
-    <Pressable
-      onPress={onPress}
-      disabled={!selectable}
-      className={`flex-row items-center justify-between border rounded-xl p-3 mb-2 ${participantBgColor} ${
-        selectable
+      <Pressable
+        onPress={onPress}
+        disabled={!selectable}
+        className={`flex-row items-center justify-between border rounded-xl p-3 mb-2 ${participantBgColor} ${selectable
           ? selected
             ? 'border-[#0ea06c]'
             : 'border-[#e6eeeb]'
           : 'border-[#e6eeeb]'
-      }`}
-    >
-      <View className="flex-row items-center">
-        {selectable ? (
-          <View
-            className={`w-8 h-8 mr-3 rounded-lg border-2 items-center justify-center ${
-              selected ? 'bg-[#0ea06c] border-[#0ea06c]' : 'border-[#0ea06c] bg-white'
-            }`}
-          >
-            {selected && <Text className="text-white text-lg font-bold">✓</Text>}
-          </View>
-        ) : (
-          <View className="w-9 h-9 mr-3 rounded-full bg-[#eaf7f2] border border-[#e3ece9] items-center justify-center">
-            <Text className="text-[#0b6b52] font-extrabold">
-              {(p.ParticipantId ?? '?').slice(0, 1)}
+          }`}
+      >
+        <View className="flex-row items-center">
+          {selectable ? (
+            <View
+              className={`w-8 h-8 mr-3 rounded-lg border-2 items-center justify-center ${selected ? 'bg-[#0ea06c] border-[#0ea06c]' : 'border-[#0ea06c] bg-white'
+                }`}
+            >
+              {selected && <Text className="text-white text-lg font-bold">✓</Text>}
+            </View>
+          ) : (
+            <View className="w-9 h-9 mr-3 rounded-full bg-[#eaf7f2] border border-[#e3ece9] items-center justify-center">
+              <Text className="text-[#0b6b52] font-extrabold">
+                {(p.ParticipantId ?? '?').slice(0, 1)}
+              </Text>
+            </View>
+          )}
+          <View>
+            <Text className="font-semibold text-gray-800">{p.name ?? p.ParticipantId}</Text>
+            <Text className="text-sm text-gray-600">
+              {p.age ?? 'N/A'} years • {p.Gender ?? 'N/A'}
+            </Text>
+            <Text className="text-xs text-gray-500">
+              {p.cancerType ?? 'N/A'} • Stage: {p.stage ?? 'N/A'}
             </Text>
           </View>
-        )}
-        <View>
-          <Text className="font-semibold text-gray-800">{p.name ?? p.ParticipantId}</Text>
-          <Text className="text-sm text-gray-600">
-            {p.age ?? 'N/A'} years • {p.Gender ?? 'N/A'}
-          </Text>
-          <Text className="text-xs text-gray-500">
-            {p.cancerType ?? 'N/A'} • Stage: {p.stage ?? 'N/A'}
-          </Text>
         </View>
-      </View>
-      {trailing}
-    </Pressable>
+        {trailing}
+      </Pressable>
     );
   };
 
@@ -371,9 +427,8 @@ export default function StudyGroupAssignment() {
             <Pressable
               onPress={handleAssign}
               disabled={selectedIds.length === 0}
-              className={`py-3 px-6 rounded-xl ${
-                selectedIds.length > 0 ? 'bg-[#0ea06c]' : 'bg-[#b7e6d4]'
-              }`}
+              className={`py-3 px-6 rounded-xl ${selectedIds.length > 0 ? 'bg-[#0ea06c]' : 'bg-[#b7e6d4]'
+                }`}
             >
               <Text className="text-white text-center font-bold">
                 Assign Group ({selectedIds.length} selected)

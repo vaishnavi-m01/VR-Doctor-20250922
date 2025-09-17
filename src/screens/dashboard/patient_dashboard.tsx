@@ -1,27 +1,37 @@
-// App.js or ParticipantDashboard.js
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
- 
+
 type PatientDashboardRouteProp = RouteProp<RootStackParamList, 'PatientDashboard'>;
 
-const Icon = ({ name, className }) => <Text className={className}>{name}</Text>;
 
-// Placeholder for Graph component. You'd use a library like react-native-svg-charts here.
-const SmallGraph = ({ data, color }) => (
+type IconProps = {
+  name: string;
+  className?: string;
+};
+
+
+type SmallGraphProps = {
+  data: number[];
+  color?: string;
+};
+
+const Icon: React.FC<IconProps> = ({ name, className }) => (
+  <Text className={className}>{name}</Text>
+);
+
+const SmallGraph: React.FC<SmallGraphProps> = ({ data: _data, color: _color }) => (
   <View className="h-8 bg-gray-100 rounded-md mt-2 flex items-center justify-center">
     <Text className="text-gray-400 text-xs">Graph Placeholder</Text>
   </View>
 );
 
-type ParticipantDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+
 
 const ParticipantDashboard = () => {
-  const navigation = useNavigation<ParticipantDashboardNavigationProp>();
-    const route = useRoute<PatientDashboardRouteProp>();
-  const { patientId, age,studyId } = route.params;
+  const route = useRoute<PatientDashboardRouteProp>();
+  const { patientId, age, studyId } = route.params;
 
 
   return (

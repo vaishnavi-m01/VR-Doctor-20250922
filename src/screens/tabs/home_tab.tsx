@@ -1,9 +1,7 @@
-import React from 'react';
 import { View, ScrollView, Text, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
-import { HomeIcon, UserGroupIcon, ChartPieIcon, PlusIcon } from 'react-native-heroicons/outline';
 import SubMenu, { SubMenuItem } from '../../components/SubMenu';
 
 type HomeTabNavigationProp = NativeStackNavigationProp<RootStackParamList>;

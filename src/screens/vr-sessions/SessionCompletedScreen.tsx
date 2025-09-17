@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
