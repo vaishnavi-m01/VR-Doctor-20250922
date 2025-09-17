@@ -796,18 +796,22 @@ export default function SocioDemographic() {
           <View className="flex-row gap-4 mt-6">
             {/* Question 5 */}
             <View className="flex-1">
-              <Text className="text-base font-medium text-[#2c4a43] mb-4">5. Does faith contribute to well-being?</Text>
+              <View style={{ minHeight: 60 }}>
+                <Text className="text-base font-medium text-[#2c4a43] mb-4">
+                  5. Does faith contribute to well-being?
+                </Text>
+              </View>
               <View className="flex-row gap-3">
                 {/* Yes Button */}
                 <Pressable
                   onPress={() => setFaithWellbeing('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'Yes'
-                    ? 'bg-[#4FC264]'
-                    : 'bg-[#EBF6D6]'
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                     }`}
                 >
-                  <Text className={`font-medium text-base ${faithWellbeing === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
+                  <Text
+                    className={`font-medium text-base ${faithWellbeing === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                      }`}
+                  >
                     Yes
                   </Text>
                 </Pressable>
@@ -815,13 +819,13 @@ export default function SocioDemographic() {
                 {/* No Button */}
                 <Pressable
                   onPress={() => setFaithWellbeing('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'No'
-                    ? 'bg-[#4FC264]'
-                    : 'bg-[#EBF6D6]'
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                     }`}
                 >
-                  <Text className={`font-medium text-base ${faithWellbeing === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
+                  <Text
+                    className={`font-medium text-base ${faithWellbeing === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                      }`}
+                  >
                     No
                   </Text>
                 </Pressable>
@@ -830,37 +834,39 @@ export default function SocioDemographic() {
 
             {/* Question 6 */}
             <View className="flex-1">
-              <Text className="text-base font-medium text-[#2c4a43] mb-4">6. Do you practice any religion?</Text>
+              <View style={{ minHeight: 60 }}>
+                <Text className="text-base font-medium text-[#2c4a43] mb-4">
+                  6. Do you practice any religion?
+                </Text>
+              </View>
               <View className="flex-row gap-3">
                 <Pressable
                   onPress={() => setPracticeReligion('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'Yes'
-                    ? 'bg-[#4FC264]'
-                    : 'bg-[#EBF6D6]'
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                     }`}
                 >
-                  <Text className={`font-medium text-base ${practiceReligion === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
+                  <Text
+                    className={`font-medium text-base ${practiceReligion === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                      }`}
+                  >
                     Yes
                   </Text>
                 </Pressable>
 
-                {/* No Button */}
                 <Pressable
                   onPress={() => setPracticeReligion('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'No'
-                    ? 'bg-[#4FC264]'
-                    : 'bg-[#EBF6D6]'
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                     }`}
                 >
-                  <Text className={`font-medium text-base ${practiceReligion === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                    }`}>
+                  <Text
+                    className={`font-medium text-base ${practiceReligion === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                      }`}
+                  >
                     No
                   </Text>
                 </Pressable>
               </View>
 
-              {/* Conditional Religion Specify Field */}
               {practiceReligion === 'Yes' && (
                 <View className="mt-4">
                   <Field
@@ -873,6 +879,7 @@ export default function SocioDemographic() {
               )}
             </View>
           </View>
+
 
           <View className="mt-6">
             <Text className="text-base font-medium text-[#2c4a43] mb-4">7. Education Level (Optional)</Text>
