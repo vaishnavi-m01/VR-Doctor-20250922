@@ -715,7 +715,7 @@ export default function DistressThermometerScreen() {
               style={{
                 height: 48,
                 minWidth: 100,
-                top: 18
+                top: -16
               }}
             >
               {loading ? (
