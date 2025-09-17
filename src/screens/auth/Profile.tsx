@@ -7,6 +7,7 @@ import { RootStackParamList } from '../../Navigation/types';
 import { Btn } from '../../components/Button';
 import FormCard from '../../components/FormCard';
 import { apiService } from 'src/services';
+import { useAuth } from '../../hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -22,14 +23,7 @@ interface UserProfile {
 
 export default function Profile() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  // const [profile, setProfile] = useState<UserProfile>({
-  //   name: 'Dr. Sarah Johnson',
-  //   email: 'sarah.johnson@hospital.com',
-  //   role: 'Principal Investigator',
-  //   organization: 'City General Hospital',
-  //   phone: '+1 (555) 123-4567',
-  //   avatar: undefined
-  // });
+  const { user, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     email: '',
@@ -56,7 +50,20 @@ export default function Profile() {
     try {
       setIsLoading(true);
 
-      //  Get UserId from AsyncStorage
+      // Use user data from auth service if available
+      if (user) {
+        setProfile({
+          name: `${user.FirstName} ${user.LastName}`,
+          email: user.Email,
+          phone: user.PhoneNumber,
+          role: user.RoleName,
+          organization: user.Address,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Fallback: Get UserId from AsyncStorage
       const userId = await AsyncStorage.getItem("userId");
 
       if (!userId) {
@@ -106,13 +113,8 @@ export default function Profile() {
           onPress: async () => {
             setIsLoading(true);
             try {
-              // Clear all stored data
-              await AsyncStorage.multiRemove([
-                'login_email',
-                'login_password',
-                'user_profile',
-                'auth_token'
-              ]);
+              // Use the auth service logout method
+              await logout();
 
               // Navigate to login screen
               navigation.reset({

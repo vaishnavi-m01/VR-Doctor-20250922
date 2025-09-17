@@ -27,7 +27,13 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.ojaska.vrqolnativewind</string>
+          <string>com.ojaskalabcorp.vrdoctarapp</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+vr-qol-nativewind</string>
         </array>
       </dict>
     </array>
@@ -43,19 +49,9 @@
       <false/>
       <key>NSAllowsLocalNetworking</key>
       <true/>
-      <key>NSExceptionDomains</key>
-      <dict>
-        <key>103.146.234.88</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-                      <key>NSExceptionMinimumTLSVersion</key>
-            <string>TLSv1.2</string>
-          <key>NSExceptionRequiresForwardSecrecy</key>
-          <false/>
-        </dict>
-      </dict>
     </dict>
+    <key>RCTNewArchEnabled</key>
+    <true/>
     <key>UIAppFonts</key>
     <array>
       <string>ZenKakuGothicAntique-Regular.ttf</string>

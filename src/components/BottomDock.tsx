@@ -19,8 +19,9 @@ export default function BottomDock({ activeScreen }: BottomDockProps) {
     iconName: string;
   };
 
-  const Item = ({ label, active, screenName, iconName }: DockItemProps) => (
+  const Item = React.forwardRef<Pressable, DockItemProps>(({ label, active, screenName, iconName }, ref) => (
     <Pressable
+      ref={ref}
       className="flex-1 items-center justify-center py-2 relative"
       onPress={() => navigation.navigate(screenName as any)}
       accessible={true}
@@ -48,11 +49,13 @@ export default function BottomDock({ activeScreen }: BottomDockProps) {
       </View>
       {active && (
         <View 
-          className="absolute -bottom-0.5 self-center w-16 h-1.5 rounded-sm bg-brand-accent-green transition-all duration-300 ease-in-out"
+          className="absolute -bottom-0.5 self-center w-16 h-1.5 rounded-sm bg-brand-accent-green"
         />
       )}
     </Pressable>
-  );
+  ));
+
+  Item.displayName = 'DockItem';
 
   return (
     <View className="absolute bottom-4 w-full items-center z-50">

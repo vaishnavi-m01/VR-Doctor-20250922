@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +8,7 @@ import toastConfig from '@components/toastConfig';
 import * as Font from 'expo-font';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
-import ErrorBoundary from './src/components/ErrorBoundary';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 import "./global.css";
 
@@ -83,7 +83,7 @@ function Splash({ navigation }: { navigation: NativeStackNavigationProp<RootStac
 
 // Main App
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState<keyof RootStackParamList>('Splash');
+  const [currentRoute, setCurrentRoute] = useState<string>('Splash');
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   // Load fonts in background

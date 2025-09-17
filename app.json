@@ -2,6 +2,8 @@
   "expo": {
     "name": "OjaskaVRDoctor",
     "slug": "vr-qol-nativewind",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "userInterfaceStyle": "automatic",
     "web": {
       "bundler": "metro",
@@ -9,15 +11,14 @@
     },
     "extra": {
       "eas": {
-        "projectId": "7c0dc194-cf75-4d8d-9e66-45dbe23d4c85"
+        "projectId": "d9714e43-e326-494b-bfca-827d1a4a8fcf"
       }
     },
     "android": {
-      "package": "com.ojaska.vrqolnativewind",
-      "supportsTablet": true
+      "package": "com.ojaskalabcorp.vrdoctarapp"
     },
     "ios": {
-      "bundleIdentifier": "com.ojaska.vrqolnativewind",
+      "bundleIdentifier": "com.ojaskalabcorp.vrdoctarapp",
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
@@ -42,6 +43,7 @@
           ]
         }
       ]
-    ]
+    ],
+    "owner": "tksenthil"
   }
 }

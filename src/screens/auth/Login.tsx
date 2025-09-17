@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from "../../Navigation/types";
 import { WELCOME_MESSAGES, BUTTON_TEXTS, } from "../../constants/appConstants";
 import { Toast } from "../../components/Toast";
-import { apiService } from "src/services";
+import { useAuth } from "../../hooks/useAuth";
 
 
 export interface LoginUser {
@@ -33,10 +33,9 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, '
 
 const Login = () => {
     const navigation = useNavigation<LoginScreenNavigationProp>();
-    const [isLoading, setIsLoading] = useState(false);
+    const { login, isLoading, error, clearAuthError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [userId, setUserId] = useState('');
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [toast, setToast] = useState<{
@@ -53,6 +52,18 @@ const Login = () => {
     useEffect(() => {
         loadSavedFormData();
     }, []);
+
+    // Handle auth error changes
+    useEffect(() => {
+        if (error) {
+            setToast({
+                visible: true,
+                message: error,
+                type: 'error',
+            });
+            clearAuthError();
+        }
+    }, [error, clearAuthError]);
 
     const loadSavedFormData = async () => {
         try {
@@ -100,67 +111,33 @@ const Login = () => {
     const handleLogin = async () => {
         if (!validateForm()) return;
 
-        setIsLoading(true);
-
         try {
-            const response = await apiService.post<LoginResponse>("/Login", {
+            const result = await login({
                 Email: email,
                 Password: password,
             });
 
-            const user = response.data.loginUser?.[0];
-            console.log("Login user:", user);
-
-            if (user) {
-                await AsyncStorage.setItem("user", JSON.stringify(user));
-
-                await AsyncStorage.setItem("login_email", email);
-                await AsyncStorage.setItem("login_password", password);
-
-                if (user.UserID) {
-                    setUserId(user.UserID.toString());
-                    await AsyncStorage.setItem("userId", user.UserID.toString());
-                }
-
-                if (user.token) {
-                    await AsyncStorage.setItem("userToken", user.token);
-                }
-
+            if (result.type === 'auth/loginUser/fulfilled') {
                 setToast({
                     visible: true,
-                    message: user.message || "Login successful!",
+                    message: "Login successful!",
                     type: "success",
                 });
 
                 setTimeout(() => {
                     navigation.navigate("Home");
                 }, 1200);
-
             } else {
-                setToast({
-                    visible: true,
-                    message: "Invalid login response",
-                    type: "error",
-                });
+                // Error is handled by the useEffect hook above
+                console.log("Login failed:", result.payload);
             }
-
-        } catch (error: any) {
+        } catch (error) {
             console.log("Login error:", error);
-
-            let errorMessage = "Something went wrong. Please try again.";
-            if (error?.status === 401) {
-                errorMessage = "Invalid email or password";
-            } else if (error?.message) {
-                errorMessage = error.message;
-            }
-
             setToast({
                 visible: true,
-                message: errorMessage,
+                message: "Something went wrong. Please try again.",
                 type: "error",
             });
-        } finally {
-            setIsLoading(false);
         }
     };
 

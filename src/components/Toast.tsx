@@ -13,13 +13,13 @@ interface ToastProps {
   duration?: number;
 }
 
-export const Toast: React.FC<ToastProps> = ({ 
+export const Toast = React.forwardRef<View, ToastProps>(({ 
   message, 
   type, 
   visible, 
   onHide, 
   duration = 3000 
-}) => {
+}, ref) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-100)).current;
 
@@ -95,6 +95,7 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <Animated.View
+      ref={ref}
       style={[
         styles.container,
         getToastStyle(),
@@ -108,7 +109,9 @@ export const Toast: React.FC<ToastProps> = ({
       <Text style={styles.message}>{message}</Text>
     </Animated.View>
   );
-};
+});
+
+Toast.displayName = 'Toast';
 
 const styles = StyleSheet.create({
   container: {

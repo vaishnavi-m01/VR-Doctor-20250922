@@ -1,12 +1,11 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
-  showDetails?: boolean;
 }
 
 interface State {
@@ -15,7 +14,7 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -26,7 +25,6 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI
     return {
       hasError: true,
       error,
@@ -35,24 +33,22 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
-    if (__DEV__) {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
-
-    // Update state with error info
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
     this.setState({
       error,
       errorInfo,
     });
 
     // Call custom error handler if provided
-    this.props.onError?.(error, errorInfo);
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
 
-    // Log error to crash reporting service in production
-    if (!__DEV__) {
-      // Example: log to crash reporting service
-      // crashlytics().recordError(error);
+    // Log to crash reporting service in production
+    if (__DEV__ === false) {
+      // TODO: Integrate with crash reporting service (e.g., Sentry, Crashlytics)
+      console.error('Production error:', error, errorInfo);
     }
   }
 
@@ -64,65 +60,54 @@ class ErrorBoundary extends Component<Props, State> {
     });
   };
 
-  handleReportError = () => {
-    // In a real app, you would send this to your error reporting service
-    console.log('Reporting error:', this.state.error);
-    // Example: send to error reporting service
-    // errorReportingService.reportError(this.state.error, this.state.errorInfo);
-  };
-
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default error UI
       return (
-        <View style={styles.container}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <View style={styles.content}>
-              <Ionicons 
-                name="warning-outline" 
-                size={64} 
-                color="#ef4444" 
-                style={styles.icon}
-              />
-              
-              <Text style={styles.title}>Oops! Something went wrong</Text>
-              <Text style={styles.message}>
-                The app encountered an unexpected error. Please try again or contact support if the problem persists.
-              </Text>
-
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
-                  <Ionicons name="refresh" size={20} color="white" style={styles.buttonIcon} />
-                  <Text style={styles.buttonText}>Try Again</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.reportButton} onPress={this.handleReportError}>
-                  <Ionicons name="bug-outline" size={20} color="#ef4444" style={styles.buttonIcon} />
-                  <Text style={styles.reportButtonText}>Report Issue</Text>
-                </TouchableOpacity>
+        <View className="flex-1 bg-gray-50 justify-center items-center px-6">
+          <View className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
+            <View className="items-center mb-6">
+              <View className="w-16 h-16 bg-red-100 rounded-full items-center justify-center mb-4">
+                <Ionicons name="warning" size={32} color="#ef4444" />
               </View>
+              <Text className="text-xl font-bold text-gray-800 text-center mb-2">
+                Something went wrong
+              </Text>
+              <Text className="text-gray-600 text-center">
+                The app encountered an unexpected error. Please try again.
+              </Text>
+            </View>
 
-              {/* Show error details in development */}
-              {__DEV__ && this.props.showDetails && this.state.error && (
-                <View style={styles.errorDetails}>
-                  <Text style={styles.errorDetailsTitle}>Error Details (Development Only):</Text>
-                  <Text style={styles.errorText}>{this.state.error.toString()}</Text>
-                  
+            {__DEV__ && this.state.error && (
+              <ScrollView className="max-h-40 mb-6">
+                <View className="bg-gray-100 rounded-lg p-4">
+                  <Text className="text-sm font-mono text-gray-800 mb-2">
+                    Error Details:
+                  </Text>
+                  <Text className="text-xs text-gray-600 mb-2">
+                    {this.state.error.message}
+                  </Text>
                   {this.state.errorInfo && (
-                    <>
-                      <Text style={styles.errorDetailsTitle}>Component Stack:</Text>
-                      <Text style={styles.errorText}>{this.state.errorInfo.componentStack}</Text>
-                    </>
+                    <Text className="text-xs text-gray-500">
+                      {this.state.errorInfo.componentStack}
+                    </Text>
                   )}
                 </View>
-              )}
-            </View>
-          </ScrollView>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              onPress={this.handleRetry}
+              className="bg-blue-600 rounded-xl py-4 px-6 items-center"
+            >
+              <Text className="text-white font-semibold text-base">
+                Try Again
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
@@ -131,133 +116,24 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Higher-order component for easier usage
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
-) => {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
-  return WrappedComponent;
-};
-
-// Hook for error boundary context (if needed)
+// Hook version for functional components
 export const useErrorHandler = () => {
-  const handleError = (error: Error, errorInfo?: ErrorInfo) => {
-    // Log error
-    console.error('Error caught by useErrorHandler:', error, errorInfo);
-    
-    // In a real app, you might want to:
-    // 1. Send to crash reporting service
-    // 2. Show user-friendly error message
-    // 3. Log to analytics
-  };
+  const [error, setError] = React.useState<Error | null>(null);
 
-  return { handleError };
+  const resetError = React.useCallback(() => {
+    setError(null);
+  }, []);
+
+  const captureError = React.useCallback((error: Error) => {
+    console.error('Error captured:', error);
+    setError(error);
+  }, []);
+
+  React.useEffect(() => {
+    if (error) {
+      throw error;
+    }
+  }, [error]);
+
+  return { captureError, resetError };
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  content: {
-    alignItems: 'center',
-    maxWidth: 400,
-  },
-  icon: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  message: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-  },
-  reportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ef4444',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  reportButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorDetails: {
-    marginTop: 32,
-    padding: 16,
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    width: '100%',
-  },
-  errorDetailsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#dc2626',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#7f1d1d',
-    fontFamily: 'monospace',
-    lineHeight: 16,
-  },
-});
-
-export default ErrorBoundary;

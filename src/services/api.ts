@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../config/environment';
+import { authService } from './authService';
 
 export interface ApiResponse<T = any> {
   data: T;
@@ -34,9 +35,13 @@ export class ApiService {
       headers: options.headers,
     });
     
+    // Get authentication header
+    const authHeader = authService.getAuthHeader();
+    
     const defaultOptions: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
     };

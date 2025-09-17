@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
-import { store } from '../store';
-import { addNotification } from '../store/slices/uiSlice';
 import { API_CONFIG } from '../config/environment';
+import { authService } from './authService';
 
 // API Response interfaces
 export interface ApiResponse<T = any> {
@@ -42,10 +41,10 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add auth token if available
-    const token = (store.getState().ui as any)?.authToken; // You might want to add auth to your UI slice
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Add auth token if available and valid
+    const authHeader = authService.getAuthHeader();
+    if (authHeader && 'Authorization' in authHeader) {
+      config.headers.Authorization = authHeader.Authorization;
     }
     
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
@@ -83,45 +82,23 @@ apiClient.interceptors.response.use(
     
     // Handle common errors with specific messages
     if (enhancedError.isAuthError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Authentication required. Please login again.'
-      }));
+      // Auto-logout on authentication error
+      authService.logout();
+      console.error('Authentication required. Please login again.');
     } else if (enhancedError.isForbiddenError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Access denied. You do not have permission to perform this action.'
-      }));
+      console.error('Access denied. You do not have permission to perform this action.');
     } else if (enhancedError.isNotFoundError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'The requested resource was not found.'
-      }));
+      console.error('The requested resource was not found.');
     } else if (enhancedError.isServerError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Server error. Please try again later.'
-      }));
+      console.error('Server error. Please try again later.');
     } else if (enhancedError.isNetworkError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Network error. Please check your connection.'
-      }));
+      console.error('Network error. Please check your connection.');
     } else if (enhancedError.isTimeoutError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Request timeout. Please try again.'
-      }));
+      console.error('Request timeout. Please try again.');
     } else if (enhancedError.isClientError) {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'Invalid request. Please check your input.'
-      }));
+      console.error('Invalid request. Please check your input.');
     } else {
-      store.dispatch(addNotification({
-        type: 'error',
-        message: 'An unexpected error occurred. Please try again.'
-      }));
+      console.error('An unexpected error occurred. Please try again.');
     }
     
     return Promise.reject(enhancedError);

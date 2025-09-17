@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import participantReducer from './slices/participantSlice';
 import assessmentReducer from './slices/assessmentSlice';
 import uiReducer from './slices/uiSlice';
+import authReducer from './slices/authSlice';
 
 export const store = configureStore({
   reducer: {
     participant: participantReducer,
     assessment: assessmentReducer,
     ui: uiReducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
