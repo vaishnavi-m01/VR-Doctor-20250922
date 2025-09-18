@@ -440,7 +440,7 @@ useEffect(() => {
       loadObservationForm(null);
     }
   }
-}, [selectedDate, routePatientId, factGScore, distressScore]); 
+}, [selectedDate, routePatientId]); 
 
 
   const [studyIdState, setStudyIdState] = useState<string>(studyId.toString());

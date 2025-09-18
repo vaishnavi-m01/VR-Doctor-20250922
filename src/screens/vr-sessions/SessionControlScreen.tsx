@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
-import Header from '../../components/Header';
+import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
 import Card from '../../components/Card';
 import Toggle from '../../components/Toggle';
 import SliderBar from '../../components/SliderBar';
@@ -13,7 +12,6 @@ import { formatDateDDMMYYYY } from 'src/utils/date';
 export default function SessionControlScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [cast, setCast] = useState(true);
-  const [voice, _setVoice] = useState(0.6);
   const [intensity, _setIntensity] = useState(0.75);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -22,6 +20,7 @@ export default function SessionControlScreen() {
   const [age, setAge] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("");
   const [medicalHistoryCreatedDate, setMedicalHistoryCreatedDate] = useState("");
+  const [doctorNotes, setDoctorNotes] = useState("");
 
   const route = useRoute<RouteProp<RootStackParamList, 'SessionControlScreen'>>();
   const { patientId, studyId, therapy, backgroundMusic, language, session,SessionNo } = route.params;
@@ -70,8 +69,20 @@ export default function SessionControlScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-6 pt-4">
-        <Header title="Active Session" />
+      <View className="px-4 pt-4">
+        <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+          <Text className="text-lg font-bold text-green-600">
+            Participant ID: {patientId}
+          </Text>
+
+          <Text className="text-base font-semibold text-green-600">
+            Study ID: {studyId || "N/A"}
+          </Text>
+
+          <Text className="text-base font-semibold text-gray-700">
+            Age: {age || "Not specified"}
+          </Text>
+        </View>
       </View>
 
       <ScrollView className="flex-1 p-6 gap-5">
@@ -80,44 +91,26 @@ export default function SessionControlScreen() {
           {/* Left Column - Participant Profile */}
           <View className="w-80">
             <Card className="p-4">
-              <Text className="font-bold text-base mb-4 text-gray-700">Particpant Profile</Text>
-              <Text className="font-semibold text-lg mb-3">Martin Sangma</Text>
-
-              {/* Profile Image */}
-              <View className="items-center mb-4">
-                <View className="w-24 h-24 rounded-full bg-gradient-to-br from-green-200 to-green-400 items-center justify-center overflow-hidden">
-                  <View className="w-20 h-20 rounded-full bg-white items-center justify-center">
-                    <Text className="text-2xl">👨‍⚕️</Text>
-                  </View>
-                </View>
-              </View>
-
+              <Text className="font-bold text-base mb-4 text-gray-700">Participant Profile</Text>
+              
               {/* Participant Details */}
               <View className="gap-2">
+                <View className="flex-row justify-between py-1">
+                  <Text className="text-sm text-gray-600">Name:</Text>
+                  <Text className="text-sm font-medium">Martin Sangma</Text>
+                </View>
                 <View className="flex-row justify-between py-1">
                   <Text className="text-sm text-gray-600">Age:</Text>
                   <Text className="text-sm font-medium">{age}</Text>
                 </View>
-                {/* <View className="flex-row justify-between py-1">
-                  <Text className="text-sm text-gray-600">Address:</Text>
-                  <Text className="text-sm font-medium">Lait stop, Shillong</Text>
-                </View> */}
                 <View className="flex-row justify-between py-1">
-                  <Text className="text-sm text-gray-600">date:</Text>
+                  <Text className="text-sm text-gray-600">Date:</Text>
                   <Text className="text-sm font-medium">{medicalHistoryCreatedDate}</Text>
                 </View>
                 <View className="flex-row justify-between py-1">
                   <Text className="text-sm text-gray-600">Contact Number:</Text>
                   <Text className="text-sm font-medium">{phoneNumber}</Text>
                 </View>
-                {/* <View className="flex-row justify-between py-1">
-                  <Text className="text-sm text-gray-600">Emergency Contact:</Text>
-                  <Text className="text-sm font-medium">97744-04558</Text>
-                </View>
-                <View className="flex-row justify-between py-1">
-                  <Text className="text-sm text-gray-600">Email:</Text>
-                  <Text className="text-sm font-medium">N/A</Text>
-                </View> */}
               </View>
             </Card>
 
@@ -125,20 +118,17 @@ export default function SessionControlScreen() {
             <Card className="p-4 mt-4">
               <Text className="font-bold text-base mb-4 text-gray-700">Doctor's Notes</Text>
 
-              {/* Search Bar */}
-              <View className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-4 flex-row items-center">
-                <Text className="text-gray-400 mr-2">🔍</Text>
-                <Text className="text-gray-400">Search</Text>
-              </View>
-
-              {/* Notes List */}
-              <View className="gap-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <Text className="text-sm font-medium">Previous Notes</Text>
-                  </View>
-                ))}
-              </View>
+              {/* Notes Text Input */}
+              <TextInput
+                value={doctorNotes}
+                onChangeText={setDoctorNotes}
+                placeholder="Enter your notes here..."
+                multiline
+                numberOfLines={6}
+                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-3 text-base text-gray-700"
+                textAlignVertical="top"
+                style={{ minHeight: 120 }}
+              />
             </Card>
           </View>
 
@@ -238,10 +228,7 @@ export default function SessionControlScreen() {
                   />
                 </View>
 
-                {/* Volume and Settings */}
-                <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
-                  <Text className="text-sm">🔊</Text>
-                </Pressable>
+                {/* Settings */}
                 <Pressable className="w-8 h-8 rounded items-center justify-center bg-gray-200">
                   <Text className="text-sm">⛶</Text>
                 </Pressable>
@@ -290,41 +277,6 @@ export default function SessionControlScreen() {
                 </View>
               </View>
 
-              {/* Bottom Row - Volume Control and Voice Slider */}
-              <View className="flex-row items-center gap-6">
-                {/* Volume Control Circle */}
-                <View className="items-center">
-                  <View className="w-28 h-28 rounded-full bg-gray-100 relative items-center justify-center">
-                    {/* Orange progress circle */}
-                    <View className="w-24 h-24 rounded-full border-4 border-gray-200 items-center justify-center relative">
-                      <View
-                        className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-400 border-r-orange-400"
-                        style={{
-                          borderBottomColor: intensity >= 0.5 ? '#fb923c' : 'transparent',
-                          borderLeftColor: intensity >= 0.75 ? '#fb923c' : 'transparent',
-                          transform: [{ rotate: '-90deg' }]
-                        }}
-                      />
-                      <Text className="text-2xl font-bold text-gray-700">75</Text>
-                      <Text className="text-xs text-gray-500">Volume</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Voice Control Slider */}
-                <View className="flex-1">
-                  <View className="h-2 bg-gray-200 rounded-full relative">
-                    <View
-                      className="h-2 bg-green-400 rounded-full absolute top-0 left-0"
-                      style={{ width: `${Math.round(voice * 100)}%` }}
-                    />
-                    <View
-                      className="w-4 h-4 bg-green-400 rounded-full absolute top-[-4px] border-2 border-white shadow-sm"
-                      style={{ left: `${Math.round(voice * 100 - 2)}%` }}
-                    />
-                  </View>
-                </View>
-              </View>
             </Card>
           </View>
         </View>

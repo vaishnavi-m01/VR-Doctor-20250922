@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Modal, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableWithoutFeedback } from "react-native";
 
 type DropdownOption = { label: string; value: string };
 
@@ -49,28 +48,47 @@ export function DropdownField({
       </TouchableOpacity>
 
       {/* Modal Dropdown */}
-      {isVisible && (
-         <View className="mt-1 bg-white border border-[#dce9e4] rounded-2xl shadow-lg max-h-60">
-
-          <TouchableWithoutFeedback> 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {options.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                onPress={() => handleSelect(option)}
-                className={`p-4 border-b border-gray-100 ${value === option.value ? 'bg-blue-50' : ''
-                  }`}
+      <Modal
+        visible={isVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsVisible(false)}
+      >
+        <Pressable 
+          className="flex-1 bg-black/20 justify-center items-center"
+          onPress={() => setIsVisible(false)}
+        >
+          <View className="bg-white rounded-2xl shadow-lg max-h-80 w-80 mx-4">
+            {/* Header */}
+            <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold text-gray-800">{label}</Text>
+              <Pressable
+                onPress={() => setIsVisible(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
               >
-                <Text className={`text-base ${value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
-                  }`}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          </TouchableWithoutFeedback>
-        </View>
-      )}
+                <Ionicons name="close" size={20} color="#666" />
+              </Pressable>
+            </View>
+
+            {/* Options List */}
+            <ScrollView showsVerticalScrollIndicator={false} className="max-h-60">
+              {options.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  onPress={() => handleSelect(option)}
+                  className={`p-4 border-b border-gray-100 ${value === option.value ? 'bg-blue-50' : ''
+                    }`}
+                >
+                  <Text className={`text-base ${value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
+                    }`}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
