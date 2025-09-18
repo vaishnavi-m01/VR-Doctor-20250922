@@ -47,7 +47,7 @@ export default function PatientScreening() {
   console.log("clinicalCheckList", clinicalChecklist)
   const [conds, setConds] = useState<string[]>([]);
   console.log("condss", conds)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
   const [PVID, setPVID] = useState<string | null>(null);
   const [PMSID, setPMSID] = useState<string | null>(null);
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
@@ -164,7 +164,7 @@ export default function PatientScreening() {
       newErrors.temperature = "Temperature is required";
     }
     if (!bmi || bmi.trim() === "") {
-      newErrors.bmi = "BMI is required";
+      newErrors.bmi = "BMI";
     }
     if (!dt || dt === 0) {
       newErrors.dt = "Distress Thermometer score is required";
@@ -273,9 +273,10 @@ export default function PatientScreening() {
         type: 'success',
         text1: PMSID ? 'Updated Successfully' : 'Added Successfully',
         text2: 'Patient screening saved successfully!',
-        onHide: () => navigation.goBack(),
-        position: 'top',
+        position: "top",
         topOffset: 50,
+        visibilityTime: 1000,
+        onHide: () => navigation.goBack(),
       });
 
     } catch (err) {
@@ -336,16 +337,42 @@ export default function PatientScreening() {
 
         <FormCard icon="I" title="Medical Details">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-xs text-muted">Distress Thermometer (0–10)</Text>
+            <Text
+              className={`text-xs ${errors.dt ? "text-red-500" : "text-muted"}`}
+            >
+              Distress Thermometer (0–10)
+            </Text>
+
             <Pressable
-              onPress={() => navigation.navigate('DistressThermometerScreen', { patientId, age, studyId })}
+              onPress={() => {
+
+                navigation.navigate("DistressThermometerScreen", {
+                  patientId,
+                  age,
+                  studyId,
+                });
+              }}
               className="px-4 py-3 bg-[#0ea06c] rounded-lg"
             >
-              <Text className="text-xs text-white font-medium">Assessment: Distress Thermometer scoring 0-10</Text>
+              <Text className="text-xs text-white font-medium">
+                Assessment: Distress Thermometer scoring 0-10
+              </Text>
             </Pressable>
           </View>
-          <Thermometer value={dt} onChange={setDt} />
-          {errors.dt && <Text className="text-red-500 text-xs mt-8">{errors.dt}</Text>}
+
+
+          <Thermometer
+            value={dt}
+            onChange={(value) => {
+              setDt(value);
+
+              if (errors.dt) {
+                setErrors((prev) => ({ ...prev, dt: "" }));
+              }
+            }}
+          />
+
+
 
           {/* <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
@@ -372,81 +399,142 @@ export default function PatientScreening() {
           <Text className="text-lg mt-3 font-semibold">Vitals</Text>
           <View className="flex-row gap-3 mt-3">
             <View className="flex-1">
-              <Field label="Pulse Rate (bpm)" placeholder="76" value={pulseRate} onChangeText={setPulseRate} keyboardType="numeric" />
-              {errors.pulseRate && <Text className="text-red-500 text-xs mt-1">{errors.pulseRate}</Text>}
+
+              <Field
+                label=" Pulse Rate (bpm)"
+                placeholder="76"
+                error={errors.pulseRate}
+                value={pulseRate}
+                onChangeText={setPulseRate}
+                keyboardType="numeric"
+              />
             </View>
+
             <View className="flex-1">
-              <Field label="Blood Pressure (mmHg)" placeholder="120/80" value={bloodPressure} onChangeText={setBloodPressure} />
-              {errors.bloodPressure && <Text className="text-red-500 text-xs mt-1">{errors.bloodPressure}</Text>}
+
+              <Field
+                label='Blood Pressure (mmHg)'
+                placeholder="120/80"
+                error={errors.bloodPressure}
+                value={bloodPressure}
+                onChangeText={setBloodPressure}
+              />
             </View>
+
             <View className="flex-1">
-              <Field label="Temperature (°C)" placeholder="36.8" value={temperature} onChangeText={setTemperature} keyboardType="numeric" />
-              {errors.temperature && <Text className="text-red-500 text-xs mt-1">{errors.temperature}</Text>}
+              <Field
+                label='Temperature (°C)'
+                error={errors.temperature}
+                placeholder="36.8"
+                value={temperature}
+                onChangeText={setTemperature}
+                keyboardType="numeric"
+              />
             </View>
+
             <View className="flex-1">
-              <Field label="BMI" placeholder="22.5" value={bmi} onChangeText={setBmi} keyboardType="numeric" />
-              {errors.bmi && <Text className="text-red-500 text-xs mt-1">{errors.bmi}</Text>}
+              <Field
+                label="BMI"
+                error={errors.bmi}
+                placeholder="22.5"
+                value={bmi}
+                onChangeText={setBmi}
+                keyboardType="numeric"
+              />
+
             </View>
+
+
           </View>
         </FormCard>
 
         <FormCard icon="⚙️" title="Devices">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text className="text-xs text-[#4b5f5a] mb-2">Any electronic implants?</Text>
+              <Text
+                className={`text-xs mb-2 ${errors.implants && !implants ? "text-red-500" : "text-[#4b5f5a]"
+                  }`}
+              >
+                Any electronic implants?
+              </Text>
 
               <View className="flex-row gap-2">
                 <Pressable
-                  onPress={() => setImplants('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                  onPress={() => setImplants("Yes")}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
-                  <Text className={`text-lg mr-1 ${implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
-                  <Text className={`font-medium text-xs ${implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setImplants('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-                    }`}
-                >
-                  <Text className={`text-lg mr-1 ${implants === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
-                  <Text className={`font-medium text-xs ${implants === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                  <Text className={`text-lg mr-1 ${implants === "Yes" ? "text-white" : "text-[#2c4a43]"}`}>✅</Text>
+                  <Text className={`font-medium text-xs ${implants === "Yes" ? "text-white" : "text-[#2c4a43]"}`}>Yes</Text>
                 </Pressable>
 
+                <Pressable
+                  onPress={() => setImplants("No")}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === "No" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
+                    }`}
+                >
+                  <Text className={`text-lg mr-1 ${implants === "No" ? "text-white" : "text-[#2c4a43]"}`}>❌</Text>
+                  <Text className={`font-medium text-xs ${implants === "No" ? "text-white" : "text-[#2c4a43]"}`}>No</Text>
+                </Pressable>
               </View>
-              {errors.implants && <Text className="text-red-500 text-xs mb-1">{errors.implants}</Text>}
             </View>
+
+
 
             <View className="flex-1">
-              <Text className="text-xs text-[#4b5f5a] mb-2">Any prosthetics or orthotics device?</Text>
+              <Text
+                // className={`text-xs mb-2 ${errors.prosthetics ? "text-red-500" : "text-[#4b5f5a]"
+                className={`text-xs mb-2 ${errors.prosthetics && !prosthetics ? "text-red-500" : "text-[#4b5f5a]"
+
+                  }`}
+              >
+                Any prosthetics or orthotics device?
+
+              </Text>
 
               <View className="flex-row gap-2">
                 <Pressable
-                  onPress={() => setProsthetics('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                  onPress={() => setProsthetics("Yes")}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
-                  <Text className={`text-lg mr-1 ${prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
-                  <Text className={`font-medium text-xs ${prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+                  <Text className={`text-lg mr-1 ${prosthetics === "Yes" ? "text-white" : "text-[#2c4a43]"}`}>✅</Text>
+                  <Text className={`font-medium text-xs ${prosthetics === "Yes" ? "text-white" : "text-[#2c4a43]"}`}>Yes</Text>
                 </Pressable>
+
                 <Pressable
-                  onPress={() => setProsthetics('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                  onPress={() => setProsthetics("No")}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === "No" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
-                  <Text className={`text-lg mr-1 ${prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
-                  <Text className={`font-medium text-xs ${prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+                  <Text className={`text-lg mr-1 ${prosthetics === "No" ? "text-white" : "text-[#2c4a43]"}`}>❌</Text>
+                  <Text className={`font-medium text-xs ${prosthetics === "No" ? "text-white" : "text-[#2c4a43]"}`}>No</Text>
                 </Pressable>
               </View>
-              {errors.prosthetics && <Text className="text-red-500 text-xs mb-1">{errors.prosthetics}</Text>}
             </View>
+
           </View>
         </FormCard>
 
-        <FormCard icon="✔︎" title="Clinical Checklist">
-          <Chip items={clinicalChecklist.map((item) => item.ExeperiencType)} value={conds} onChange={setConds} />
+        <FormCard
+          icon="✔︎"
+          title="Clinical Checklist"
+          error={errors.conds ? true : false}
+        >
+          <Chip
+            items={clinicalChecklist.map((item) => item.ExeperiencType)}
+            value={conds}
+            onChange={(selected) => {
+              setConds(selected);
+              if (errors.conds && selected.length > 0) {
+                setErrors((prev) => ({ ...prev, conds: "" }));
+              }
+            }}
+          />
           <View style={{ height: 150 }} />
         </FormCard>
+
+
       </ScrollView>
 
       <BottomBar>

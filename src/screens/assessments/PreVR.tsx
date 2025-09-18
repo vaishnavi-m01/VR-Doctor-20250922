@@ -200,14 +200,12 @@ export default function PreVR() {
             <React.Fragment key={v}>
               <Pressable
                 onPress={() => setResponse(questionId, v.toString(), false, index)}
-                className={`flex-1 py-3 items-center justify-center ${
-                  value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
-                }`}
+                className={`flex-1 py-3 items-center justify-center ${value?.toString() === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
+                  }`}
               >
                 <Text
-                  className={`font-medium text-sm ${
-                    value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
-                  }`}
+                  className={`font-medium text-sm ${value?.toString() === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
+                    }`}
                 >
                   {v}
                 </Text>
@@ -226,9 +224,8 @@ export default function PreVR() {
       <View className="flex-row gap-2">
         <Pressable
           onPress={() => setResponse(questionId, 'Yes', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-            value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-          }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+            }`}
         >
           <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
           <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
@@ -237,9 +234,8 @@ export default function PreVR() {
         </Pressable>
         <Pressable
           onPress={() => setResponse(questionId, 'No', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
-            value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-          }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+            }`}
         >
           <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
           <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
@@ -257,14 +253,12 @@ export default function PreVR() {
             <React.Fragment key={option}>
               <Pressable
                 onPress={() => setResponse(questionId, option, false, index)}
-                className={`flex-1 py-3 items-center justify-center ${
-                  value === option ? 'bg-[#4FC264]' : 'bg-white'
-                }`}
+                className={`flex-1 py-3 items-center justify-center ${value === option ? 'bg-[#4FC264]' : 'bg-white'
+                  }`}
               >
                 <Text
-                  className={`font-medium text-xs text-center ${
-                    value === option ? 'text-white' : 'text-[#4b5f5a]'
-                  }`}
+                  className={`font-medium text-xs text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'
+                    }`}
                 >
                   {option}
                 </Text>
@@ -349,7 +343,7 @@ export default function PreVR() {
       return;
     }
 
-    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+    const hasEmptyFields = Object.entries(responses).some(([_questionId, entries]) =>
       entries.some((entry) => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
     );
 
@@ -386,7 +380,7 @@ export default function PreVR() {
       return;
     }
 
-    const hasEmptyFields = Object.entries(responses).some(([questionId, entries]) =>
+    const hasEmptyFields = Object.entries(responses).some(([_questionId, entries]) =>
       entries.some((entry) => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
     );
 
@@ -446,10 +440,12 @@ export default function PreVR() {
           type: 'success',
           text1: 'Success',
           text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
-          position: 'top',
+          position: "top",
           topOffset: 50,
+          visibilityTime: 1000,
+          onHide: () => navigation.goBack(),
         });
-        navigation.goBack();
+        // navigation.goBack();
       } else {
         Toast.show({
           type: 'error',

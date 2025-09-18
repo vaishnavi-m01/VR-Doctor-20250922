@@ -264,6 +264,9 @@ export default function InformedConsentForm({
                     type: "success",
                     text1: PICDID ? 'Updated Successfully' : 'Added Successfully',
                     text2: "Consent form submitted successfully",
+                    position: "top",
+                    topOffset: 50,
+                    visibilityTime: 1000,
                     onHide: () => navigation.goBack(),
                 });
 

@@ -1,12 +1,12 @@
-import React, { useState, useContext } from 'react';
+import  { useState, useContext } from 'react';
 import {
   View,
   Text,
   Pressable,
-  Modal,
   TouchableOpacity,
   ScrollView
 } from 'react-native';
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import AssessItem from '../../../components/AssessItem';
 import { apiService } from 'src/services';
 import { UserContext } from 'src/store/context/UserContext';
 import Toast from 'react-native-toast-message';
+import { Modal } from 'react-native';
 
 // Define the navigation prop type
 type OrientationTabNavigationProp = NativeStackNavigationProp<RootStackParamList>;

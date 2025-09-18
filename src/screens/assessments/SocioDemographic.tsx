@@ -524,7 +524,7 @@ export default function SocioDemographic() {
             : "Participant added successfully!",
           position: "top",
           topOffset: 50,
-          visibilityTime: 2000,
+          visibilityTime: 1000,
           onHide: () => navigation.goBack(),
         });
       }

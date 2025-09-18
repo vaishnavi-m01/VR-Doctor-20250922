@@ -2,13 +2,12 @@ import { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   Pressable,
   ActivityIndicator,
 } from "react-native";
 import Checkbox from "../../../../../components/Checkbox";
-import FormCard from "../../../../../components/FormCard";
+import FormCard from "../../../../../components/FormCard";    
 import Thermometer from "../../../../../components/Thermometer";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import BottomBar from "@components/BottomBar";

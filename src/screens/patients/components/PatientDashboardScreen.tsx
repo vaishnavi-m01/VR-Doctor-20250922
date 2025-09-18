@@ -1,12 +1,9 @@
-import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import Header from '../../../components/Header';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../Navigation/types';
-import AssessItem from '../../../components/AssessItem';
 import Card from '../../../components/Card';
-import { CalendarDaysIcon, ChartBarIcon, PlayCircleIcon } from 'react-native-heroicons/outline';
 import { 
   DEFAULT_PATIENT_INFO, 
   SESSION_CONSTANTS, 
