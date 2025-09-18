@@ -73,6 +73,8 @@ export default function ExitInterview() {
   const [exitInterviewOptions, setExitInterviewOptions] = useState<ExitInterviewOptions[]>([]);
   const [answers, setAnswers] = useState<{ [key: string]: string | string[] }>({});
   const [exitInterviewId, setExitInterviewId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
 
   // Fetch questions once
   useEffect(() => {
@@ -145,14 +147,14 @@ export default function ExitInterview() {
         setExitInterviewId(consolidatedInterview.ExitInterviewId || null);
 
         // Map flags (0/1) to selected checkbox strings for reasons
-    const reasonAnswers: string[] = [
-  ...(consolidatedInterview.MedicalReasons ? ['Medical reasons (e.g., worsening condition, side effects)'] : []),
-  ...(consolidatedInterview.TechnicalDifficulties ? ['Technical difficulties (e.g., VR device issues)'] : []),
-  ...(consolidatedInterview.LackOfBenefit ? ['Lack of perceived benefit'] : []),
-  ...(consolidatedInterview.TimeConstraints ? ['Time constraints or personal reasons'] : []),
-  ...(consolidatedInterview.AdherenceDifficulty ? ['Difficulty adhering to study requirements'] : []),
-  ...(consolidatedInterview.OtherReason ? ['Other'] : []),
-];
+        const reasonAnswers: string[] = [
+          ...(consolidatedInterview.MedicalReasons ? ['Medical reasons (e.g., worsening condition, side effects)'] : []),
+          ...(consolidatedInterview.TechnicalDifficulties ? ['Technical difficulties (e.g., VR device issues)'] : []),
+          ...(consolidatedInterview.LackOfBenefit ? ['Lack of perceived benefit'] : []),
+          ...(consolidatedInterview.TimeConstraints ? ['Time constraints or personal reasons'] : []),
+          ...(consolidatedInterview.AdherenceDifficulty ? ['Difficulty adhering to study requirements'] : []),
+          ...(consolidatedInterview.OtherReason ? ['Other'] : []),
+        ];
 
         // Find dynamic question id for reasons
         const reasonQuestionId = (Object.keys(groupedQuestions) as string[]).find((qid) => {
@@ -162,7 +164,7 @@ export default function ExitInterview() {
 
         // Set answers including checkboxes and others
         setAnswers({
-        ...(reasonQuestionId ? { [reasonQuestionId]: reasonAnswers } : {}),
+          ...(reasonQuestionId ? { [reasonQuestionId]: reasonAnswers } : {}),
           'EIQID-2': consolidatedInterview.VRExperienceRating || '',
           'EIQID-9': consolidatedInterview.WouldParticipateAgain || '',
           'EIQID-11': consolidatedInterview.WantsUpdates || '',
@@ -224,92 +226,83 @@ export default function ExitInterview() {
     setInterviewerDate(todayStr);
   };
 
-const isEmptyString = (value: any) =>
-  !value || (typeof value === 'string' && value.trim() === '');
+  const isEmptyString = (value: any) =>
+    !value || (typeof value === 'string' && value.trim() === '');
 
-const validateForm = (): boolean => {
-  const hasAnyResponse =
-    Object.keys(answers).length > 0 ||
-    !isEmptyString(training) ||
-    !isEmptyString(trainingExplain) ||
-    !isEmptyString(technicalIssues) ||
-    !isEmptyString(technicalDetails) ||
-    !isEmptyString(requirements) ||
-    !isEmptyString(requirementsExplain) ||
-    !isEmptyString(engagementSuggestions) ||
-    !isEmptyString(future) ||
-    !isEmptyString(updates) ||
-    !isEmptyString(studySuggestions) ||
-    !isEmptyString(overallRating) ||
-    !isEmptyString(vrHelpful) ||
-    !isEmptyString(vrChallenging) ||
-    !isEmptyString(otherReasonText) ||
-    !isEmptyString(participantSignature) ||
-    !isEmptyString(interviewerSignature) ||
-    !isEmptyString(participantDate) ||
-    !isEmptyString(interviewerDate);
 
-  if (!hasAnyResponse) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'No responses entered. Please fill the form.',
-      position: 'top',
-      topOffset: 50,
-    });
-    return false;
-  }
+  const handleValidate = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
 
-  const hasEmptyAnswers = Object.entries(answers).some(([_, answer]) => {
-    if (Array.isArray(answer)) {
-      return answer.length === 0;
+    const hasAnyResponse =
+      Object.keys(answers).length > 0 ||
+      !isEmptyString(training) ||
+      !isEmptyString(trainingExplain) ||
+      !isEmptyString(technicalIssues) ||
+      !isEmptyString(technicalDetails) ||
+      !isEmptyString(requirements) ||
+      !isEmptyString(requirementsExplain) ||
+      !isEmptyString(engagementSuggestions) ||
+      !isEmptyString(future) ||
+      !isEmptyString(updates) ||
+      !isEmptyString(studySuggestions) ||
+      !isEmptyString(overallRating) ||
+      !isEmptyString(vrHelpful) ||
+      !isEmptyString(vrChallenging) ||
+      !isEmptyString(otherReasonText) ||
+      !isEmptyString(participantSignature) ||
+      !isEmptyString(interviewerSignature) ||
+      !isEmptyString(participantDate) ||
+      !isEmptyString(interviewerDate);
+
+    if (!hasAnyResponse) {
+      newErrors.noResponses = 'No responses entered. Please fill the form.';
     }
-    return isEmptyString(answer);
-  });
 
-  if (
-    hasEmptyAnswers ||
-    isEmptyString(training) ||
-    isEmptyString(technicalIssues) ||
-    isEmptyString(requirements) ||
-    isEmptyString(participantSignature) ||
-    isEmptyString(interviewerSignature) ||
-    isEmptyString(participantDate) ||
-    isEmptyString(interviewerDate) ||
-    isEmptyString(vrHelpful) ||
-    isEmptyString(vrChallenging) ||
-    isEmptyString(engagementSuggestions) ||
-    isEmptyString(future)
-  ) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'All required fields must be filled',
-      position: 'top',
-      topOffset: 50,
-    });
-    return false;
-  }
+    if (Object.entries(answers).some(([_, answer]) => Array.isArray(answer) ? answer.length === 0 : isEmptyString(answer))) {
+      newErrors.answers = 'All answers are required';
+    }
 
-  return true;
-};
+    if (isEmptyString(training)) newErrors.training = 'Training is required';
+    if (isEmptyString(technicalIssues)) newErrors.technicalIssues = 'Technical issues field is required';
+    if (isEmptyString(requirements)) newErrors.requirements = 'Requirements field is required';
+    if (isEmptyString(participantSignature)) newErrors.participantSignature = 'Participant signature is required';
+    if (isEmptyString(interviewerSignature)) newErrors.interviewerSignature = 'Interviewer signature is required';
+    if (isEmptyString(participantDate)) newErrors.participantDate = 'Participant date is required';
+    if (isEmptyString(interviewerDate)) newErrors.interviewerDate = 'Interviewer date is required';
+    if (isEmptyString(vrHelpful)) newErrors.vrHelpful = 'This field is required';
+    if (isEmptyString(vrChallenging)) newErrors.vrChallenging = 'This field is required';
+    if (isEmptyString(engagementSuggestions)) newErrors.engagementSuggestions = 'This field is required';
+    if (isEmptyString(future)) newErrors.future = 'This field is required';
 
-  const handleValidate = () => {
-    if (validateForm()) {
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       Toast.show({
-        type: 'success',
-        text1: 'Validation Passed',
-        text2: 'All required fields are filled',
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill all required fields',
         position: 'top',
         topOffset: 50,
       });
+      return false;
     }
+
+    Toast.show({
+      type: 'success',
+      text1: 'Validation Passed',
+      text2: 'All required fields are valid',
+      position: 'top',
+      topOffset: 50,
+    });
+
+    return true;
   };
 
+
   const handleSave = async () => {
-     if (!validateForm()) {
-        return; 
-      }
+    if (!handleValidate()) {
+      return;
+    }
 
     try {
 
@@ -408,7 +401,7 @@ const validateForm = (): boolean => {
         style={{ paddingTop: 8, paddingBottom: '0.25rem' }}
       >
         <View className="bg-white border-b border-gray-200 rounded-xl flex-row justify-between items-center shadow-sm"
-        style={{ padding: 24}}
+          style={{ padding: 24 }}
         >
           <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>Participant ID: {patientId}</Text>
           <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
@@ -418,15 +411,15 @@ const validateForm = (): boolean => {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-[14px] bg-bg pb-[400px]" 
-       style={{ paddingTop: '0.2rem' }}
+      <ScrollView className="flex-1 p-[14px] bg-bg pb-[400px]"
+        style={{ paddingTop: '0.2rem' }}
       >
-        
+
         {/* Acknowledgment Card */}
         <FormCard icon="PI" title="Exit Interview">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => {}} />
+              <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => { }} />
             </View>
             <View className="flex-1">
               <DateField label="Interview Date" value={participantDate} onChange={setParticipantDate} />
@@ -497,25 +490,37 @@ const validateForm = (): boolean => {
         {/* Technical & Usability Issues */}
         <FormCard icon="3" title="Technical & Usability Issues">
           {/* Training */}
-          <Text className="text-xs text-[#4b5f5a] mb-2">
-            {findQuestionByPattern('training')?.QuestionText || findQuestionByPattern('adequate')?.QuestionText || 'Training/support on using the VR system was adequate?'}
-          </Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => setTraining('Yes')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-            >
-              <Text className={`text-lg mr-1 ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
-              <Text className={`font-medium text-xs ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setTraining('No')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-            >
-              <Text className={`text-lg mr-1 ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
-              <Text className={`font-medium text-xs ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
-            </Pressable>
+          {/* Training Question */}
+          <View className="mb-3">
+            <Text className={`text-xs mb-2 ${errors.training ? 'text-red-500' : 'text-[#4b5f5a]'}`}>
+              {findQuestionByPattern('training')?.QuestionText || findQuestionByPattern('adequate')?.QuestionText || 'Training/support on using the VR system was adequate?'}
+            </Text>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => {
+                  setTraining('Yes');
+                  setErrors(prev => ({ ...prev, training: undefined }));
+                }}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+              >
+                <Text className={`text-lg mr-1 ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                <Text className={`font-medium text-xs ${training === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setTraining('No');
+                  setErrors(prev => ({ ...prev, training: undefined }));
+                }}
+                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${training === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+              >
+                <Text className={`text-lg mr-1 ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                <Text className={`font-medium text-xs ${training === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+              </Pressable>
+            </View>
+            {/* Error message */}
+
           </View>
+
           {training === 'No' && (
             <View className="mt-3">
               <Field label="Please explain" placeholder="What support was missing?" value={trainingExplain} onChangeText={setTrainingExplain} />
@@ -551,25 +556,41 @@ const validateForm = (): boolean => {
 
         {/* Study Adherence Card */}
         <FormCard icon="4" title="Study Adherence & Protocol">
-          <Text className="text-xs text-[#4b5f5a] mb-2">
-            {findQuestionByPattern('requirements')?.QuestionText || findQuestionByPattern('reasonable')?.QuestionText || 'Were requirements reasonable?'}
+          <Text
+            className={`text-xs mb-2 ${errors.requirements ? 'text-red-500' : 'text-[#4b5f5a]'
+              }`}
+          >
+            {findQuestionByPattern('requirements')?.QuestionText ||
+              findQuestionByPattern('reasonable')?.QuestionText ||
+              'Were requirements reasonable?'}
           </Text>
           <View className="flex-row gap-2">
             <Pressable
-              onPress={() => setRequirements('Yes')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+              onPress={() => {
+                setRequirements('Yes');
+                setErrors((prev) => ({ ...prev, requirements: undefined })); // clear error
+              }}
+              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
             >
               <Text className={`text-lg mr-1 ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
               <Text className={`font-medium text-xs ${requirements === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
             </Pressable>
             <Pressable
-              onPress={() => setRequirements('No')}
-              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+              onPress={() => {
+                setRequirements('No');
+                setErrors((prev) => ({ ...prev, requirements: undefined })); // clear error
+              }}
+              className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${requirements === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+                }`}
             >
               <Text className={`text-lg mr-1 ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
               <Text className={`font-medium text-xs ${requirements === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
             </Pressable>
           </View>
+
+
+
           {requirements === 'No' && (
             <View className="mt-3">
               <Field label="If no, please explain" placeholder="Explain…" value={requirementsExplain} onChangeText={setRequirementsExplain} />
@@ -581,6 +602,7 @@ const validateForm = (): boolean => {
             <Field
               label={findQuestionByPattern('engaged')?.QuestionText || findQuestionByPattern('engagement')?.QuestionText || 'What could have helped you stay engaged?'}
               placeholder="Suggestions…"
+              error={errors?.engagementSuggestions}
               value={engagementSuggestions}
               onChangeText={setEngagementSuggestions}
             />
@@ -640,6 +662,7 @@ const validateForm = (): boolean => {
               label={findQuestionByPattern('suggestions')?.QuestionText || findQuestionByPattern('improve')?.QuestionText || 'Suggestions to improve the study'}
               placeholder="Your suggestions…"
               value={studySuggestions}
+              error={errors.studySuggestions}
               onChangeText={setStudySuggestions}
             />
           </View>
@@ -649,7 +672,7 @@ const validateForm = (): boolean => {
         <FormCard icon="✔︎" title="Acknowledgment & Consent">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Field label="Participant Signature (full name)" placeholder="Participant full name" value={participantSignature} onChangeText={setParticipantSignature} />
+              <Field label="Participant Signature (full name)" placeholder="Participant full name" value={participantSignature} onChangeText={setParticipantSignature} error={errors?.participantSignature} />
             </View>
             <View className="flex-1">
               <DateField label="Interview CreatedDate" value={participantDate} onChange={setParticipantDate} />
@@ -657,7 +680,7 @@ const validateForm = (): boolean => {
           </View>
           <View className="flex-row gap-3 mt-2">
             <View className="flex-1">
-              <Field label="Interviewer Signature (full name)" placeholder="Interviewer full name" value={interviewerSignature} onChangeText={setInterviewerSignature} />
+              <Field label="Interviewer Signature (full name)" placeholder="Interviewer full name" value={interviewerSignature} onChangeText={setInterviewerSignature} error={errors?.interviewerSignature} />
             </View>
             <View className="flex-1">
               <DateField label="Modified Date" value={interviewerDate} onChange={setInterviewerDate} />

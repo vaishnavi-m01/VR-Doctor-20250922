@@ -66,6 +66,8 @@ export default function InformedConsentForm({
     const [witnessSignaturePad, setWitnessSignaturePad] = useState('');
 
     const [informedConsent, setInformedConsent] = useState<setInformedConsent[]>([]);
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
 
 
 
@@ -112,10 +114,10 @@ export default function InformedConsentForm({
 
 
     /* ---------------------- Actions ---------------------------- */
-    const allInitialed = useMemo(
-        () => Object.values(acks).every(Boolean) && agree,
-        [acks, agree]
-    );
+    // const allInitialed = useMemo(
+    //     () => Object.values(acks).every(Boolean) && agree,
+    //     [acks, agree]
+    // );
 
     useFocusEffect(
         React.useCallback(() => {
@@ -140,30 +142,61 @@ export default function InformedConsentForm({
 
 
 
+    useEffect(() => {
+        const allInitialed = informedConsent.every((item) => acks[item.ICMID]);
+        if (allInitialed) {
+            setErrors((prev) => {
+                const { allInitialed, ...rest } = prev;
+                return rest; // remove the error key so label turns normal
+            });
+        }
+    }, [acks, informedConsent]);
+
     const validateForm = () => {
-        const requiredFields = [
-            participantName,
-            ageInput,
-            qualification,
-            allInitialed ? "ok" : "",
-            signatures.subjectName,
-            subjectSignaturePad,
-            // signatures.subjectDate,
-            signatures.coPIName,
-            coPISignaturePad,
-            // signatures.coPIDate,
-            signatures.investigatorName,
-            signatures.witnessName,
-            witnessSignaturePad,
-            // signatures.witnessDate,
+        const newErrors: { [key: string]: string } = {};
 
-        ];
+        // if (!participantName || participantName.trim() === "") {
+        //     newErrors.participantName = "Participant Name is required";
+        // }
+        // if (!ageInput || ageInput.trim() === "") {
+        //     newErrors.ageInput = "Age is required";
+        // }
+        // if (!qualification || qualification.trim() === "") {
+        //     newErrors.qualification = "Qualification is required";
+        // }
+        const allInitialed = informedConsent.every((item) => acks[item.ICMID]);
+        if (!allInitialed) {
+            newErrors.allInitialed = "Please initial all required sections";
+        }
+        if (!agree) {
+            newErrors.agree = "agree is required"
+        }
 
-        const hasEmptyField = requiredFields.some(
-            (field) => !field || field.toString().trim() === ""
-        );
+        if (!signatures.subjectName || signatures.subjectName.trim() === "") {
+            newErrors.subjectName = "Subject name is required";
+        }
+        if (!subjectSignaturePad) {
+            newErrors.subjectSignaturePad = "Subject signature is required";
+        }
+        if (!signatures.coPIName || signatures.coPIName.trim() === "") {
+            newErrors.coPIName = "Co-PI name is required";
+        }
+        if (!coPISignaturePad) {
+            newErrors.coPISignaturePad = "Co-PI signature is required";
+        }
+        if (!signatures.investigatorName || signatures.investigatorName.trim() === "") {
+            newErrors.investigatorName = "Investigator name is required";
+        }
+        if (!signatures.witnessName || signatures.witnessName.trim() === "") {
+            newErrors.witnessName = "Witness name is required";
+        }
+        if (!witnessSignaturePad) {
+            newErrors.witnessSignaturePad = "Witness signature is required";
+        }
 
-        if (hasEmptyField) {
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
             Toast.show({
                 type: "error",
                 text1: "Validation Error",
@@ -174,6 +207,7 @@ export default function InformedConsentForm({
             return false;
         }
 
+        // Otherwise, show success toast
         Toast.show({
             type: "success",
             text1: "Validation Passed",
@@ -186,13 +220,12 @@ export default function InformedConsentForm({
     };
 
 
-
     const handleClear = () => {
-        setStudyNumber("");
+        // setStudyNumber("");
 
-        setParticipantName("");
-        setAgeInput("");
-        setQualification("");
+        // setParticipantName("");
+        // setAgeInput("");
+        // setQualification("");
 
         setAcks({});
         setAgree(false);
@@ -426,6 +459,7 @@ export default function InformedConsentForm({
                             label="Participant’s Name"
                             placeholder="Full name"
                             value={participantName}
+
                             onChangeText={setParticipantName}
                         />
                     </View>
@@ -464,6 +498,7 @@ export default function InformedConsentForm({
                                     placeholderTextColor="#9ca3af"
                                     keyboardType="numeric"
                                     className="text-base text-[#0b1f1c]"
+
                                 />
                             </InputShell>
                         </View>
@@ -484,7 +519,9 @@ export default function InformedConsentForm({
                 </FormCard>
 
                 {/* Acknowledgements */}
-                <FormCard icon="C" title="Consent Acknowledgements (Initial each)">
+                <FormCard icon="C" title="Consent Acknowledgements (Initial each)"
+                    error={!!errors.allInitialed}
+                >
                     {informedConsent.map((s, idx) => (
                         <View key={s.ICMID} className="mb-3">
                             <View className="bg-white border border-[#e6eeeb] rounded-2xl p-3">
@@ -535,7 +572,10 @@ export default function InformedConsentForm({
                             >
                                 {agree && <Text className="text-white text-[10px]">✓</Text>}
                             </Pressable>
-                            <Text className="text-[#0b1f1c]">
+                            <Text
+                                className={`text-sm font-medium ${errors && !agree ? "text-red-500" : "text-[#0b1f1c]"
+                                    }`}
+                            >
                                 I agree to voluntarily take part in the above study.
                             </Text>
                         </View>
@@ -548,20 +588,29 @@ export default function InformedConsentForm({
                     <View className="space-y-4">
                         <View className="flex-row space-x-4">
                             <SignatureBlock
-                                title="Signature (or Thumb impression) of the Subject / Legally Acceptable Representative"
+                                title="Signature (or Thumb impression) of the Subject"
                                 nameLabel="Signatory’s Name"
+                                error={{
+                                    subjectName: errors.subjectName,
+                                    subjectSignaturePad: errors.subjectSignaturePad,
+                                }}
                                 nameValue={signatures.subjectName}
-                                onChangeName={(v) => setSig('subjectName', v)}
+                                onChangeName={(v) => setSig("subjectName", v)}
                                 signatureValue={subjectSignaturePad}
                                 onChangeSignature={setSubjectSignaturePad}
                                 dateValue={signatures.subjectDate}
-                                onChangeDate={(v) => setSig('subjectDate', v)}
+                                onChangeDate={(v) => setSig("subjectDate", v)}
                             />
+
 
                             <SignatureBlock
                                 title="Co-Principal Investigator Signature"
                                 nameLabel="Co-PI Name"
                                 nameValue={signatures.coPIName}
+                                error={{
+                                    subjectName: errors.coPIName,
+                                    subjectSignaturePad: errors.coPISignaturePad,
+                                }}
                                 onChangeName={(v) => setSig('coPIName', v)}
                                 signatureValue={coPISignaturePad}
                                 onChangeSignature={setCoPISignaturePad}
@@ -572,25 +621,20 @@ export default function InformedConsentForm({
                         </View>
 
                         <View className="flex-row space-x-4">
-                            <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
-                                <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-3">
-                                    Study Investigator’s Name
-                                </Text>
-                                <InputShell>
-                                    <TextInput
-                                        value={signatures.investigatorName}
-                                        onChangeText={(v: any) => setSig('investigatorName', v)}
-                                        placeholder="Enter name"
-                                        placeholderTextColor="#9ca3af"
-                                        className="text-sm text-[#0b1f1c]"
-                                    />
-                                </InputShell>
-                            </View>
+                            <InvestigatorNameBlock
+                                value={signatures.investigatorName}
+                                onChange={(v) => setSig("investigatorName", v)}
+                                error={errors.investigatorName}
+                            />
 
                             <SignatureBlock
                                 title="Witness Signature"
                                 nameLabel="Name of the Witness"
                                 nameValue={signatures.witnessName}
+                                error={{
+                                    subjectName: errors.witnessName,
+                                    subjectSignaturePad: errors.witnessSignaturePad,
+                                }}
                                 onChangeName={(v) => setSig('witnessName', v)}
                                 signatureValue={witnessSignaturePad}
                                 onChangeSignature={setWitnessSignaturePad}
@@ -661,77 +705,169 @@ function InputShell({ children }: { children: React.ReactNode }) {
     );
 }
 
-function SignatureBlock({
+
+
+type SignatureBlockProps = {
+    title: string;
+    nameLabel: string;
+    nameValue: string;
+    dateValue: string;
+    signatureValue: string;
+    error?: {
+        subjectName?: string;
+        subjectSignaturePad?: string;
+    };
+    onChangeName: (v: string) => void;
+    onChangeDate: (v: string) => void;
+    onChangeSignature: (v: string) => void;
+};
+
+export function SignatureBlock({
     title,
     nameLabel,
+    error,
     nameValue,
     onChangeName,
     dateValue,
     onChangeDate,
     signatureValue,
     onChangeSignature,
-}: {
-    title: string;
-    nameLabel: string;
-    nameValue: string;
-    onChangeName: (v: string) => void;
-    dateValue: string;
-    onChangeDate: (v: string) => void;
-    signatureValue: string;               // new
-    onChangeSignature: (v: string) => void; // new
-}) {
+}: SignatureBlockProps) {
+    const [nameError, setNameError] = useState(!!error?.subjectName);
+    const [sigError, setSigError] = useState(!!error?.subjectSignaturePad);
+
+    // Hide name error when user types
+    useEffect(() => {
+        if (nameValue && nameValue.trim() !== "") {
+            setNameError(false);
+        } else if (error?.subjectName) {
+            setNameError(true);
+        }
+    }, [nameValue, error?.subjectName]);
+
+    // Hide signature error when user signs
+    useEffect(() => {
+        if (signatureValue && signatureValue.trim() !== "") {
+            setSigError(false);
+        } else if (error?.subjectSignaturePad) {
+            setSigError(true);
+        }
+    }, [signatureValue, error?.subjectSignaturePad]);
+
     return (
         <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
-            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-3">{title}</Text>
+            {/* Title */}
+            <Text
+                className={`text-[13px] font-semibold mb-3 ${sigError ? "text-red-500" : "text-[#4b5f5a]"
+                    }`}
+            >
+                {title}
+            </Text>
 
             {/* Signature pad */}
-            <View className="border-2 border-dashed border-[#cfe0db] rounded-lg min-h-[96px] mb-3 bg-[#fafdfb]">
+            <View
+                className={`border-2 border-dashed rounded-lg min-h-[96px] mb-3 bg-[#fafdfb] border-[#cfe0db]
+        }`}
+            >
                 <TextInput
-                    value={signatureValue}             // separate state
-                    onChangeText={onChangeSignature}   // separate setter
+                    value={signatureValue}
+                    onChangeText={onChangeSignature}
                     placeholder="Signature Area"
                     placeholderTextColor="#90a29d"
                     style={{
                         flex: 1,
-                        textAlign: 'center',
+                        textAlign: "center",
                         padding: 10,
                         fontSize: 16,
-                        color: '#0b1f1c',
+                        color: "#0b1f1c",
                     }}
                 />
             </View>
 
             {/* Name + Date */}
             <View className="flex-row space-x-3">
+                {/* Name */}
                 <View className="flex-[1.4]">
-                    <Text className="text-[12px] text-[#6b7a77] mb-1">{nameLabel}</Text>
-                    <InputShell>
-                        <TextInput
-                            value={nameValue}
-                            onChangeText={onChangeName}
-                            placeholder="Enter name"
-                            placeholderTextColor="#9ca3af"
-                            className="text-sm text-[#0b1f1c]"
-                        />
-                    </InputShell>
+                    <Text
+                        className={`text-[12px] mb-1 ${nameError ? "text-red-500" : "text-[#6b7a77]"
+                            }`}
+                    >
+                        {nameLabel}
+                    </Text>
+                    <TextInput
+                        value={nameValue}
+                        onChangeText={onChangeName}
+                        placeholder="Enter name"
+                        placeholderTextColor="#9ca3af"
+                        className={`text-sm text-[#0b1f1c] border rounded-xl px-3 py-2 border-[#dce9e4]
+            }`}
+                    />
                 </View>
 
+                {/* Date */}
                 <View className="flex-[0.8]">
                     <Text className="text-[12px] text-[#6b7a77] mb-1">Date</Text>
-                    <InputShell>
-                        <View className="flex-row items-center">
-                            <TextInput
-                                value={dateValue}
-                                onChangeText={onChangeDate}
-                                placeholder="dd/mm/yyyy"
-                                placeholderTextColor="#9ca3af"
-                                className="flex-1 text-sm text-[#0b1f1c]"
-                            />
-                            <EvilIcons name="calendar" size={22} color="#6b7a77" />
-                        </View>
-                    </InputShell>
+                    <View className="flex-row items-center border border-[#dce9e4] rounded-xl px-3 py-2">
+                        <TextInput
+                            value={dateValue}
+                            onChangeText={onChangeDate}
+                            placeholder="dd/mm/yyyy"
+                            placeholderTextColor="#9ca3af"
+                            className="flex-1 text-sm text-[#0b1f1c]"
+                        />
+                        <EvilIcons name="calendar" size={22} color="#6b7a77" />
+                    </View>
                 </View>
             </View>
         </View>
     );
 }
+
+
+
+
+export function InvestigatorNameBlock({
+    value,
+    onChange,
+    error,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    error?: string;
+}) {
+    const [showError, setShowError] = useState(!!error);
+
+    // Update error visibility when user types
+    useEffect(() => {
+        if (value && value.trim() !== "") {
+            setShowError(false); // hide red when typing
+        } else if (error) {
+            setShowError(true); // show red when error + empty
+        }
+    }, [value, error]);
+
+    return (
+        <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
+            {/* Label */}
+            <Text
+                className={`text-[13px] font-semibold mb-3 ${showError ? "text-red-500" : "text-[#4b5f5a]"
+                    }`}
+            >
+                Study Investigator’s Name
+            </Text>
+
+
+            <TextInput
+                value={value}
+                onChangeText={onChange}
+                placeholder="Enter name"
+                placeholderTextColor="#9ca3af"
+                className={`text-sm text-[#0b1f1c] border rounded-xl px-3 py-2  border-[#dce9e4]
+                        }`}
+            />
+        </View>
+    );
+}
+
+
+

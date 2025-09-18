@@ -10,6 +10,7 @@ interface DropdownFieldProps {
   onValueChange: (val: string) => void;
   options: DropdownOption[];
   placeholder?: string;
+  error?: string; // Optional error message
 }
 
 export function DropdownField({
@@ -18,6 +19,7 @@ export function DropdownField({
   onValueChange,
   options,
   placeholder,
+  error,
 }: DropdownFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -32,20 +34,24 @@ export function DropdownField({
   return (
     <View className="mb-4 w-full">
       {/* Label */}
-      <Text className="text-sm text-[#4b5f5a] mb-2 font-semibold">
+      <Text
+        className={`text-sm mb-2 font-semibold ${error ? "text-red-500" : "text-[#4b5f5a]"}`}
+      >
         {label}
       </Text>
 
       {/* Dropdown Button */}
       <TouchableOpacity
         onPress={() => setIsVisible(true)}
-        className="border border-[#dce9e4] rounded-2xl bg-white h-12 justify-center px-3 flex-row items-center"
+        className={`border rounded-2xl bg-white h-12 justify-center px-3 flex-row items-center  border-[#dce9e4]
+        }`}
       >
-        <Text className="flex-1 text-base text-[#4b5f5a]">
+        <Text className={`flex-1 text-base ${value ? "text-[#0b1f1c]" : "text-[#4b5f5a]"}`}>
           {displayText}
         </Text>
-        <Ionicons name="chevron-down" size={20} color="#4b5f5a" />
+        <Ionicons name="chevron-down" size={20} color={error ? "#f87171" : "#4b5f5a"} />
       </TouchableOpacity>
+
 
       {/* Modal Dropdown */}
       <Modal
@@ -54,7 +60,7 @@ export function DropdownField({
         animationType="fade"
         onRequestClose={() => setIsVisible(false)}
       >
-        <Pressable 
+        <Pressable
           className="flex-1 bg-black/20 justify-center items-center"
           onPress={() => setIsVisible(false)}
         >
@@ -76,11 +82,15 @@ export function DropdownField({
                 <TouchableOpacity
                   key={option.value}
                   onPress={() => handleSelect(option)}
-                  className={`p-4 border-b border-gray-100 ${value === option.value ? 'bg-blue-50' : ''
+                  className={`p-4 border-b border-gray-100 ${value === option.value ? "bg-blue-50" : ""
                     }`}
                 >
-                  <Text className={`text-base ${value === option.value ? 'text-blue-600 font-semibold' : 'text-[#4b5f5a]'
-                    }`}>
+                  <Text
+                    className={`text-base ${value === option.value
+                      ? "text-blue-600 font-semibold"
+                      : "text-[#4b5f5a]"
+                      }`}
+                  >
                     {option.label}
                   </Text>
                 </TouchableOpacity>

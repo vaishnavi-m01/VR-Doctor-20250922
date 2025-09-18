@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react';
+import { PropsWithChildren } from 'react';
 import { View, Text } from 'react-native';
 
 type Props = PropsWithChildren<{ icon?: string; title?: string; desc?: string; error?: boolean; }>
@@ -25,11 +25,12 @@ export default function FormCard({ icon, title, desc, children, error }: Props) 
         {/* Title and description */}
         <View className="mb-3">
           <Text
-            className={`text-base font-semibold ${error ? "text-red-500" : "text-black"
+            className={`text-base font-semibold ${error ? "text-red-500" : "text-[#0b1f1c]"
               }`}
           >
             {title}
           </Text>
+
           {!!desc && <Text className="text-xs text-muted mt-1 ml-[14px]">{desc}</Text>}
         </View>
 

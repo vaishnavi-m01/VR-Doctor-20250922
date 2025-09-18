@@ -176,7 +176,7 @@ export default function PatientScreening() {
       newErrors.prosthetics = "Select Yes/No for prosthetics";
     }
     if (conds.length === 0) {
-      newErrors.conds = "Select at least one clinical experience";
+      newErrors.conds
     }
 
     setErrors(newErrors);

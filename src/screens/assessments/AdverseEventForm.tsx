@@ -95,6 +95,8 @@ export default function AdverseEventForm() {
     const [followUpDate, setFollowUpDate] = useState(today);
     const [date, setDate] = useState(today);
     const [physicianDateTime, setPhysicianDateTime] = useState(today);
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
 
 
     const [AEId, setAEId] = useState<string | null>(null);
@@ -164,33 +166,76 @@ export default function AdverseEventForm() {
 
 
     const handleValidate = () => {
-        const requiredFields = [
-            reportDate,
-            // dateOfAE,
-            // timeOfAE,
-            reportedBy,
-            Description?.trim(),
-            completed,
-            vrContentType,
-            guidance,
-            physicianDateTime,
-            physicianName?.trim(),
-            aeRelated,
-            conditionContribution,
-            // followUpDate,
-            followUpParticipantStatus?.trim(),
-            investigatorSignature?.trim(),
-            // date,
-            severity,
-            outcome.length > 0 ? "ok" : "",
-            actions.length > 0 ? "ok" : "",
-        ];
+        const newErrors: { [key: string]: string } = {};
 
-        const hasEmptyField = requiredFields.some(
-            (field) => !field || field.toString().trim() === ""
-        );
+        // if (!reportDate) {
+        //     newErrors.reportDate = "Report Date is required";
+        // }
 
-        if (hasEmptyField) {
+        // if (!dateOfAE) newErrors.dateOfAE = "Date of AE is required";
+        // if (!timeOfAE) newErrors.timeOfAE = "Time of AE is required";
+
+        if (!reportedBy) {
+            newErrors.reportedBy = "Reported By is required";
+        }
+
+        if (!Description?.trim()) {
+            newErrors.Description = "Description is required";
+        }
+
+        if (!completed) {
+            newErrors.completed = "Completed field is required";
+        }
+
+        if (!vrContentType) {
+            newErrors.vrContentType = "VR Content Type is required";
+        }
+
+        if (!guidance) {
+            newErrors.guidance = "Guidance is required";
+        }
+
+        if (!physicianDateTime) {
+            newErrors.physicianDateTime = "Physician Date & Time is required";
+        }
+
+        if (!physicianName?.trim()) {
+            newErrors.physicianName = "Physician Name is required";
+        }
+
+        if (!aeRelated) {
+            newErrors.aeRelated = "AE Related is required";
+        }
+
+        if (!conditionContribution) {
+            newErrors.conditionContribution = "Condition Contribution is required";
+        }
+
+        // if (!followUpDate) newErrors.followUpDate = "Follow-up Date is required";
+
+        if (!followUpParticipantStatus?.trim()) {
+            newErrors.followUpParticipantStatus = "Follow-up Participant Status is required";
+        }
+
+        if (!investigatorSignature?.trim()) {
+            newErrors.investigatorSignature = "Investigator Signature is required";
+        }
+
+        if (!severity) {
+            newErrors.severity = "Severity is required";
+        }
+
+        if (outcome.length === 0) {
+            newErrors.outcome = "Outcome cannot be empty";
+        }
+
+        if (actions.length === 0) {
+            newErrors.actions = "Actions cannot be empty";
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
             Toast.show({
                 type: "error",
                 text1: "Validation Error",
@@ -211,6 +256,7 @@ export default function AdverseEventForm() {
 
         return true;
     };
+
 
 
 
@@ -414,19 +460,19 @@ export default function AdverseEventForm() {
             <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
                 <View
                     style={{
-                        backgroundColor: "white",          
-                        borderBottomWidth: 1,              
-                        borderBottomColor: "#e5e7eb",    
-                        borderRadius: 12,                  
-                        padding: 17,                     
-                        flexDirection: "row",              
-                        justifyContent: "space-between",   
-                        alignItems: "center",            
-                        shadowColor: "#000",               
-                        shadowOpacity: 0.05,              
+                        backgroundColor: "white",
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#e5e7eb",
+                        borderRadius: 12,
+                        padding: 17,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
                         shadowRadius: 4,
                         shadowOffset: { width: 0, height: 2 },
-                        elevation: 1,                       
+                        elevation: 1,
                     }}
                 >
 
@@ -556,6 +602,7 @@ export default function AdverseEventForm() {
                         placeholder="e.g., Dr. John (Investigator)"
                         multiline
                         value={reportedBy}
+                        error={errors.reportedBy}
                         onChangeText={setReportedBy}
                     />
 
@@ -580,57 +627,65 @@ export default function AdverseEventForm() {
                         placeholder="symptoms, context, severity..."
                         multiline
                         value={Description ?? ""}
+                        error={errors?.Description}
                         onChangeText={setdescription}
                     />
                     <View className="mb-3">
-                        <Text className="text-xs text-[#4b5f5a] mb-2">VR session in progress?</Text>
+                        <View className="flex-row justify-between items-center mb-2">
+                            {/* <Text className="text-xs text-[#4b5f5a]">VR session in progress?</Text> */}
+                            <Text
+                                className={`text-xs mb-2 ${errors.completed && !completed ? "text-red-500" : "text-[#4b5f5a]"
+                                    }`}
+                            >
+                                VR session in progress?
+                            </Text>
+                        </View>
                         <View className="flex-row gap-2">
                             {/* Yes Button */}
                             <Pressable
-                                onPress={() => setCompleted('Yes')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'Yes'
-                                    ? 'bg-[#4FC264]'
-                                    : 'bg-[#EBF6D6]'
+                                onPress={() => {
+                                    setCompleted('Yes');
+                                    setErrors((prev) => ({ ...prev, completed: '' })); // clear error immediately
+                                }}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                                     }`}
                             >
-                                <Text className={`text-lg mr-1 ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
+                                <Text className={`text-lg mr-1 ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
                                     ✅
                                 </Text>
-                                <Text className={`font-medium text-xs ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
+                                <Text className={`font-medium text-xs ${completed === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
                                     Yes
                                 </Text>
                             </Pressable>
 
                             {/* No Button */}
                             <Pressable
-                                onPress={() => setCompleted('No')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'No'
-                                    ? 'bg-[#4FC264]'
-                                    : 'bg-[#EBF6D6]'
+                                onPress={() => {
+                                    setCompleted('No');
+                                    setErrors((prev) => ({ ...prev, completed: '' })); // clear error immediately
+                                }}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${completed === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                                     }`}
                             >
-                                <Text className={`text-lg mr-1 ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
+                                <Text className={`text-lg mr-1 ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
                                     ❌
                                 </Text>
-                                <Text className={`font-medium text-xs ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
+                                <Text className={`font-medium text-xs ${completed === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>
                                     No
                                 </Text>
                             </Pressable>
                         </View>
-                        {/* {completed === 'No' && (
-                            <View className="mt-3">
-                                <Field label="If No, specify reason" placeholder="Reason for not completing…" />
-                            </View>
-                        )} */}
+
+
                     </View>
                     <DropdownField
-                        label="VR Content Type at of AE"
+                        label="VR Content Type at AE"
                         value={vrContentType}
-                        onValueChange={(val) => setVrContentType(val)}
+                        error={errors?.vrContentType}
+                        onValueChange={(val) => {
+                            setVrContentType(val);
+                            setErrors((prev) => ({ ...prev, vrContentType: "" }));
+                        }}
                         options={[
                             { label: "Chemotherapy", value: "chemotherapy" },
                             { label: "Anxiety", value: "anxiety" },
@@ -639,45 +694,39 @@ export default function AdverseEventForm() {
                         ]}
                     />
 
-                    <View className="flex-1">
-                        <Text className="text-xs text-[#4b5f5a] mb-2">Was the Session Interrupted?</Text>
+                    <View className="flex-1 mb-3">
+                        <Text className={`text-xs mb-2 ${errors.guidance && !guidance ? "text-red-500" : "text-[#4b5f5a]"
+                            }`}>Was the Session Interrupted?</Text>
+
                         <View className="flex-row gap-2">
                             {/* Yes Button */}
                             <Pressable
-                                onPress={() => setGuidance('Yes')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'Yes'
-                                    ? 'bg-[#4FC264]'
-                                    : 'bg-[#EBF6D6]'
+                                onPress={() => {
+                                    setGuidance('Yes');
+                                    setErrors((prev) => ({ ...prev, guidance: "" }));
+                                }}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                                     }`}
                             >
-                                <Text className={`text-lg mr-1 ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
-                                    ✅
-                                </Text>
-                                <Text className={`font-medium text-xs ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
-                                    Yes
-                                </Text>
+                                <Text className={`text-lg mr-1 ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
+                                <Text className={`font-medium text-xs ${guidance === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>Yes</Text>
                             </Pressable>
 
                             {/* No Button */}
                             <Pressable
-                                onPress={() => setGuidance('No')}
-                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'No'
-                                    ? 'bg-[#4FC264]'
-                                    : 'bg-[#EBF6D6]'
+                                onPress={() => {
+                                    setGuidance('No');
+                                    setErrors((prev) => ({ ...prev, guidance: "" })); // Clear error immediately
+                                }}
+                                className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${guidance === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
                                     }`}
                             >
-                                <Text className={`text-lg mr-1 ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
-                                    ❌
-                                </Text>
-                                <Text className={`font-medium text-xs ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                                    }`}>
-                                    No
-                                </Text>
+                                <Text className={`text-lg mr-1 ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
+                                <Text className={`font-medium text-xs ${guidance === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
                             </Pressable>
                         </View>
+
+
                     </View>
 
 
@@ -686,9 +735,13 @@ export default function AdverseEventForm() {
 
                 <FormCard icon="2" title=" Severity & Impact Assessment">
 
-                    <Text className="text-sm font-medium text-gray-700 mb-2">
+                    <Text
+                        className={`text-xs mb-2 ${errors.severity && !severity ? "text-red-500" : "text-[#4b5f5a]"
+                            }`}
+                    >
                         AE Severity Level (Check One):
                     </Text>
+
                     <View className="space-y-2">
                         {aeSeverity.map((item, index) => (
                             <TouchableOpacity
@@ -696,8 +749,10 @@ export default function AdverseEventForm() {
                                 onPress={() => {
                                     console.log("Selected SeverityId:", item.SeverityId);
                                     setSeverity(item.SeverityId || "");
-                                }}
 
+                                    // Clear error immediately when user selects
+                                    setErrors((prev) => ({ ...prev, severity: "" }));
+                                }}
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dce9e4]"
                             >
                                 <View className="w-5 h-5 rounded-full border border-gray-400 items-center justify-center mr-2">
@@ -718,19 +773,23 @@ export default function AdverseEventForm() {
                     <View className="h-px bg-gray-200 my-4" />
 
                     {/* Outcome of AE */}
-                    <Text className="text-sm font-medium text-gray-700 mb-2">
+                    <Text
+                        className={`text-sm font-medium mb-2 ${errors.outcome && outcome.length === 0 ? "text-red-500" : "text-gray-700"
+                            }`}
+                    >
                         Outcome of AE:
                     </Text>
+
                     <View className="flex flex-wrap flex-row gap-2">
                         {aeOutcome.map((item, index) => (
                             <TouchableOpacity
                                 key={item.OutcomeId || index}
-                                // onPress={() => toggleOutcome(item.OutcomeName)}
                                 onPress={() => {
-                                    console.log("Selected outcomeId:", item.OutcomeId);
-                                    toggleOutcome(item.OutcomeId || "")
-                                }}
+                                    toggleOutcome(item.OutcomeId || "");
 
+                                    // Clear error immediately on selection
+                                    setErrors((prev) => ({ ...prev, outcome: "" }));
+                                }}
                                 className="flex-row items-center px-3 py-2 rounded-xl border border-[#dbe8e3] bg-[#F6F7F7]"
                             >
                                 <View className="w-5 h-5 border border-gray-400 rounded mr-2 items-center justify-center">
@@ -745,36 +804,51 @@ export default function AdverseEventForm() {
                         ))}
                     </View>
 
+
                 </FormCard>
                 <FormCard icon="3" title="Action Taken">
-                    <Text className="text-sm font-medium text-gray-700 mb-2">
-                         Immediate Action Taken (Check all that apply):
+                    <Text
+                        className={`text-sm font-medium mb-2 ${errors.actions && actions.length === 0 ? "text-red-500" : "text-gray-700"
+                            }`}
+                    >
+                        Immediate Action Taken (Check all that apply):
                     </Text>
+
                     <Chip
                         items={aeImmediateAction.map((item) => ({
                             label: item.ActionName,
-                            value: item.ActionId || ""
+                            value: item.ActionId || "",
                         }))}
                         value={actions}
+                        type="multiple"
                         onChange={(newActions) => {
                             console.log("Selected ActionIds:", newActions);
                             setActions(newActions);
+
+                            if (newActions.length > 0) {
+                                setErrors((prev) => ({ ...prev, actions: "" }));
+                            }
                         }}
-                        type="multiple"
                     />
 
 
 
                     <View className="flex-row gap-3 mt-2">
                         <DateField label="Date physician notified" value={physicianDateTime} onChange={setPhysicianDateTime} />
-                        <View className="flex-1"><Field label="Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} /></View>
+                        <View className="flex-1"><Field label="Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} error={errors?.physicianName} /></View>
                     </View>
                 </FormCard>
 
 
                 <FormCard icon="4" title="Causality Assessment">
                     <View className="mb-4">
-                        <Text className="text-xs text-[#4b5f5a] mb-1">AE related to VR use?</Text>
+                        <Text
+                            className={`text-xs mb-1 ${errors.aeRelated && !aeRelated ? "text-red-500" : "text-[#4b5f5a]"
+                                }`}
+                        >
+                            AE related to VR use?
+                        </Text>
+
                         <Segmented
                             options={[
                                 { label: "Yes", value: "Yes" },
@@ -782,21 +856,38 @@ export default function AdverseEventForm() {
                                 { label: "Uncertain", value: "Uncertain" },
                             ]}
                             value={aeRelated || undefined}
-                            onChange={setAeRelated}
+                            onChange={(val) => {
+                                setAeRelated(val);
+
+                                setErrors((prev) => ({ ...prev, aeRelated: "" }));
+                            }}
                         />
                     </View>
 
+
                     <View>
-                        <Text className="text-xs text-[#4b5f5a] mb-1">Pre-existing condition contribution?</Text>
+                        <Text
+                            className={`text-xs mb-1 ${errors.conditionContribution && !conditionContribution
+                                ? "text-red-500"
+                                : "text-[#4b5f5a]"
+                                }`}
+                        >
+                            Pre-existing condition contribution?
+                        </Text>
+
                         <Segmented
                             options={[
                                 { label: "Yes", value: "Yes" },
                                 { label: "No", value: "No" },
                             ]}
                             value={conditionContribution || undefined}
-                            onChange={setConditionContribution}
+                            onChange={(val) => {
+                                setConditionContribution(val);
+                                setErrors((prev) => ({ ...prev, conditionContribution: "" }));
+                            }}
                         />
                     </View>
+
                 </FormCard>
 
 
@@ -806,13 +897,13 @@ export default function AdverseEventForm() {
                             <DateField label="Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
                         </View>
                         <View className="flex-1">
-                            <Field label="signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} />
+                            <Field label="signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} error={errors?.investigatorSignature}/>
                         </View>
                     </View>
 
                     <View className="flex-row gap-3 mt-2">
                         <View className="flex-1">
-                            <Field label="Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} />
+                            <Field label="Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} error={errors?.followUpParticipantStatus}/>
                         </View>
                         <View className="flex-1">
                             <DateField label="Date" value={date} onChange={setDate} />

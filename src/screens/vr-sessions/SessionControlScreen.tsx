@@ -23,8 +23,8 @@ export default function SessionControlScreen() {
   const [doctorNotes, setDoctorNotes] = useState("");
 
   const route = useRoute<RouteProp<RootStackParamList, 'SessionControlScreen'>>();
-  const { patientId, studyId, therapy, backgroundMusic, language, session,SessionNo } = route.params;
- console.log("VRSession",therapy,backgroundMusic,language,session,SessionNo)
+  const { patientId, studyId, therapy, backgroundMusic, language, session, SessionNo } = route.params;
+  console.log("VRSession", therapy, backgroundMusic, language, session, SessionNo)
 
   // Simulate time progression when playing
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function SessionControlScreen() {
           <View className="w-80">
             <Card className="p-4">
               <Text className="font-bold text-base mb-4 text-gray-700">Participant Profile</Text>
-              
+
               {/* Participant Details */}
               <View className="gap-2">
                 <View className="flex-row justify-between py-1">
@@ -285,7 +285,8 @@ export default function SessionControlScreen() {
       {/* Bottom Button */}
       <View className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
         <Pressable
-          onPress={() => nav.navigate('SessionCompletedScreen',{patientId,SessionNo})}
+          // onPress={() => nav.navigate('SessionCompletedScreen',{patientId,SessionNo})}
+          onpress={() => ""}
           className="bg-gray-800 px-6 py-3 rounded-full"
         >
           <Text className="text-white font-medium">Complete Session</Text>

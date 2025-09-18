@@ -164,7 +164,7 @@ const handleSubmit = async () => {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-4 pt-4"><Header title="Session Completed" /></View>
+      <View className="px-4 pt-4"><Header title="Session Completedd" /></View>
       <ScrollView
         className="flex-1 p-4 gap-4"
         contentContainerStyle={{ paddingBottom: 150 }}
