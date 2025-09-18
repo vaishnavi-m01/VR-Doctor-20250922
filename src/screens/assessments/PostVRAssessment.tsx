@@ -51,6 +51,8 @@ export default function PostVRAssessment() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+
   const [postQuestions, setPostQuestions] = useState<AssessmentQuestion[]>([]);
   const [responses, setResponses] = useState<ResponsesState>({});
 
@@ -144,7 +146,17 @@ export default function PostVRAssessment() {
       } else {
         questionResponses[index].ScaleValue = value;
       }
-      return { ...prev, [questionId]: questionResponses };
+      const updated = { ...prev, [questionId]: questionResponses };
+      console.log('Updated responses:', updated);
+      return updated;
+    });
+    setValidationErrors((prev) => {
+      if (prev[questionId]) {
+        const newErrors = { ...prev };
+        delete newErrors[questionId];
+        return newErrors;
+      }
+      return prev;
     });
   };
 
@@ -185,12 +197,14 @@ export default function PostVRAssessment() {
             <React.Fragment key={v}>
               <Pressable
                 onPress={() => setResponse(questionId, v.toString(), false, index)}
-                className={`flex-1 py-3 items-center justify-center ${value === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
-                  }`}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value === v.toString() ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
               >
                 <Text
-                  className={`font-medium text-sm ${value === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
-                    }`}
+                  className={`font-medium text-sm ${
+                    value === v.toString() ? 'text-white' : 'text-[#4b5f5a]'
+                  }`}
                 >
                   {v}
                 </Text>
@@ -209,8 +223,9 @@ export default function PostVRAssessment() {
       <View className="flex-row gap-2">
         <Pressable
           onPress={() => setResponse(questionId, 'Yes', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-            }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'Yes' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
         >
           <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
           <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
@@ -219,8 +234,9 @@ export default function PostVRAssessment() {
         </Pressable>
         <Pressable
           onPress={() => setResponse(questionId, 'No', false, index)}
-          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
-            }`}
+          className={`w-1/2 flex-row items-center justify-center rounded-full py-3 px-2 ${
+            value === 'No' ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'
+          }`}
         >
           <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
           <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
@@ -238,8 +254,9 @@ export default function PostVRAssessment() {
             <React.Fragment key={option}>
               <Pressable
                 onPress={() => setResponse(questionId, option, false, index)}
-                className={`flex-1 py-3 items-center justify-center ${value === option ? 'bg-[#4FC264]' : 'bg-white'
-                  }`}
+                className={`flex-1 py-3 items-center justify-center ${
+                  value === option ? 'bg-[#4FC264]' : 'bg-white'
+                }`}
               >
                 <Text className={`font-medium text-xs text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'}`}>
                   {option}
@@ -258,12 +275,19 @@ export default function PostVRAssessment() {
     const questionId = question.AssessmentId;
     const index = 0;
 
+    const hasError = validationErrors[questionId];
+
     const scaleValue = responses[questionId]?.[index]?.ScaleValue || '';
     const notesValue = responses[questionId]?.[index]?.Notes || '';
 
     return (
       <View key={questionId} className="mt-3">
-        <Text className="text-xs text-[#4b5f5a] mb-2">{question.AssessmentTitle}</Text>
+        <Text  className={`text-xs mb-2 ${
+          hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+          }`}
+        >
+          {question.AssessmentTitle}
+        </Text>
         <Text className="text-xs text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
 
         {questionType === 'scale_5' && renderScale(questionId, 5, index)}
@@ -320,10 +344,34 @@ export default function PostVRAssessment() {
     );
   };
 
-  const handleValidate = () => {
-    const hasAnyResponse = Object.keys(responses).length > 0;
+  const validateResponses = (): boolean => {
+    if (postQuestions.length === 0) return false;
 
-    if (!hasAnyResponse) {
+    const newErrors: Record<string, boolean> = {};
+
+    postQuestions.forEach((question) => {
+      const questionId = question.AssessmentId;
+      const entries = responses[questionId] || [];
+
+      const noneFilled = entries.every(
+        (entry) =>
+          (entry.ScaleValue === null || entry.ScaleValue === '') &&
+          (entry.Notes === null || entry.Notes === '')
+      );
+
+      if (noneFilled) {
+        newErrors[questionId] = true;
+      }
+    });
+
+    setValidationErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+  const handleValidate = () => {
+    if (Object.keys(responses).length === 0) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
@@ -331,22 +379,13 @@ export default function PostVRAssessment() {
         position: 'top',
         topOffset: 50,
       });
+      setValidationErrors({});
       return;
     }
 
-    const hasEmptyFields = Object.entries(responses).some(([_questionId, entries]) =>
-      entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
-    );
+    const passed = validateResponses();
 
-    if (hasEmptyFields) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'All fields are required',
-        position: 'top',
-        topOffset: 50,
-      });
-    } else {
+    if (passed) {
       Toast.show({
         type: 'success',
         text1: 'Validation Passed',
@@ -354,11 +393,20 @@ export default function PostVRAssessment() {
         position: 'top',
         topOffset: 50,
       });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill all required fields.',
+        position: 'top',
+        topOffset: 50,
+      });
     }
   };
 
+
   const handleSave = async () => {
-    const hasAnyResponse = Object.keys(responses).length > 0;
+  const hasAnyResponse = Object.keys(responses).length > 0;
 
     if (!hasAnyResponse) {
       Toast.show({
@@ -371,15 +419,13 @@ export default function PostVRAssessment() {
       return;
     }
 
-    const hasEmptyFields = Object.entries(responses).some(([_questionId, entries]) =>
-      entries.some(entry => (entry.ScaleValue === null || entry.ScaleValue === '') && (entry.Notes === null || entry.Notes === ''))
-    );
+    const passedValidation = validateResponses();
 
-    if (hasEmptyFields) {
+    if (!passedValidation) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: 'All fields are required',
+        text2: 'All fields are required to save.',
         position: 'top',
         topOffset: 50,
       });
@@ -428,11 +474,12 @@ export default function PostVRAssessment() {
           type: 'success',
           text1: 'Success',
           text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
-          position: "top",
+          position: 'top',
           topOffset: 50,
           visibilityTime: 1000,
           onHide: () => navigation.goBack(),
         });
+      
       } else {
         Toast.show({
           type: 'error',
@@ -458,6 +505,7 @@ export default function PostVRAssessment() {
 
   const handleClear = () => {
     setResponses({});
+    setValidationErrors({});
   };
 
   if (loading) {

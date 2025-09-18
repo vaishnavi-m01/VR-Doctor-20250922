@@ -29,6 +29,10 @@ type Question = {
 export default function PreAndPostVR() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'PreAndPostVR'>>();
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+
+
   const { patientId, age, studyId } = route.params as { patientId: number | string; age: number; studyId: number | string };
 
   // Format participantId and studyId to avoid double prefixing
@@ -56,7 +60,6 @@ export default function PreAndPostVR() {
   // Assessment type options
   const assessmentTypes: Array<'Pre' | 'Post'> = ['Pre', 'Post'];
 
-  // Fetch mock available sessions (replace with real api)
   const fetchAvailableSessions = async () => {
     try {
       const mockSessions = ['Session 1', 'Session 2', 'Session 3', 'Session 4', 'Session 5'];
@@ -66,7 +69,6 @@ export default function PreAndPostVR() {
     }
   };
 
-  // Fetch questions and previous responses on mount or change of patient/study/session
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -83,7 +85,6 @@ export default function PreAndPostVR() {
         });
         const responseData = responsesRes.data.ResponseData || [];
 
-        // Merge previous response data (PPPVRId, ScaleValue, Notes) into questions
         const mergedQuestions = fetchedQuestions.map((q) => {
           const resp = responseData.find(r => r.PPVRQMID === q.PPVRQMID);
           return {
@@ -121,14 +122,23 @@ export default function PreAndPostVR() {
     fetchData();
   }, [patientId, studyId, sessionNo]);
 
-  // Update answer for question
+
   const setAnswer = (questionId: string, value: string) => {
     setResponses((prev) => ({
       ...prev,
       [questionId]: { ScaleValue: value, Notes: prev[questionId]?.Notes || '' },
     }));
-    setValidationError('');
+
+    setValidationErrors((prev) => {
+      if (prev[questionId]) {
+        const newErrors = { ...prev };
+        delete newErrors[questionId];
+        return newErrors;
+      }
+      return prev;
+    });
   };
+
 
   // Update notes for question
   const setNote = (questionId: string, value: string) => {
@@ -142,58 +152,86 @@ export default function PreAndPostVR() {
   const preQuestions = questions.filter(q => q.Type === 'Pre').sort((a, b) => a.SortKey - b.SortKey);
   const postQuestions = questions.filter(q => q.Type === 'Post').sort((a, b) => a.SortKey - b.SortKey);
 
-  const handleClear = () => {
-    setResponses({});
-    setValidationError('');
+
+  const validateResponses = (): boolean => {
+    const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
+
+    const newErrors: Record<string, boolean> = {};
+
+    questionsToValidate.forEach((q) => {
+      const answer = responses[q.PPVRQMID]?.ScaleValue?.trim();
+      if (!answer) {
+        newErrors[q.PPVRQMID] = true;
+      }
+    });
+
+    setValidationErrors(newErrors);
+    
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleValidate = () => {
-    const questionsToValidate = questions.filter(q => q.Type === selectedAssessmentType);
-    const invalid = questionsToValidate.some(q =>
-      !(responses[q.PPVRQMID]?.ScaleValue && responses[q.PPVRQMID]?.ScaleValue.trim() !== '')
-    );
 
-    if (invalid) {
+  const handleValidate = () => {
+    if (Object.keys(responses).length === 0) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: 'Please fill all required fields',
+        text2: 'No responses entered. Please fill the form.',
         position: 'top',
         topOffset: 50,
       });
-    } else {
+      setValidationErrors({});
+      return;
+    }
+
+    const passed = validateResponses();
+
+    if (passed) {
       Toast.show({
         type: 'success',
         text1: 'Validation Passed',
         text2: 'All required fields are filled',
         position: 'top',
-        topOffset: 50,
+        topOffset: 50
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please fill all required fields.',
+        position: 'top',
+        topOffset: 50
       });
     }
   };
 
+
   const handleSave = async () => {
-    // Validate required fields before save
-    const questionsToSave = questions.filter(q => q.Type === selectedAssessmentType);
-    const unanswered = questionsToSave.filter(q =>
-      !(responses[q.PPVRQMID]?.ScaleValue && responses[q.PPVRQMID]?.ScaleValue.trim() !== '') // Check ScaleValue is non-empty
-    );
+   if (Object.keys(responses).length === 0) {
+    Toast.show({
+      type: 'error',
+      text1: 'Validation Error',
+      text2: 'No responses entered. Please fill the form before saving.',
+      position: 'top',
+      topOffset: 50
+    });
+    return;
+  }
 
-    if (unanswered.length > 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'All fields are required',
-        position: 'top',
-        topOffset: 50,
-      });
-      return; // Do not proceed with save
-    }
+  const passedValidation = validateResponses();
 
-    setValidationError('');
+  if (!passedValidation) {
+    Toast.show({
+      type: 'error',
+      text1: 'Validation Error',
+      text2: 'All fields are required',
+      position: 'top',
+      topOffset: 50
+    });
+    return;
+  }
     setSaving(true);
     try {
-      // Only save questions that match the selected assessment type
       const questionsToSave = questions.filter(q => q.Type === selectedAssessmentType);
       const questionData = questionsToSave.map(q => ({
         PPPVRId: q.PPPVRId || null,
@@ -226,7 +264,7 @@ export default function PreAndPostVR() {
           text2: isAdd ? 'PreAndPost added successfully!' : 'PreAndPost updated successfully!',
           position: 'top',
           topOffset: 50,
-          visibilityTime: 2000,
+          visibilityTime: 1000,
           onHide: () => navigation.goBack(),
         });
       } else {
@@ -250,6 +288,11 @@ export default function PreAndPostVR() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleClear = () => {
+    setResponses({});
+    setValidationErrors({});
   };
 
   if (loading) {
@@ -484,75 +527,93 @@ export default function PreAndPostVR() {
         {/* Display questions for selected assessment type */}
         {selectedAssessmentType === 'Pre' && preQuestions.length > 0 && (
           <FormCard icon="A" title="Pre Virtual Reality Questions">
-            {preQuestions.map((q) => (
-              <View key={q.PPVRQMID} className="mb-3">
-                <Text className="text-xs text-[#4b5f5a] mb-2">{q.QuestionName}</Text>
-                <View className="flex-row gap-2">
-                  {['Yes', 'No'].map((opt) => (
-                    <Pressable
-                      key={opt}
-                      onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-                    >
-                      <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                        {opt === 'Yes' ? '✅' : '❌'}
-                      </Text>
-                      <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                        {opt}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+            {preQuestions.map((q) => {
+              const hasError = validationErrors[q.PPVRQMID]; 
+                return (
+                  <View key={q.PPVRQMID} className="mb-3">
+                    <Text 
+                      className={`text-xs text-[#4b5f5a] mb-2 ${
+                      hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                      }`}
+                    > 
+                      {q.QuestionName}
+                    </Text>
+                    <View className="flex-row gap-2">
+                      {['Yes', 'No'].map((opt) => (
+                        <Pressable
+                          key={opt}
+                          onPress={() => setAnswer(q.PPVRQMID, opt)}
+                          className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+                        >
+                          <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                            {opt === 'Yes' ? '✅' : '❌'}
+                          </Text>
+                          <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                            {opt}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
 
-                {responses[q.PPVRQMID]?.ScaleValue && (
-                  <View className="mt-3">
-                    <Field
-                      label="Additional Notes (Optional)"
-                      placeholder="Please provide details…"
-                      value={responses[q.PPVRQMID]?.Notes || ''}
-                      onChangeText={(text) => setNote(q.PPVRQMID, text)}
-                    />
+                    {responses[q.PPVRQMID]?.ScaleValue && (
+                      <View className="mt-3">
+                        <Field
+                          label="Additional Notes (Optional)"
+                          placeholder="Please provide details…"
+                          value={responses[q.PPVRQMID]?.Notes || ''}
+                          onChangeText={(text) => setNote(q.PPVRQMID, text)}
+                        />
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
-            ))}
+                );
+            })}
           </FormCard>
         )}
 
         {selectedAssessmentType === 'Post' && postQuestions.length > 0 && (
           <FormCard icon="B" title="Post Virtual Reality Questions">
-            {postQuestions.map((q) => (
-              <View key={q.PPVRQMID} className="mb-3">
-                <Text className="text-xs text-[#4b5f5a] mb-2">{q.QuestionName}</Text>
-                <View className="flex-row gap-2">
-                  {['Yes', 'No'].map((opt) => (
-                    <Pressable
-                      key={opt}
-                      onPress={() => setAnswer(q.PPVRQMID, opt)}
-                      className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-                    >
-                      <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                        {opt === 'Yes' ? '✅' : '❌'}
+            {postQuestions.map((q) => {
+              const hasError = validationErrors[q.PPVRQMID]; 
+                return (
+                  <View key={q.PPVRQMID} className="mb-3">
+                    <Text 
+                        className={`text-xs text-[#4b5f5a] mb-2 ${
+                        hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                        }`}
+                      > 
+                      {q.QuestionName}
                       </Text>
-                      <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                        {opt}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                    <View className="flex-row gap-2">
+                      {['Yes', 'No'].map((opt) => (
+                        <Pressable
+                          key={opt}
+                          onPress={() => setAnswer(q.PPVRQMID, opt)}
+                          className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+                        >
+                          <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                            {opt === 'Yes' ? '✅' : '❌'}
+                          </Text>
+                          <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                            {opt}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
 
-                {responses[q.PPVRQMID]?.ScaleValue && (
-                  <View className="mt-3">
-                    <Field
-                      label="Additional Notes (Optional)"
-                      placeholder="Please provide details…"
-                      value={responses[q.PPVRQMID]?.Notes || ''}
-                      onChangeText={(text) => setNote(q.PPVRQMID, text)}
-                    />
+                    {responses[q.PPVRQMID]?.ScaleValue && (
+                      <View className="mt-3">
+                        <Field
+                          label="Additional Notes (Optional)"
+                          placeholder="Please provide details…"
+                          value={responses[q.PPVRQMID]?.Notes || ''}
+                          onChangeText={(text) => setNote(q.PPVRQMID, text)}
+                        />
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
-            ))}
+               );
+            })}
           </FormCard>
         )}
 

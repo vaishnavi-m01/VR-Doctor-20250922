@@ -95,6 +95,9 @@ export default function EdmontonFactGScreen() {
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [isDefaultForm, setIsDefaultForm] = useState(true);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
+
   const { userId } = useContext(UserContext);
 
   const route = useRoute<RouteProp<RootStackParamList, "EdmontonFactGScreen">>();
@@ -114,19 +117,30 @@ export default function EdmontonFactGScreen() {
     "Functional well-being": "F",
   };
 
-  const setAnswer = (code: string, value: number) => {
-    setAnswers((prev) => ({ ...prev, [code]: value }));
-  };
+const setAnswer = (code: string, value: number) => {
+  setAnswers((prev) => ({ ...prev, [code]: value }));
+  setFieldErrors((prev) => {
+    if (prev[code]) {
+      const newErrors = { ...prev };
+      delete newErrors[code];
+      return newErrors;
+    }
+    return prev;
+  });
+};
 
-  const handleClear = () => {
-    setAnswers({});
-    setSelectedDate("");
-    setShowDateDropdown(false);
-    setSubscales([]);
-    setError(null);
-    setIsDefaultForm(true);
-    fetchFactG(null);
-  };
+
+const handleClear = () => {
+  setAnswers({});
+  setSelectedDate("");
+  setShowDateDropdown(false);
+  setSubscales([]);
+  setError(null);
+  setFieldErrors({});
+  setIsDefaultForm(true);
+  fetchFactG(null);
+};
+
 
   const formatDate = (dateString: string): string => {
     // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
@@ -351,9 +365,10 @@ export default function EdmontonFactGScreen() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
+
   const handleValidate = () => {
     const totalQuestions = subscales.reduce((count, scale) => count + scale.items.length, 0);
-    const answeredQuestions = Object.values(answers).filter(v => v !== null && v !== undefined ).length;
+    const answeredQuestions = Object.entries(answers).filter(([_, v]) => v !== null && v !== undefined).length;
 
     if (answeredQuestions === 0) {
       Toast.show({
@@ -362,6 +377,16 @@ export default function EdmontonFactGScreen() {
         text2: 'No responses entered. Please fill the form.',
         position: 'top',
         topOffset: 50,
+      });
+      setFieldErrors(() => {
+        // Mark all fields with error because none are answered
+        const errors: Record<string, boolean> = {};
+        subscales.forEach(scale => {
+          scale.items.forEach(item => {
+            errors[item.code] = true;
+          });
+        });
+        return errors;
       });
       return;
     }
@@ -374,6 +399,18 @@ export default function EdmontonFactGScreen() {
         position: 'top',
         topOffset: 50,
       });
+      setFieldErrors(() => {
+        const errors: Record<string, boolean> = {};
+        subscales.forEach(scale => {
+          scale.items.forEach(item => {
+            const val = answers[item.code];
+            if (val === null || val === undefined) {
+              errors[item.code] = true;
+            }
+          });
+        });
+        return errors;
+      });
     } else {
       Toast.show({
         type: 'success',
@@ -382,16 +419,16 @@ export default function EdmontonFactGScreen() {
         position: 'top',
         topOffset: 50,
       });
+      setFieldErrors({});
     }
   };
 
+
   const handleSave = async () => {
     const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
-    const answeredQuestions = Object.values(answers).filter(
-      v => v !== null && v !== undefined 
-    ).length;
+    const answeredQuestions = Object.entries(answers).filter(([_, v]) => v !== null && v !== undefined).length;
 
-    // No answers at all
+
     if (answeredQuestions === 0) {
       Toast.show({
         type: 'error',
@@ -399,6 +436,15 @@ export default function EdmontonFactGScreen() {
         text2: 'No responses entered. Please fill the form before saving.',
         position: 'top',
         topOffset: 50,
+      });
+      setFieldErrors(() => {
+        const errors: Record<string, boolean> = {};
+        subscales.forEach(scale => {
+          scale.items.forEach(item => {
+            errors[item.code] = true;
+          });
+        });
+        return errors;
       });
       return;
     }
@@ -412,9 +458,23 @@ export default function EdmontonFactGScreen() {
         position: 'top',
         topOffset: 50,
       });
+      setFieldErrors(() => {
+        const errors: Record<string, boolean> = {};
+        subscales.forEach(scale => {
+          scale.items.forEach(item => {
+            const val = answers[item.code];
+            if (val === null || val === undefined) {
+              errors[item.code] = true;
+            }
+          });
+        });
+        return errors;
+      });
       setSaving(false);
       return;
     }
+
+    setFieldErrors({}); 
 
     try {
       setSaving(true);
@@ -460,21 +520,9 @@ export default function EdmontonFactGScreen() {
           type: "success",
           text1: "Success",
           text2: isAdd ? "FactG Added successfully!" : "FactG Updated successfully!",
-          // onHide: () => {
-          //   navigation.goBack();
-          //   const navState = navigation.getState();
-
-          //   navigation.reset({
-          //     index: 0,
-          //     routes: navState.routes.map((r) =>
-          //       r.name === "PatientScreening"
-          //         ? { ...r, params: { ...(r.params ?? {}), CreatedDate: createdDate, PatientId: patientId } }
-          //         : r
-          //     ) as any,
-          //   });
-
-          // },
-          
+          position: 'top',
+          topOffset: 50,
+          visibilityTime: 1000, 
            onHide: () => {
             navigation.goBack();
             const navState = navigation.getState();
@@ -675,7 +723,16 @@ export default function EdmontonFactGScreen() {
                 {scale.items.map((item, index) => (
                   <View key={item.code}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                      <Text style={{ width: 64, fontWeight: "700", color: "#1f2937" , marginLeft: 13}}>{item.code}</Text>
+                      <Text
+                       style={{
+              width: 64,
+              fontWeight: "700",
+              color: fieldErrors[item.code] ? "#dc2626" : "#1f2937", // red if error
+              marginLeft: 13,
+            }}
+                       >
+                        {item.code}
+                        </Text>
                       <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>

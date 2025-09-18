@@ -68,6 +68,9 @@ export default function DistressThermometerScreen() {
   const [isDefaultForm, setIsDefaultForm] = useState(true);
   const [PDWSID, setPDWSID] = useState<string | null>(null);
 
+  const [errors, setErrors] = useState<{ distressScore?: string; selectedProblems?: string }>({});
+
+
   const navigation = useNavigation<any>();
   const { userId } = useContext(UserContext);
   const route = useRoute<RouteProp<RootStackParamList, "DistressThermometerScreen">>();
@@ -363,45 +366,27 @@ export default function DistressThermometerScreen() {
 
 
 
-  const handleValidate = () => {
+const handleValidate = () => {
+  const newErrors: typeof errors = {};
 
-    const hasDistressScore = v > 0;
-    // Check if any problem checkbox is selected
-    const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
+  const hasDistressScore = v > 0;
+  const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
 
-    if (!hasDistressScore && !hasSelectedProblem) {
-      Toast.show({
-        type: "error",
-        text1: "Validation Error",
-        text2: "No responses entered. Please fill the form.",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
-    }
-
+  if (!hasDistressScore && !hasSelectedProblem) {
+    newErrors.distressScore = "Please rate your distress (0-10).";
+    newErrors.selectedProblems = "Please select at least one problem.";
+  } else {
     if (!hasDistressScore) {
-      Toast.show({
-        type: "error",
-        text1: "Validation Error",
-        text2: "Please rate your distress (0-10).",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
+      newErrors.distressScore = "Please rate your distress (0-10).";
     }
-
     if (!hasSelectedProblem) {
-      Toast.show({
-        type: "error",
-        text1: "Validation Error",
-        text2: "Please select at least one problem.",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
+      newErrors.selectedProblems = "Please select at least one problem.";
     }
+  }
 
+  setErrors(newErrors);
+
+  if (Object.keys(newErrors).length === 0) {
     Toast.show({
       type: "success",
       text1: "Validation Passed",
@@ -409,7 +394,17 @@ export default function DistressThermometerScreen() {
       position: "top",
       topOffset: 50,
     });
-  };
+  } else {
+    Toast.show({
+      type: "error",
+      text1: "Validation Error",
+      text2: Object.values(newErrors).join(" "),
+      position: "top",
+      topOffset: 50,
+    });
+  }
+};
+
 
 
   const handleSave = async () => {
@@ -522,6 +517,27 @@ export default function DistressThermometerScreen() {
     }
   };
 
+const onChangeDistress = (value: number) => {
+  setV(value);
+  setErrors((prevErrors) => ({
+    distressScore: undefined,
+    selectedProblems: prevErrors.selectedProblems, 
+  }));
+};
+
+
+const toggleProblem = (questionId: string) => {
+  setSelectedProblems((prev) => {
+    const newSelected = { ...prev, [questionId]: !prev[questionId] };
+    setErrors((prevErrors) => ({
+      distressScore: prevErrors.distressScore, 
+      selectedProblems: undefined, 
+    }));
+    return newSelected;
+  });
+};
+
+
 
   const handleClear = () => {
     setV(0);
@@ -540,11 +556,7 @@ export default function DistressThermometerScreen() {
     getData(selectedDate || null);
   };
 
-  const toggleProblem = (questionId: string) => {
-    setSelectedProblems((prev) => {
-      return { ...prev, [questionId]: !prev[questionId] };
-    });
-  };
+
 
   return (
     <>
@@ -727,44 +739,29 @@ export default function DistressThermometerScreen() {
 
         </FormCard>
 
-
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 mb-4">
-          <Text className="font-bold text-lg text-[#333] mb-4">Rate Your Distress (0-10)</Text>
+          <Text className={`font-bold text-lg mb-4 ${
+              errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+              }`} 
+            >
+           Rate Your Distress (0-10)</Text>
           <FormCard icon="DT" title="Distress Thermometer">
-            <Thermometer value={v} onChange={setV} />
+            <Thermometer value={v} onChange={onChangeDistress} />
+            
           </FormCard>
         </View>
 
-        {/* Notes Section */}
-        {/* <View className="bg-white rounded-lg p-4 shadow-md mb-4">
-          <Text className="font-bold text-lg text-[#333] mb-4">Notes</Text>
-          <TextInput
-            className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
-            placeholder="Add any additional notes..."
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={3}
-            style={{
-              backgroundColor: "#f8f9fa",
-              borderColor: "#e5e7eb",
-              borderRadius: 16,
-              textAlignVertical: "top",
-            }}
-          />
-        </View> */}
 
         {/* Dynamic Problem List */}
         <View className="bg-white rounded-lg p-4 mb-4">
-          <Text className="font-bold text-lg text-[#333] mb-4">Problem List</Text>
+          <Text className={`font-bold text-lg mb-4 ${
+              errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+              }`} 
+          >
+            Problem List</Text>
+          
 
-          {/* {loading && (
-            <View className="items-center py-4">
-              <ActivityIndicator size="large" color="#2E7D32" />
-              <Text className="text-gray-500 mt-2">Loading questions...</Text>
-            </View>
-          )} */}
           {error && (
             <View className="bg-red-50 p-3 rounded-lg mb-4">
               <Text className="text-red-600 text-center">{error}</Text>
@@ -798,23 +795,8 @@ export default function DistressThermometerScreen() {
             </View>
           ))}
 
-          {/* <View className="flex-1 mr-1">
-            <Text className="text-xs text-[#6b7a77] mb-2">Other Problems</Text>
-            <TextInput
-              className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
-              placeholder="Enter other problems..."
-              value={otherProblems}
-              onChangeText={setOtherProblems}
-              multiline
-              numberOfLines={3}
-              style={{
-                backgroundColor: "#f8f9fa",
-                borderColor: "#e5e7eb",
-                borderRadius: 16,
-                textAlignVertical: "top",
-              }}
-            />
-          </View> */}
+        
+
         </View>
 
         {/* Extra space to prevent content being hidden */}

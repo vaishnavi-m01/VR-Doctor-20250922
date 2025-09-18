@@ -5,19 +5,28 @@ type ChipItem = string | { label: string; value: string };
 
 type Props = {
   items: ChipItem[];
-  value: string[];
-  onChange: (next: string[]) => void;
+  value: string[] | string; // accept string for single, string[] for multiple
+  onChange: (next: string[] | string) => void; // emit string for single, string[] for multiple
   type?: "single" | "multiple";
 };
 
 export default function Chip({ items, value, onChange, type = "multiple" }: Props) {
+  const isSingle = type === "single";
+
+  // Normalize value to array internally for uniform handling
+  const valueArray: string[] = isSingle
+    ? typeof value === "string"
+      ? value ? [value] : []
+      : value || []
+    : (value as string[]) || [];
+
   function toggle(v: string) {
-    if (type === "single") {
-      const next = value.includes(v) ? [] : [v];
+    if (isSingle) {
+      const next = valueArray.includes(v) ? '' : v; // next is string or empty string for deselect
       onChange(next);
     } else {
-      const has = value.includes(v);
-      const next = has ? value.filter(x => x !== v) : [...value, v];
+      const has = valueArray.includes(v);
+      const next = has ? valueArray.filter(x => x !== v) : [...valueArray, v];
       onChange(next);
     }
   }
@@ -27,7 +36,7 @@ export default function Chip({ items, value, onChange, type = "multiple" }: Prop
       {items.map((item) => {
         const label = typeof item === "string" ? item : item.label;
         const v = typeof item === "string" ? item : item.value;
-        const active = value.includes(v);
+        const active = valueArray.includes(v);
 
         return (
           <Pressable
