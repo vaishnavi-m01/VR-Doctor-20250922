@@ -166,7 +166,7 @@ export default function PreAndPostVR() {
     });
 
     setValidationErrors(newErrors);
-    
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -207,29 +207,29 @@ export default function PreAndPostVR() {
 
 
   const handleSave = async () => {
-   if (Object.keys(responses).length === 0) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'No responses entered. Please fill the form before saving.',
-      position: 'top',
-      topOffset: 50
-    });
-    return;
-  }
+    if (Object.keys(responses).length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'No responses entered. Please fill the form before saving.',
+        position: 'top',
+        topOffset: 50
+      });
+      return;
+    }
 
-  const passedValidation = validateResponses();
+    const passedValidation = validateResponses();
 
-  if (!passedValidation) {
-    Toast.show({
-      type: 'error',
-      text1: 'Validation Error',
-      text2: 'All fields are required',
-      position: 'top',
-      topOffset: 50
-    });
-    return;
-  }
+    if (!passedValidation) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'All fields are required',
+        position: 'top',
+        topOffset: 50
+      });
+      return;
+    }
     setSaving(true);
     try {
       const questionsToSave = questions.filter(q => q.Type === selectedAssessmentType);
@@ -253,17 +253,18 @@ export default function PreAndPostVR() {
       console.log("Saving PrePost VR session payload:", payload);
       console.log("Session being saved:", sessionNo, "for assessment type:", selectedAssessmentType);
 
-      const isAdd = questionData.some((q) => !q.PPPVRId);
+      const isUpdate = questionData.some((q) => q.PPPVRId);
 
       const response = await apiService.post('/AddUpdateParticipantPrePostVRSessions', payload);
 
       if (response.status === 200) {
         Toast.show({
           type: 'success',
-          text1: 'Success',
-          text2: isAdd ? 'PreAndPost added successfully!' : 'PreAndPost updated successfully!',
+          text1: isUpdate ? 'Updated Successfully' : 'Added Successfully',
+          text2: isUpdate
+            ? 'PreAndPost updated successfully!'
+            : 'PreAndPost added successfully!',
           position: 'top',
-          topOffset: 50,
           visibilityTime: 1000,
           onHide: () => navigation.goBack(),
         });
@@ -309,31 +310,31 @@ export default function PreAndPostVR() {
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View style={{
           backgroundColor: 'white',
-          borderBottomColor: "rgba(229, 231, 235, 1)", 
+          borderBottomColor: "rgba(229, 231, 235, 1)",
           borderBottomWidth: 1,
           borderRadius: 12,
-          padding:17,
+          padding: 17,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          shadowColor: "#000000",       
-          shadowOpacity: 0.35,          
-          shadowRadius: 1,           
+          shadowColor: "#000000",
+          shadowOpacity: 0.35,
+          shadowRadius: 1,
           shadowOffset: { width: 0, height: 1 },
         }}>
-          <Text 
-           style={{ 
-              color: "rgba(22, 163, 74, 1)", 
-              fontWeight: "700",             
-              fontSize: 18,                 
-              lineHeight: 28,     
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
+              fontWeight: "700",
+              fontSize: 18,
+              lineHeight: 28,
             }}
           >
             Participant ID: {participantIdInput}
           </Text>
-          <Text 
-           style={{
-              color: "rgba(22, 163, 74, 1)", 
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
               fontWeight: "600",
               fontSize: 16,
               lineHeight: 24,
@@ -437,100 +438,100 @@ export default function PreAndPostVR() {
 
       <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
         <FormCard icon="I" title="Pre & Post VR">
-          <View style={{ paddingBottom: 40}}>
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Field label="Participant ID" value={participantIdInput} editable={false} />
+          <View style={{ paddingBottom: 40 }}>
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Field label="Participant ID" value={participantIdInput} editable={false} />
+              </View>
+              <View className="flex-1">
+                <DateField label="Date" value={dateInput} onChange={setDateInput} />
+              </View>
             </View>
-            <View className="flex-1">
-              <DateField label="Date" value={dateInput} onChange={setDateInput} />
-            </View>
-          </View>
 
-          {/* Assessment Type Dropdown */}
-          <View style={{ marginTop: 16 }}>
-            <Text style={{ fontSize: 12, color: '#4b5f5a', marginBottom: 8 }}>
-              Assessment Type
-            </Text>
-            <View style={{ width: 128, position: 'relative' }}>
-              <Pressable
-                style={{
-                  backgroundColor: '#f8f9fa',
-                  borderColor: '#e5e7eb',
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-                onPress={() => setShowAssessmentDropdown(!showAssessmentDropdown)}
-              >
-                <Text style={{ fontSize: 14, color: '#374151' }}>{selectedAssessmentType}</Text>
-                <Text style={{ color: '#6b7280', fontSize: 12 }}>▼</Text>
-              </Pressable>
-
-              {showAssessmentDropdown && (
-                <>
-                  {/* Backdrop */}
-                  <Pressable
-                    style={{
-                      position: 'absolute',
-                      top: -200,
-                      left: -200,
-                      right: -200,
-                      bottom: -200,
-                      zIndex: 9998,
-                    }}
-                    onPress={() => setShowAssessmentDropdown(false)}
-                  />
-                  <View style={{
-                    position: 'absolute',
-                    top: 40,
-                    left: 0,
-                    backgroundColor: 'white',
+            {/* Assessment Type Dropdown */}
+            <View style={{ marginTop: 16 }}>
+              <Text style={{ fontSize: 12, color: '#4b5f5a', marginBottom: 8 }}>
+                Assessment Type
+              </Text>
+              <View style={{ width: 128, position: 'relative' }}>
+                <Pressable
+                  style={{
+                    backgroundColor: '#f8f9fa',
                     borderColor: '#e5e7eb',
                     borderWidth: 1,
                     borderRadius: 8,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.08,
-                    shadowRadius: 8,
-                    shadowOffset: { width: 0, height: 2 },
-                    elevation: 10,
-                    width: 128,
-                    zIndex: 9999,
-                    overflow: 'hidden',
-                  }}>
-                    {assessmentTypes.map((type, index) => (
-                      <Pressable
-                        key={type}
-                        style={{
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                          borderBottomWidth: index < assessmentTypes.length - 1 ? 1 : 0,
-                          borderBottomColor: '#f1f5f9',
-                          backgroundColor: selectedAssessmentType === type ? '#e6f4ea' : 'white',
-                        }}
-                        onPress={() => {
-                          setSelectedAssessmentType(type);
-                          setShowAssessmentDropdown(false);
-                        }}
-                      >
-                        <Text style={{
-                          fontSize: 14,
-                          color: selectedAssessmentType === type ? '#2f855a' : '#374151',
-                          fontWeight: selectedAssessmentType === type ? '600' : undefined,
-                        }}>
-                          {type}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </>
-              )}
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => setShowAssessmentDropdown(!showAssessmentDropdown)}
+                >
+                  <Text style={{ fontSize: 14, color: '#374151' }}>{selectedAssessmentType}</Text>
+                  <Text style={{ color: '#6b7280', fontSize: 12 }}>▼</Text>
+                </Pressable>
+
+                {showAssessmentDropdown && (
+                  <>
+                    {/* Backdrop */}
+                    <Pressable
+                      style={{
+                        position: 'absolute',
+                        top: -200,
+                        left: -200,
+                        right: -200,
+                        bottom: -200,
+                        zIndex: 9998,
+                      }}
+                      onPress={() => setShowAssessmentDropdown(false)}
+                    />
+                    <View style={{
+                      position: 'absolute',
+                      top: 40,
+                      left: 0,
+                      backgroundColor: 'white',
+                      borderColor: '#e5e7eb',
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      shadowColor: '#000',
+                      shadowOpacity: 0.08,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 2 },
+                      elevation: 10,
+                      width: 128,
+                      zIndex: 9999,
+                      overflow: 'hidden',
+                    }}>
+                      {assessmentTypes.map((type, index) => (
+                        <Pressable
+                          key={type}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderBottomWidth: index < assessmentTypes.length - 1 ? 1 : 0,
+                            borderBottomColor: '#f1f5f9',
+                            backgroundColor: selectedAssessmentType === type ? '#e6f4ea' : 'white',
+                          }}
+                          onPress={() => {
+                            setSelectedAssessmentType(type);
+                            setShowAssessmentDropdown(false);
+                          }}
+                        >
+                          <Text style={{
+                            fontSize: 14,
+                            color: selectedAssessmentType === type ? '#2f855a' : '#374151',
+                            fontWeight: selectedAssessmentType === type ? '600' : undefined,
+                          }}>
+                            {type}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                )}
+              </View>
             </View>
-          </View>
           </View>
         </FormCard>
 
@@ -542,45 +543,44 @@ export default function PreAndPostVR() {
         {selectedAssessmentType === 'Pre' && preQuestions.length > 0 && (
           <FormCard icon="A" title="Pre Virtual Reality Questions">
             {preQuestions.map((q) => {
-              const hasError = validationErrors[q.PPVRQMID]; 
-                return (
-                  <View key={q.PPVRQMID} className="mb-3">
-                    <Text 
-                      className={`text-xs text-[#4b5f5a] mb-2 ${
-                      hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+              const hasError = validationErrors[q.PPVRQMID];
+              return (
+                <View key={q.PPVRQMID} className="mb-3">
+                  <Text
+                    className={`text-xs text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
                       }`}
-                    > 
-                      {q.QuestionName}
-                    </Text>
-                    <View className="flex-row gap-2">
-                      {['Yes', 'No'].map((opt) => (
-                        <Pressable
-                          key={opt}
-                          onPress={() => setAnswer(q.PPVRQMID, opt)}
-                          className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-                        >
-                          <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                            {opt === 'Yes' ? '✅' : '❌'}
-                          </Text>
-                          <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                            {opt}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-
-                    {responses[q.PPVRQMID]?.ScaleValue && (
-                      <View className="mt-3">
-                        <Field
-                          label="Additional Notes (Optional)"
-                          placeholder="Please provide details…"
-                          value={responses[q.PPVRQMID]?.Notes || ''}
-                          onChangeText={(text) => setNote(q.PPVRQMID, text)}
-                        />
-                      </View>
-                    )}
+                  >
+                    {q.QuestionName}
+                  </Text>
+                  <View className="flex-row gap-2">
+                    {['Yes', 'No'].map((opt) => (
+                      <Pressable
+                        key={opt}
+                        onPress={() => setAnswer(q.PPVRQMID, opt)}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+                      >
+                        <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                          {opt === 'Yes' ? '✅' : '❌'}
+                        </Text>
+                        <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                          {opt}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
-                );
+
+                  {responses[q.PPVRQMID]?.ScaleValue && (
+                    <View className="mt-3">
+                      <Field
+                        label="Additional Notes (Optional)"
+                        placeholder="Please provide details…"
+                        value={responses[q.PPVRQMID]?.Notes || ''}
+                        onChangeText={(text) => setNote(q.PPVRQMID, text)}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
             })}
           </FormCard>
         )}
@@ -588,45 +588,44 @@ export default function PreAndPostVR() {
         {selectedAssessmentType === 'Post' && postQuestions.length > 0 && (
           <FormCard icon="B" title="Post Virtual Reality Questions">
             {postQuestions.map((q) => {
-              const hasError = validationErrors[q.PPVRQMID]; 
-                return (
-                  <View key={q.PPVRQMID} className="mb-3">
-                    <Text 
-                        className={`text-xs text-[#4b5f5a] mb-2 ${
-                        hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
-                        }`}
-                      > 
-                      {q.QuestionName}
-                      </Text>
-                    <View className="flex-row gap-2">
-                      {['Yes', 'No'].map((opt) => (
-                        <Pressable
-                          key={opt}
-                          onPress={() => setAnswer(q.PPVRQMID, opt)}
-                          className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
-                        >
-                          <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                            {opt === 'Yes' ? '✅' : '❌'}
-                          </Text>
-                          <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
-                            {opt}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-
-                    {responses[q.PPVRQMID]?.ScaleValue && (
-                      <View className="mt-3">
-                        <Field
-                          label="Additional Notes (Optional)"
-                          placeholder="Please provide details…"
-                          value={responses[q.PPVRQMID]?.Notes || ''}
-                          onChangeText={(text) => setNote(q.PPVRQMID, text)}
-                        />
-                      </View>
-                    )}
+              const hasError = validationErrors[q.PPVRQMID];
+              return (
+                <View key={q.PPVRQMID} className="mb-3">
+                  <Text
+                    className={`text-xs text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                      }`}
+                  >
+                    {q.QuestionName}
+                  </Text>
+                  <View className="flex-row gap-2">
+                    {['Yes', 'No'].map((opt) => (
+                      <Pressable
+                        key={opt}
+                        onPress={() => setAnswer(q.PPVRQMID, opt)}
+                        className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'bg-[#4FC264]' : 'bg-[#EBF6D6]'}`}
+                      >
+                        <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                          {opt === 'Yes' ? '✅' : '❌'}
+                        </Text>
+                        <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                          {opt}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
-               );
+
+                  {responses[q.PPVRQMID]?.ScaleValue && (
+                    <View className="mt-3">
+                      <Field
+                        label="Additional Notes (Optional)"
+                        placeholder="Please provide details…"
+                        value={responses[q.PPVRQMID]?.Notes || ''}
+                        onChangeText={(text) => setNote(q.PPVRQMID, text)}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
             })}
           </FormCard>
         )}
@@ -634,12 +633,12 @@ export default function PreAndPostVR() {
         {/* Show message if no questions for selected type */}
         {((selectedAssessmentType === 'Pre' && preQuestions.length === 0) ||
           (selectedAssessmentType === 'Post' && postQuestions.length === 0)) && (
-          <FormCard icon="ℹ️" title={`No ${selectedAssessmentType} Questions Available`}>
-            <Text className="text-gray-600 text-center py-4">
-              No {selectedAssessmentType} Virtual Reality questions are available at this time.
-            </Text>
-          </FormCard>
-        )}
+            <FormCard icon="ℹ️" title={`No ${selectedAssessmentType} Questions Available`}>
+              <Text className="text-gray-600 text-center py-4">
+                No {selectedAssessmentType} Virtual Reality questions are available at this time.
+              </Text>
+            </FormCard>
+          )}
 
         {/* Spacer so content not hidden behind BottomBar */}
         <View style={{ height: 150 }} />

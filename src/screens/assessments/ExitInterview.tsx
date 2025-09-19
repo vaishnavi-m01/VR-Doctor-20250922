@@ -105,7 +105,7 @@ export default function ExitInterview() {
          const res = await apiService.post<any>("/GetParticipantDetails", { ParticipantId: patientId });
          const data = res.data?.ResponseData;
         if (data) {
-          setParticipantName(data.Signature ?? ''); // or the proper field for participant signature
+          setParticipantName(data.Signature ?? ''); 
         }
       } catch (err) {
         console.error('Error fetching participant details', err);
@@ -356,14 +356,18 @@ const handleClear = () => {
 
       await apiService.post('/AddUpdateParticipantExitInterview', body);
 
-      Toast.show({
+     Toast.show({
         type: 'success',
-        text1: 'Saved Successfully',
-        text2: exitInterviewId ? 'Exit Interview Updated Successfully' : 'Exit Interview added Successfully',
+        text1: exitInterviewId ? 'Updated Successfully' : 'Added Successfully',
+        text2: exitInterviewId
+          ? 'Exit Interview updated successfully'
+          : 'Exit Interview added successfully',
         onHide: () => navigation.goBack(),
         position: 'top',
         topOffset: 50,
+        visibilityTime:1000
       });
+
     } catch (error) {
       console.error('Save error:', error);
       Toast.show({

@@ -419,256 +419,171 @@ const handleYesNoChange = (sofid: string, value: string) => {
     return (formValues[sofid] ?? '').trim();
   };
 
-  const handleValidate = () => {
-    const errors: Record<string, string> = {};
+ const handleValidate = (): boolean => {
+  const errors: Record<string, string> = {};
 
-    // Required text fields excluding start/end time fields
-    const requiredTextFields = [
-      'SOFID-1',
-      'SOFID-2',
-      'SOFID-3',
-      'SOFID-4',
-      'SOFID-5',
-      'SOFID-6',
-      'SOFID-11',
-      'SOFID-12',
-    ];
+  // Required text fields excluding start/end time fields
+  const requiredTextFields = [
+    'SOFID-1',
+    'SOFID-2',
+    'SOFID-3',
+    'SOFID-4',
+    'SOFID-5',
+    'SOFID-6',
+    'SOFID-11',
+    'SOFID-12',
+  ];
 
-    requiredTextFields.forEach((field) => {
-      const value = getFormValue(field);
-      if (!value) {
-        const label = formFields.find((f) => f.SOFID === field)?.FieldLabel || field;
-        errors[field] = `${label} is required.`;
-      }
-    });
-
-    // Check start time and end time fields only for format errors (no empty error)
-    ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
-      const value = getFormValue(timeField);
-      const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
-      if (value && !isValidTime(value)) {
-        errors[timeField] = `${label} must be in HH:MM:SS format.`;
-      }
-    });
-
-    // Yes/No state fields required
-    const yesNoRequiredFields = [
-      'SOFID-9',
-      'SOFID-14', 
-      'SOFID-20', 
-      'SOFID-22', 
-      'SOFID-24', 
-      'SOFID-26',
-      'SOFID-16', 
-      'SOFID-17', 
-      'SOFID-18', 
-    ];
-
-    yesNoRequiredFields.forEach((field) => {
-      const val = yesNoStates[field];
-      if (val !== 'Yes' && val !== 'No') {
-        const label = formFields.find((f) => f.SOFID === field)?.FieldLabel || field;
-        errors[field] = `${label} is required.`;
-      }
-    });
-
-    if (!resp || resp.length === 0) {
-      errors['SOFID-13'] = 'Please select Patient Response During Session.';
+  requiredTextFields.forEach((field) => {
+    const value = getFormValue(field);
+    if (!value) {
+      const label = formFields.find((f) => f.SOFID === field)?.FieldLabel || field;
+      errors[field] = `${label} is required.`;
     }
+  });
 
-    // Set errors state or clear it
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please fix the errors before submitting.',
-        position: 'top',
-        topOffset: 50,
-      });
-    } else {
-      setFieldErrors({});
-      Toast.show({
-        type: 'success',
-        text1: 'Validation Passed',
-        text2: 'All required fields are filled.',
-        position: 'top',
-        topOffset: 50,
-      });
+  // Check start time and end time fields only for format errors
+  ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
+    const value = getFormValue(timeField);
+    const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
+    if (value && !isValidTime(value)) {
+      errors[timeField] = `${label} must be in HH:MM:SS format.`;
     }
-  };
+  });
 
+  // Yes/No state fields required
+  const yesNoRequiredFields = [
+    'SOFID-9',
+    'SOFID-14',
+    'SOFID-20',
+    'SOFID-22',
+    'SOFID-24',
+    'SOFID-26',
+    'SOFID-16',
+    'SOFID-17',
+    'SOFID-18',
+  ];
 
-  const handleSave = async () => {
-    if (saving) return;
-  
-    const completed = yesNoStates['SOFID-9'] ?? '';
-    const tech = yesNoStates['SOFID-14'] ?? '';
-    const discomfort = yesNoStates['SOFID-22'] ?? '';
-    const deviation = yesNoStates['SOFID-26'] ?? '';
-    const assistance = yesNoStates['SOFID-24'] ?? '';
-    const followInstructions = yesNoStates['SOFID-20'] ?? '';
-    const distressScoreAndFactG = getFormValue('SOFID-18');
-    const preVRAssessment = getFormValue('SOFID-16');
-    const postVRAssessment = getFormValue('SOFID-17');
-
-   const startTime = getFormValue('SOFID-11');
-    const endTime = getFormValue('SOFID-12');
-
-    if (!isValidTime(startTime) || !isValidTime(endTime)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Start Time and End Time must be in HH:MM:SS format.',
-        position: 'top',
-        topOffset: 50,
-      });
-      setSaving(false);
-      return;
+  yesNoRequiredFields.forEach((field) => {
+    const val = yesNoStates[field];
+    if (val !== 'Yes' && val !== 'No') {
+      const label = formFields.find((f) => f.SOFID === field)?.FieldLabel || field;
+      errors[field] = `${label} is required.`;
     }
+  });
 
-    setSaving(true);
+  // Response required
+  if (!resp || resp.length === 0) {
+    errors['SOFID-13'] = 'Please select Patient Response During Session.';
+  }
 
-    try {
-      const participantId = getFormValue('SOFID-2');
-      const dateTime = getFormValue('SOFID-1');
+  if (Object.keys(errors).length > 0) {
+    setFieldErrors(errors);
+    Toast.show({
+      type: 'error',
+      text1: 'Validation Error',
+      text2: 'Please fix the errors before submitting.',
+      position: 'top',
+      topOffset: 50,
+    });
+    return false; // ❌ validation failed
+  } else {
+    setFieldErrors({});
+    return true; // ✅ validation passed
+  }
+};
 
-      if (!participantId || !studyIdState || !dateTime) {
-        Toast.show({
-          type: 'error',
-          text1: 'Validation Error',
-          text2: 'Missing required fields: Participant ID, Study ID, or Date/Time',
-          position: 'top',
-          topOffset: 50,
-        });
-        setSaving(false);
-        return;
-      }
+const handleSave = async () => {
+  if (saving) return;
 
-      const dateTimeFormatted = formatDateTimeForApi(dateTime);
+  const isValid = handleValidate();
+  if (!isValid) return; // stop if validation fails
 
-      // Validate required text fields
-      const requiredTextFields = [
-        'SOFID-1',
-        'SOFID-2',
-        'SOFID-3',
-        'SOFID-4',
-        'SOFID-5',
-        'SOFID-6',
-        'SOFID-11',
-        'SOFID-12',
-      ];
+  setSaving(true);
 
-      const anyTextFieldEmpty = requiredTextFields.some((field) => {
-        const value = getFormValue(field);
-        return !value || value === '';
-      });
+  try {
+    const participantId = getFormValue('SOFID-2');
+    const dateTime = getFormValue('SOFID-1');
+    const dateTimeFormatted = formatDateTimeForApi(dateTime);
 
-      // Validate yes/no states
-      const requiredYesNoStates = [
-        completed,
-        tech,
-        followInstructions,
-        discomfort,
-        assistance,
-        deviation,
-        preVRAssessment,
-        postVRAssessment,
-        distressScoreAndFactG,
-      ];
-
-      const anyYesNoEmpty = requiredYesNoStates.some((state) => state !== 'Yes' && state !== 'No');
-
-      const isPatientResponseEmpty = resp.length === 0;
-
-      if (anyTextFieldEmpty || anyYesNoEmpty || isPatientResponseEmpty) {
-        Toast.show({
-          type: 'error',
-          text1: 'Validation Error',
-          text2: 'All fields are required.',
-          position: 'top',
-          topOffset: 50,
-        });
-        setSaving(false);
-        return;
-      }
-
-      // Construct payload
-      const payload: StudyObservationApiModel = {
-        ObservationId: observationId,
-        ParticipantId: participantId,
-        StudyId: studyIdState,
-        DateAndTime: dateTimeFormatted,
-        DeviceId: getFormValue('SOFID-3') || STATIC_DEVICE_ID,
-        ObserverName: getFormValue('SOFID-4'),
-        SessionNumber: getFormValue('SOFID-5'),
-        SessionName: getFormValue('SOFID-6'),
-        FACTGScore: getFormValue('SOFID-7'),
-        DistressThermometerScore: getFormValue('SOFID-8'),
-        SessionCompleted: completed,
-        SessionNotCompletedReason: completed === 'No' ? getFormValue('SOFID-10') || null : null,
-        SessionStartTime: getFormValue('SOFID-11'),
-        SessionEndTime: getFormValue('SOFID-12'),
-        PatientResponseDuringSession: Array.isArray(resp) ? resp.join(',') : resp,
-        PatientResponseOther:
-          Array.isArray(resp) && resp.includes('Other') && getFormValue('SOFID-13-OTHER') !== ''
-            ? getFormValue('SOFID-13-OTHER')
-            : !Array.isArray(resp) && resp === 'Other' && getFormValue('SOFID-13-OTHER') !== ''
+    // Build payload
+    const payload: StudyObservationApiModel = {
+      ObservationId: observationId,
+      ParticipantId: participantId,
+      StudyId: studyIdState,
+      DateAndTime: dateTimeFormatted,
+      DeviceId: getFormValue('SOFID-3') || STATIC_DEVICE_ID,
+      ObserverName: getFormValue('SOFID-4'),
+      SessionNumber: getFormValue('SOFID-5'),
+      SessionName: getFormValue('SOFID-6'),
+      FACTGScore: getFormValue('SOFID-7'),
+      DistressThermometerScore: getFormValue('SOFID-8'),
+      SessionCompleted: yesNoStates['SOFID-9'],
+      SessionNotCompletedReason:
+        yesNoStates['SOFID-9'] === 'No' ? getFormValue('SOFID-10') || null : null,
+      SessionStartTime: getFormValue('SOFID-11'),
+      SessionEndTime: getFormValue('SOFID-12'),
+      PatientResponseDuringSession: Array.isArray(resp) ? resp.join(',') : resp,
+      PatientResponseOther:
+        Array.isArray(resp) && resp.includes('Other') && getFormValue('SOFID-13-OTHER') !== ''
+          ? getFormValue('SOFID-13-OTHER')
+          : !Array.isArray(resp) && resp === 'Other' && getFormValue('SOFID-13-OTHER') !== ''
             ? getFormValue('SOFID-13-OTHER')
             : null,
-        TechnicalIssues: tech,
-        TechnicalIssuesDescription: tech === 'Yes' && getFormValue('SOFID-15') !== '' ? getFormValue('SOFID-15') : null,
-        PreVRAssessmentCompleted: preVRAssessment,
-        PostVRAssessmentCompleted: postVRAssessment,
-        DistressScoreAndFACTGCompleted: distressScoreAndFactG,
-        SessionStoppedMidwayReason:
-          completed === 'No' ? getFormValue('SOFID-19') || getFormValue('SOFID-10') || null : null,
-        PatientAbleToFollowInstructions: followInstructions,
-        PatientInstructionsExplanation:
-          followInstructions === 'No' && getFormValue('SOFID-21') !== '' ? getFormValue('SOFID-21') : null,
-        VisibleSignsOfDiscomfort: discomfort,
-        DiscomfortDescription:
-          discomfort === 'Yes' && getFormValue('SOFID-23') !== '' ? getFormValue('SOFID-23') : null,
-        PatientRequiredAssistance: assistance,
-        AssistanceExplanation:
-          assistance === 'Yes' && getFormValue('SOFID-25') !== '' ? getFormValue('SOFID-25') : null,
-        DeviationsFromProtocol: deviation,
-        ProtocolDeviationExplanation:
-          deviation === 'Yes' && getFormValue('SOFID-27') !== '' ? getFormValue('SOFID-27') : null,
-        OtherObservations: getFormValue('SOFID-28') !== '' ? getFormValue('SOFID-28') : null,
-        ModifiedBy: userId ?? 'UID-1',
-      };
+      TechnicalIssues: yesNoStates['SOFID-14'],
+      TechnicalIssuesDescription:
+        yesNoStates['SOFID-14'] === 'Yes' && getFormValue('SOFID-15') !== '' ? getFormValue('SOFID-15') : null,
+      PreVRAssessmentCompleted: yesNoStates['SOFID-16'],
+      PostVRAssessmentCompleted: yesNoStates['SOFID-17'],
+      DistressScoreAndFACTGCompleted: yesNoStates['SOFID-18'],
+      SessionStoppedMidwayReason:
+        yesNoStates['SOFID-9'] === 'No' ? getFormValue('SOFID-19') || getFormValue('SOFID-10') || null : null,
+      PatientAbleToFollowInstructions: yesNoStates['SOFID-20'],
+      PatientInstructionsExplanation:
+        yesNoStates['SOFID-20'] === 'No' && getFormValue('SOFID-21') !== '' ? getFormValue('SOFID-21') : null,
+      VisibleSignsOfDiscomfort: yesNoStates['SOFID-22'],
+      DiscomfortDescription:
+        yesNoStates['SOFID-22'] === 'Yes' && getFormValue('SOFID-23') !== '' ? getFormValue('SOFID-23') : null,
+      PatientRequiredAssistance: yesNoStates['SOFID-24'],
+      AssistanceExplanation:
+        yesNoStates['SOFID-24'] === 'Yes' && getFormValue('SOFID-25') !== '' ? getFormValue('SOFID-25') : null,
+      DeviationsFromProtocol: yesNoStates['SOFID-26'],
+      ProtocolDeviationExplanation:
+        yesNoStates['SOFID-26'] === 'Yes' && getFormValue('SOFID-27') !== '' ? getFormValue('SOFID-27') : null,
+      OtherObservations: getFormValue('SOFID-28') !== '' ? getFormValue('SOFID-28') : null,
+      ModifiedBy: userId ?? 'UID-1',
+    };
 
-      console.log('Saving observation payload:', payload);
+    console.log('Saving observation payload:', payload);
 
-      const response = await apiService.post('/AddUpdateParticipantStudyObservationForm', payload);
+    const response = await apiService.post('/AddUpdateParticipantStudyObservationForm', payload);
 
-      if (response.status === 200 || response.status === 201) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: !observationId ? 'Observation Added successfully!' : 'Observation Updated successfully!',
-          position: 'top',
-          topOffset: 50,
-          visibilityTime: 1000,
-          onHide: () => navigation.goBack(),
-        });
-      } else {
-        throw new Error(`Server returned status ${response.status}`);
-      }
-    } catch (error: any) {
-      console.error('Error saving observation:', error);
+    if (response.status === 200 || response.status === 201) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.message || 'Failed to save Study Observation. Please try again.',
+        type: 'success',
+        text1: !observationId ? "Added Successfully!" : "Updated Successfully!",
+        text2: !observationId ? 'Observation Added successfully!' : 'Observation Updated successfully!',
         position: 'top',
         topOffset: 50,
+        visibilityTime: 1000,
+        onHide: () => navigation.goBack(),
       });
-    } finally {
-      setSaving(false);
+    } else {
+      throw new Error(`Server returned status ${response.status}`);
     }
-  };
+  } catch (error: any) {
+    console.error('Error saving observation:', error);
+    Toast.show({
+      type: 'error',
+      text1: 'Error',
+      text2: error.message || 'Failed to save Study Observation. Please try again.',
+      position: 'top',
+      topOffset: 50,
+    });
+  } finally {
+    setSaving(false);
+  }
+};
     
 
   const handleClear = () => {

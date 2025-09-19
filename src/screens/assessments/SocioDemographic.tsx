@@ -545,7 +545,7 @@ export default function SocioDemographic() {
       if (response.status === 200) {
         Toast.show({
           type: "success",
-          text1: isEditMode ? "Updated" : "Success",
+          text1: isEditMode ? 'Updated Successfully' : 'Added Successfully',
           text2: isEditMode
             ? "Participant updated successfully!"
             : "Participant added successfully!",
