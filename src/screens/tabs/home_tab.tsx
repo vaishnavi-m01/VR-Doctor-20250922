@@ -35,7 +35,7 @@ export default function HomeTab() {
       title: 'Assessments',
       subtitle: 'Patient evaluation forms',
       route: 'PreVR',
-      params: {}
+      params: { patientId: 'PID-3', studyId: 'CS-0001', age: 35 } 
     }
   ];
 
