@@ -502,7 +502,6 @@ const handleYesNoChange = (sofid: string, value: string) => {
   const handleSave = async () => {
     if (saving) return;
   
-
     const completed = yesNoStates['SOFID-9'] ?? '';
     const tech = yesNoStates['SOFID-14'] ?? '';
     const discomfort = yesNoStates['SOFID-22'] ?? '';
@@ -673,12 +672,13 @@ const handleYesNoChange = (sofid: string, value: string) => {
     
 
   const handleClear = () => {
-    setFormValues({});
+    // setFormValues({});
     setYesNoStates({});
     setResp('');
     setObservationId(null);
     setFactGScore(null);
     setDistressScore(null);
+    setFieldErrors({});
   };
 
   const renderTextField = (sofid: string, label: string, placeholder?: string, multiline = false) => {

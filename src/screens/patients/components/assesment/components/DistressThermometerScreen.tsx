@@ -365,47 +365,44 @@ export default function DistressThermometerScreen() {
   }, [selectedDate, enteredPatientId]);
 
 
+  const handleValidate = () => {
+    const newErrors: typeof errors = {};
 
-const handleValidate = () => {
-  const newErrors: typeof errors = {};
+    const hasDistressScore = v > 0;
+    const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
 
-  const hasDistressScore = v > 0;
-  const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
-
-  if (!hasDistressScore && !hasSelectedProblem) {
-    newErrors.distressScore = "Please rate your distress (0-10).";
-    newErrors.selectedProblems = "Please select at least one problem.";
-  } else {
-    if (!hasDistressScore) {
+    if (!hasDistressScore && !hasSelectedProblem) {
       newErrors.distressScore = "Please rate your distress (0-10).";
-    }
-    if (!hasSelectedProblem) {
       newErrors.selectedProblems = "Please select at least one problem.";
+    } else {
+      if (!hasDistressScore) {
+        newErrors.distressScore = "Please rate your distress (0-10).";
+      }
+      if (!hasSelectedProblem) {
+        newErrors.selectedProblems = "Please select at least one problem.";
+      }
     }
-  }
 
-  setErrors(newErrors);
+    setErrors(newErrors);
 
-  if (Object.keys(newErrors).length === 0) {
-    Toast.show({
-      type: "success",
-      text1: "Validation Passed",
-      text2: "All required fields are filled",
-      position: "top",
-      topOffset: 50,
-    });
-  } else {
-    Toast.show({
-      type: "error",
-      text1: "Validation Error",
-      text2: Object.values(newErrors).join(" "),
-      position: "top",
-      topOffset: 50,
-    });
-  }
-};
-
-
+    if (Object.keys(newErrors).length === 0) {
+      Toast.show({
+        type: "success",
+        text1: "Validation Passed",
+        text2: "All required fields are filled",
+        position: "top",
+        topOffset: 50,
+      });
+    } else {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: Object.values(newErrors).join(" "),
+        position: "top",
+        topOffset: 50,
+      });
+    }
+  };
 
   const handleSave = async () => {
 
@@ -426,13 +423,10 @@ const handleValidate = () => {
     try {
       setLoading(true);
 
-
-      // Detect if this is an update by presence of PDTWQID (existing data)
       const hasExistingData = categories.some((cat) =>
         cat.questions.some((q) => q.PDTWQID)
       );
 
-      // Prepare distress answers for API - include all questions with their answers
       const distressData = categories.flatMap((cat) =>
         cat.questions.map((q) => ({
           DistressQuestionId: q.id,
@@ -450,7 +444,6 @@ const handleValidate = () => {
           ? studyId
           : `${studyId}`;
 
-      // Construct the request object with an update flag if existing data detected
       const reqObj: any = {
         ParticipantId: enteredPatientId,
         StudyId: studyIdFormatted,
@@ -469,7 +462,6 @@ const handleValidate = () => {
       // Call backend to add or update distress thermometer data
       await apiService.post("/AddUpdateParticipantDistressThermometerWeeklyQA", reqObj);
 
-      // Prepare distress score save request including PDWSID for update
       const scoreObj: SaveScoreRequest = {
         ParticipantId: enteredPatientId,
         StudyId: studyIdFormatted,
@@ -517,26 +509,25 @@ const handleValidate = () => {
     }
   };
 
-const onChangeDistress = (value: number) => {
-  setV(value);
-  setErrors((prevErrors) => ({
-    distressScore: undefined,
-    selectedProblems: prevErrors.selectedProblems, 
-  }));
-};
-
-
-const toggleProblem = (questionId: string) => {
-  setSelectedProblems((prev) => {
-    const newSelected = { ...prev, [questionId]: !prev[questionId] };
+  const onChangeDistress = (value: number) => {
+    setV(value);
     setErrors((prevErrors) => ({
-      distressScore: prevErrors.distressScore, 
-      selectedProblems: undefined, 
+      distressScore: undefined,
+      selectedProblems: prevErrors.selectedProblems, 
     }));
-    return newSelected;
-  });
-};
+  };
 
+
+  const toggleProblem = (questionId: string) => {
+    setSelectedProblems((prev) => {
+      const newSelected = { ...prev, [questionId]: !prev[questionId] };
+      setErrors((prevErrors) => ({
+        distressScore: prevErrors.distressScore, 
+        selectedProblems: undefined, 
+      }));
+      return newSelected;
+    });
+  };
 
 
   const handleClear = () => {
@@ -741,26 +732,31 @@ const toggleProblem = (questionId: string) => {
 
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 mb-4">
-          <Text className={`font-bold text-lg mb-4 ${
-              errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
-              }`} 
-            >
-           Rate Your Distress (0-10)</Text>
-          <FormCard icon="DT" title="Distress Thermometer">
+           <FormCard icon="DT" title="Distress Thermometer">
+             <Text className={`font-bold text-lg mb-4 ${
+                errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                }`} 
+              >
+              Rate Your Distress (0-10)
+            </Text>
             <Thermometer value={v} onChange={onChangeDistress} />
-            
+             
+         
           </FormCard>
+        
         </View>
 
 
         {/* Dynamic Problem List */}
         <View className="bg-white rounded-lg p-4 mb-4">
-          <Text className={`font-bold text-lg mb-4 ${
-              errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
-              }`} 
-          >
-            Problem List</Text>
-          
+           <FormCard icon="P" title="Problem List">
+           
+              {errors.selectedProblems && (
+                <Text style={{ color: 'red', marginVertical: 8, marginLeft: 12, fontSize: 14 }}>
+                  {errors.selectedProblems}
+                </Text>
+              )}
+          </FormCard>
 
           {error && (
             <View className="bg-red-50 p-3 rounded-lg mb-4">
@@ -770,6 +766,7 @@ const toggleProblem = (questionId: string) => {
               </Pressable>
             </View>
           )}
+
           {!loading && !error && categories.length === 0 && (
             <View className="bg-yellow-50 p-3 rounded-lg mb-4">
               <Text className="text-yellow-700 text-center">No questions found for this participant.</Text>
@@ -780,7 +777,7 @@ const toggleProblem = (questionId: string) => {
           )}
 
           {categories.map((cat, index) => (
-            <View key={`${cat.categoryName}-${index}`} className="mb-4">
+            <View key={`${cat.categoryName}-${index}`} className="mb-4 ml-12">
               <Text className="font-bold mb-2 text-sm text-[#333]">{cat.categoryName}</Text>
               <View className="flex-row flex-wrap">
                 {cat.questions?.map((q) => (
@@ -795,8 +792,7 @@ const toggleProblem = (questionId: string) => {
             </View>
           ))}
 
-        
-
+      
         </View>
 
         {/* Extra space to prevent content being hidden */}

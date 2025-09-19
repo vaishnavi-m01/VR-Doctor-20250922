@@ -34,10 +34,6 @@ interface setInformedConsent {
     Status: number;
 }
 
-
-
-
-
 export default function InformedConsentForm({
 
 }: InformedConsentFormProps) {
@@ -68,13 +64,6 @@ export default function InformedConsentForm({
     const [informedConsent, setInformedConsent] = useState<setInformedConsent[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
 
-
-
-
-
-
-
-
     const [acks, setAcks] = useState<Record<string, boolean>>({});
 
     const [agree, setAgree] = useState(false);
@@ -99,9 +88,6 @@ export default function InformedConsentForm({
             [id]: !prev[id],
         }));
     };
-
-
-
 
     useEffect(() => {
         apiService
@@ -139,8 +125,6 @@ export default function InformedConsentForm({
             if (patientId) fetchParticipantDetails();
         }, [patientId])
     );
-
-
 
     useEffect(() => {
         const allInitialed = informedConsent.every((item) => acks[item.ICMID]);
@@ -459,8 +443,8 @@ export default function InformedConsentForm({
                             label="Participant’s Name"
                             placeholder="Full name"
                             value={participantName}
-
-                            onChangeText={setParticipantName}
+                            // onChangeText={setParticipantName}
+                            editable={false}
                         />
                     </View>
 
@@ -498,7 +482,7 @@ export default function InformedConsentForm({
                                     placeholderTextColor="#9ca3af"
                                     keyboardType="numeric"
                                     className="text-base text-[#0b1f1c]"
-
+                                    editable={false}
                                 />
                             </InputShell>
                         </View>
@@ -509,7 +493,8 @@ export default function InformedConsentForm({
                                 label="Qualification"
                                 placeholder="Education / Qualification"
                                 value={qualification}
-                                onChangeText={setQualification}
+                                // onChangeText={setQualification}
+                                editable={false}
                             />
                         </View>
                     </View>
@@ -673,11 +658,13 @@ function LabeledInput({
     value,
     onChangeText,
     placeholder,
+    editable = true,
 }: {
     label: string;
     value: string;
-    onChangeText: (t: string) => void;
+    onChangeText?: (t: string) => void;
     placeholder?: string;
+    editable?: boolean;
 }) {
     return (
         <View className="flex-1">
