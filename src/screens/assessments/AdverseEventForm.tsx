@@ -462,25 +462,38 @@ export default function AdverseEventForm() {
                     style={{
                         backgroundColor: "white",
                         borderBottomWidth: 1,
-                        borderBottomColor: "#e5e7eb",
+                        borderBottomColor: "rgba(229, 231, 235, 1)", 
                         borderRadius: 12,
                         padding: 17,
                         flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        shadowOffset: { width: 0, height: 2 },
-                        elevation: 1,
+                        shadowColor: "#000000",       
+                        shadowOpacity: 0.35,          
+                        shadowRadius: 1,           
+                        shadowOffset: { width: 0, height: 1 },
                     }}
                 >
 
 
-                    <Text style={{ color: "#2f855a", fontSize: 18, fontWeight: "bold" }}>
+                    <Text 
+                        style={{ 
+                            color: "rgba(22, 163, 74, 1)", 
+                            fontWeight: "700",             
+                            fontSize: 18,                 
+                            lineHeight: 28,     
+                        }}
+                    >
                         Participant ID: {patientId}
                     </Text>
-                    <Text style={{ color: "#2f855a", fontSize: 16, fontWeight: "600" }}>
+                    <Text 
+                     style={{
+                        color: "rgba(22, 163, 74, 1)", 
+                        fontWeight: "600",
+                        fontSize: 16,
+                        lineHeight: 24,
+                        }}
+                    >
                         Study ID: {studyId ? (typeof studyId === "string" ? studyId : `${studyId}`) : "CS-0001"}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>

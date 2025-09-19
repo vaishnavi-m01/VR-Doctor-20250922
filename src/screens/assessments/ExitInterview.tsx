@@ -391,27 +391,43 @@ const handleClear = () => {
           style={{
             backgroundColor: 'white',
             borderBottomWidth: 1,
-            borderBottomColor: '#e5e7eb',
+            borderBottomColor: "rgba(229, 231, 235, 1)", 
             borderRadius: 12,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: 24,
-            shadowColor: '#000',
-            shadowOpacity: 0.05,
-            shadowOffset: { width: 0, height: 1 },
-            shadowRadius: 5,
+            shadowColor: "#000000",       
+            shadowOpacity: 0.35,          
+            shadowRadius: 1,           
+            shadowOffset: { width: 0, height: 1 }, 
           }}
         >
-          <Text style={{ color: '#2f855a', fontSize: 18, fontWeight: 'bold' }}>Participant ID: {patientId}</Text>
-          <Text style={{ color: '#2f855a', fontSize: 16, fontWeight: '600' }}>
+          <Text 
+           style={{ 
+              color: "rgba(22, 163, 74, 1)", 
+              fontWeight: "700",             
+              fontSize: 18,                 
+              lineHeight: 28,     
+            }}
+          >
+            Participant ID: {patientId}
+          </Text>
+          <Text 
+           style={{
+              color: "rgba(22, 163, 74, 1)", 
+              fontWeight: "600",
+              fontSize: 16,
+              lineHeight: 24,
+            }}
+          >
             Study ID: {studyId ? `${studyId}` : 'CS-0001'}
           </Text>
           <Text style={{ color: '#4a5568', fontSize: 16, fontWeight: '600' }}>Age: {age || 'Not specified'}</Text>
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1, padding: 14, backgroundColor: '#f5f7f6', paddingBottom: 420 }}>
+      <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6' ,paddingVertical: 0, paddingHorizontal: 20}}>
         {/* Acknowledgment card */}
         <FormCard icon="E" title="Exit Interview">
           <View style={{ flexDirection: 'row', gap: 12 }}>

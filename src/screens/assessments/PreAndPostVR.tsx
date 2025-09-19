@@ -309,22 +309,36 @@ export default function PreAndPostVR() {
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View style={{
           backgroundColor: 'white',
-          borderBottomColor: '#e5e7eb',
+          borderBottomColor: "rgba(229, 231, 235, 1)", 
           borderBottomWidth: 1,
           borderRadius: 12,
-          padding:24,
+          padding:17,
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 2 },
+          shadowColor: "#000000",       
+          shadowOpacity: 0.35,          
+          shadowRadius: 1,           
+          shadowOffset: { width: 0, height: 1 },
         }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2f855a' }}>
+          <Text 
+           style={{ 
+              color: "rgba(22, 163, 74, 1)", 
+              fontWeight: "700",             
+              fontSize: 18,                 
+              lineHeight: 28,     
+            }}
+          >
             Participant ID: {participantIdInput}
           </Text>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#2f855a' }}>
+          <Text 
+           style={{
+              color: "rgba(22, 163, 74, 1)", 
+              fontWeight: "600",
+              fontSize: 16,
+              lineHeight: 24,
+            }}
+          >
             Study ID: {studyIdFormatted}
           </Text>
 
