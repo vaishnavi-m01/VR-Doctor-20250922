@@ -666,7 +666,7 @@ const handleSave = async () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]" style={{ paddingTop: '0.2rem' }}>
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}>
         <FormCard icon="S" title="Study Observation - Basic Information">
           <View className="flex-row flex-wrap gap-x-4 gap-y-3">
             {groupedFields.basic.map((f) => (

@@ -436,7 +436,7 @@ export default function PreAndPostVR() {
         </>
       )}
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
         <FormCard icon="I" title="Pre & Post VR">
           <View style={{ paddingBottom: 40 }}>
             <View className="flex-row gap-3">

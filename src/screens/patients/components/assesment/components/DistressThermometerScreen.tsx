@@ -709,7 +709,7 @@ export default function DistressThermometerScreen() {
       )}
 
       {/* Main content ScrollView */}
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
         {/* Distress Thermometer Card */}
         <FormCard icon="DT" title={`Distress Thermometer ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}>
           <Text className="text-[12px] text-gray-500 mb-3">

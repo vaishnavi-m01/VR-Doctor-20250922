@@ -598,7 +598,7 @@ export default function AdverseEventForm() {
                 </>
             )}
 
-            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="Date of Report (Optional)" value={reportDate} onChange={setReportDate} />

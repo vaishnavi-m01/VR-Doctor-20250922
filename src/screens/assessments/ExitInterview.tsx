@@ -431,7 +431,7 @@ const handleClear = () => {
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6' ,paddingVertical: 0, paddingHorizontal: 20}}>
+      <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6' ,paddingVertical:2, paddingHorizontal: 20}}>
         {/* Acknowledgment card */}
         <FormCard icon="E" title="Exit Interview">
           <View style={{ flexDirection: 'row', gap: 12 }}>

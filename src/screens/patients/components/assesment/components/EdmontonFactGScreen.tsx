@@ -709,7 +709,7 @@ const handleClear = () => {
       )}
 
       {/* <ScrollView style={{ flex: 1, paddingVertical: 5, paddingHorizontal: 16 }}> */}
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
 
         <FormCard
           icon="FG"

@@ -531,7 +531,7 @@ export default function PostVRAssessment() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]" style={{ paddingTop: '0.2rem' }}>
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]" style={{ paddingTop: '0.1rem' }}>
         {/* Main Assessment Card */}
         <FormCard icon="J" title="Post‑VR Assessment & Questionnaires">
           <View className="flex-row gap-3">
