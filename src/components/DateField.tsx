@@ -10,6 +10,7 @@ type Props = {
   onChange: (val: string) => void;
   mode?: "date" | "time" | "datetime";
   placeholder?: string;
+  error?: string; 
 };
 
 export default function DateField({
