@@ -551,14 +551,23 @@ export default function InformedConsentForm({
                     <View className="mt-3">
                         <View className="flex-row items-center">
                             <Pressable
-                                onPress={() => setAgree((v) => !v)}
-                                className={`w-5 h-5 mr-3 rounded-[6px] border-2 items-center justify-center ${agree ? 'bg-[#0ea06c] border-[#0ea06c]' : 'border-[#cfe0db]'
+                                onPress={() => {
+                                    setAgree((v) => {
+                                        const newVal = !v;
+                                        if (newVal) {
+                                            setErrors((prev) => ({ ...prev, agree: undefined }));
+                                        }
+                                        return newVal;
+                                    });
+                                }}
+                                className={`w-5 h-5 mr-3 rounded-[6px] border-2 items-center justify-center ${agree ? "bg-[#0ea06c] border-[#0ea06c]" : "border-[#cfe0db]"
                                     }`}
                             >
                                 {agree && <Text className="text-white text-[10px]">✓</Text>}
                             </Pressable>
+
                             <Text
-                                className={`text-sm font-medium ${errors && !agree ? "text-red-500" : "text-[#0b1f1c]"
+                                className={`text-sm font-medium ${errors.agree ? "text-red-500" : "text-[#0b1f1c]"
                                     }`}
                             >
                                 I agree to voluntarily take part in the above study.
@@ -676,6 +685,7 @@ function LabeledInput({
                     value={value}
                     onChangeText={onChangeText}
                     placeholder={placeholder}
+                    editable={editable}
                     placeholderTextColor="#9ca3af"
                     className="text-base text-[#0b1f1c]"
                 />

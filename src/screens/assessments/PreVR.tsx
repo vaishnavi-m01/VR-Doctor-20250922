@@ -490,7 +490,7 @@ export default function PreVR() {
       if (response.status === 200) {
         Toast.show({
           type: 'success',
-          text1: 'Success',
+          text1: isAdd ? 'Added Successfully' : 'Updated Successfully',
           text2: isAdd ? 'Assessment added successfully!' : 'Assessment updated successfully!',
           position: 'top',
           topOffset: 50,

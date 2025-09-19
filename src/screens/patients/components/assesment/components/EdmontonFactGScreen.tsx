@@ -518,7 +518,7 @@ const handleClear = () => {
 
         Toast.show({
           type: "success",
-          text1: "Success",
+          text1: isAdd ? 'Added Successfully' : 'Updated Successfully',
           text2: isAdd ? "FactG Added successfully!" : "FactG Updated successfully!",
           position: 'top',
           topOffset: 50,

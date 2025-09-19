@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Checkbox from "../../../../../components/Checkbox";
-import FormCard from "../../../../../components/FormCard";    
+import FormCard from "../../../../../components/FormCard";
 import Thermometer from "../../../../../components/Thermometer";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import BottomBar from "@components/BottomBar";
@@ -476,7 +476,7 @@ export default function DistressThermometerScreen() {
       if (PDWSID) {
         scoreObj.PDWSID = PDWSID;
       }
-
+      const isAdd = PDWSID === null;
       // Call backend to add or update distress score
       const scoreRes = await apiService.post<SaveScoreResponse>(
         "/AddUpdateParticipantDistressWeeklyScore",
@@ -489,8 +489,8 @@ export default function DistressThermometerScreen() {
 
       Toast.show({
         type: "success",
-        text1: "Success",
-        text2: "Distress thermometer data saved successfully!",
+        text1: isAdd ? 'Added Successfully' : 'Updated Successfully',
+        text2:  isAdd? "Distress thermometer added successfully!" : "Distress thermometer Updated successfully!",
         onHide: () => {
           navigation.goBack();
           fetchAvailableDates();
@@ -513,7 +513,7 @@ export default function DistressThermometerScreen() {
     setV(value);
     setErrors((prevErrors) => ({
       distressScore: undefined,
-      selectedProblems: prevErrors.selectedProblems, 
+      selectedProblems: prevErrors.selectedProblems,
     }));
   };
 
@@ -522,8 +522,8 @@ export default function DistressThermometerScreen() {
     setSelectedProblems((prev) => {
       const newSelected = { ...prev, [questionId]: !prev[questionId] };
       setErrors((prevErrors) => ({
-        distressScore: prevErrors.distressScore, 
-        selectedProblems: undefined, 
+        distressScore: prevErrors.distressScore,
+        selectedProblems: undefined,
       }));
       return newSelected;
     });
@@ -556,38 +556,38 @@ export default function DistressThermometerScreen() {
         <View
           style={{
             backgroundColor: "white",
-            borderBottomColor: "rgba(229, 231, 235, 1)", 
+            borderBottomColor: "rgba(229, 231, 235, 1)",
             borderBottomWidth: 1,
             borderRadius: 12,
             padding: 17,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            shadowColor: "#000000",       
-            shadowOpacity: 0.35,          
-            shadowRadius: 1,           
-            shadowOffset: { width: 0, height: 1 },  
+            shadowColor: "#000000",
+            shadowOpacity: 0.35,
+            shadowRadius: 1,
+            shadowOffset: { width: 0, height: 1 },
 
           }}
         >
-          <Text 
-            style={{ 
-              color: "rgba(22, 163, 74, 1)", 
-              fontWeight: "700",             
-              fontSize: 18,                 
-              lineHeight: 28,     
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
+              fontWeight: "700",
+              fontSize: 18,
+              lineHeight: 28,
             }}
           >
             Participant ID: {enteredPatientId}
           </Text>
-          <Text 
+          <Text
             style={{
-                color: "rgba(22, 163, 74, 1)", 
-                fontWeight: "600",
-                fontSize: 16,
-                lineHeight: 24,
-              }}
-            >
+              color: "rgba(22, 163, 74, 1)",
+              fontWeight: "600",
+              fontSize: 16,
+              lineHeight: 24,
+            }}
+          >
             Study ID:{" "}
             {studyId
               ? typeof studyId === "string"
@@ -747,30 +747,29 @@ export default function DistressThermometerScreen() {
 
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 mb-4">
-           <FormCard icon="DT" title="Distress Thermometer">
-             <Text className={`font-bold text-lg mb-4 ${
-                errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
-                }`} 
-              >
+          <FormCard icon="DT" title="Distress Thermometer">
+            <Text className={`font-bold text-lg mb-4 ${errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+              }`}
+            >
               Rate Your Distress (0-10)
             </Text>
             <Thermometer value={v} onChange={onChangeDistress} />
-             
-         
+
+
           </FormCard>
-        
+
         </View>
 
 
         {/* Dynamic Problem List */}
         <View className="bg-white rounded-lg p-4 mb-4">
-           <FormCard icon="P" title="Problem List">
-           
-              {errors.selectedProblems && (
-                <Text style={{ color: 'red', marginVertical: 8, marginLeft: 12, fontSize: 14 }}>
-                  {errors.selectedProblems}
-                </Text>
-              )}
+          <FormCard icon="P" title="Problem List">
+
+            {errors.selectedProblems && (
+              <Text style={{ color: 'red', marginVertical: 8, marginLeft: 12, fontSize: 14 }}>
+                {errors.selectedProblems}
+              </Text>
+            )}
           </FormCard>
 
           {error && (
@@ -807,7 +806,7 @@ export default function DistressThermometerScreen() {
             </View>
           ))}
 
-      
+
         </View>
 
         {/* Extra space to prevent content being hidden */}
