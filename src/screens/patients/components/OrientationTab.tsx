@@ -1,4 +1,4 @@
-import  { useState, useContext } from 'react';
+import  {useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,7 @@ export default function OrientationTab({
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+
   const selectCompletionStatus = async (status: string): Promise<void> => {
     setIsLoading(true);
     try {
@@ -67,6 +68,31 @@ export default function OrientationTab({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    async function fetchParticipantDetails() {
+      try {
+        const res = await apiService.post<any>('/GetParticipantDetails', {
+          ParticipantId: patientId,
+        });
+        const data = res.data?.ResponseData;
+        if (data) {
+          // setParticipantName(data.Signature ?? '');
+          setOrientationCompleted(data.OrientationStatus ?? null);
+        }
+      } catch (err) {
+        console.error('Error fetching participant details', err);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to load participant data',
+        });
+      }
+    }
+
+    if (patientId) fetchParticipantDetails();
+  }, [patientId]);
+
 
   return (
    <>
