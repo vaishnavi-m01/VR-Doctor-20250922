@@ -27,14 +27,15 @@ export default function HomeTab() {
       id: 'session-management',
       title: 'Session Management',
       subtitle: 'VR session setup and control',
-      route: 'SessionSetupScreen'
+      route: 'SessionSetupScreen',
+       params: { }
     },
     {
       id: 'assessments',
       title: 'Assessments',
       subtitle: 'Patient evaluation forms',
       route: 'PreVR',
-      params: { patientId: 1 }
+      params: {}
     }
   ];
 
@@ -71,14 +72,14 @@ export default function HomeTab() {
       <View className="mb-6">
         <Text className="text-xl font-semibold text-[#0e4336] mb-4">Quick Actions</Text>
         <View className="flex-row space-x-4">
-          <Pressable 
-            onPress={() => navigation.navigate('SocioDemographic', { patientId: Date.now() })}
+          <Pressable
+            onPress={() => navigation.navigate('SocioDemographic', {})}
             className="flex-1 bg-[#0e4336] rounded-xl p-4 items-center"
           >
             <Text className="text-white font-semibold text-center">Add Participant</Text>
           </Pressable>
-          <Pressable 
-            onPress={() => navigation.navigate('SessionSetupScreen' as any)}
+          <Pressable
+            onPress={() => navigation.navigate('SessionSetupScreen',{})}
             className="flex-1 bg-[#0ea06c] rounded-xl p-4 items-center"
           >
             <Text className="text-white font-semibold text-center">Start Session</Text>

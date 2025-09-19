@@ -67,6 +67,9 @@ interface ParticipantDetails {
   SignatureDate?: Date | string;
 
   LifestyleData?: ParticipantLifestyle[];
+
+  GroupType?: string;
+  GroupTypeNumber?: string;
 }
 
 
@@ -149,8 +152,10 @@ export default function SocioDemographic() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [habitErrors, setHabitErrors] = useState<{ [habitId: string]: string }>({});
 
-
-
+  const [groupType, setGroupType] = useState("");
+  const [groupTypeNumber, setGroupTypeNumber] = useState("");
+  console.log("groupType", groupType)
+  console.log("groupTypeNumber", groupTypeNumber)
 
   const route = useRoute<RouteProp<RootStackParamList, 'SocioDemographic'>>();
   const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
@@ -277,6 +282,10 @@ export default function SocioDemographic() {
           );
 
           const data = res.data?.ResponseData;
+          if (data.GroupType === "Study") {
+            setGroupType(data.GroupType ?? "");
+            setGroupTypeNumber(data.GroupTypeNumber ?? "")
+          }
 
           if (data) {
             // Personal
@@ -1190,7 +1199,29 @@ export default function SocioDemographic() {
             {/* Extra space to ensure Date field is not hidden by BottomBar */}
             <View style={{ height: 100 }} />
           </View>
-        </FormCard>
+
+        </FormCard  >
+
+        {groupType && groupTypeNumber && (
+          <FormCard icon='5' title='Group Information' >
+            <Field
+              label="GroupType"
+              value={groupType}
+              isEditMode={false}
+              onChangeText={setGroupType}
+            />
+            <Field
+              label="Randomization ID"
+              placeholder="Enter your name"
+              value={groupTypeNumber}
+              isEditMode={false}
+              // error={errors.participantSignature}
+              onChangeText={setGroupTypeNumber}
+            />
+
+          </FormCard>
+        )}
+  
       </ScrollView>
 
       <BottomBar>

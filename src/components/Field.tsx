@@ -5,9 +5,10 @@ type FieldProps = {
   label?: string;
   error?: string;
   value?: string;
+  isEditMode?: boolean; 
 } & TextInputProps;
 
-export function Field({ label, error, value, ...props }: FieldProps) {
+export function Field({ label, error, value, isEditMode = true,...props }: FieldProps) {
   const [showError, setShowError] = useState(!!error);
 
   // hide error if user types something
@@ -36,6 +37,7 @@ export function Field({ label, error, value, ...props }: FieldProps) {
           borderRadius: 16,
         }}
         value={value}
+        editable={isEditMode}
         onChangeText={props.onChangeText}
         {...props}
       />
