@@ -13,6 +13,8 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { DropdownField } from '@components/DropdownField';
 import { formatForDB, formatForUI } from 'src/utils/date';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 
 type LifeStyleData = {
@@ -562,7 +564,11 @@ export default function SocioDemographic() {
 
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
       {isEditMode && (
         <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
@@ -582,7 +588,9 @@ export default function SocioDemographic() {
         </View>
       )}
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]"
+        keyboardShouldPersistTaps="handled"
+      >
 
         <FormCard icon="👤" title="Section 1: Personal Information">
           <View className="mt-6">
@@ -1200,7 +1208,7 @@ export default function SocioDemographic() {
 
         </FormCard  >
 
-  
+
       </ScrollView>
 
       <BottomBar>
@@ -1210,7 +1218,7 @@ export default function SocioDemographic() {
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
