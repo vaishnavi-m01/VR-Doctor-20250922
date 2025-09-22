@@ -798,7 +798,7 @@ export default function DistressThermometerScreen() {
 
           {categories.map((cat, index) => (
             <View key={`${cat.categoryName}-${index}`} className="mb-4 ml-12">
-              <Text className="font-bold mb-2 text-sm text-[#333]">{cat.categoryName}</Text>
+              <Text className="font-bold mb-2 text-lg text-[#333]">{cat.categoryName}</Text>
               <View className="flex-row flex-wrap">
                 {cat.questions?.map((q) => (
                   <Checkbox

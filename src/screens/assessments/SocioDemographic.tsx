@@ -13,8 +13,8 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { DropdownField } from '@components/DropdownField';
 import { formatForDB, formatForUI } from 'src/utils/date';
-import { KeyboardAvoidingView } from 'react-native';
-import { Platform } from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
+
 
 
 type LifeStyleData = {
@@ -26,6 +26,7 @@ type LifeStyleData = {
 interface ParticipantLifestyle {
   Lifestyle: string;
   Level: string;
+  
 }
 
 
@@ -125,6 +126,7 @@ export default function SocioDemographic() {
   const [cancerTypes, setCancerTypes] = useState<CancerTypes[]>([]);
   const [cancerTypeOptions, setCancerTypeOptions] = useState<DropdownOption[]>([]);
   const [cancerDiagnosis, setCancerDiagnosis] = useState("");
+  console.log("cancerDiagnosis",cancerDiagnosis)
   const [cancerStage, setCancerStage] = useState("");
   const [ecogScore, setEcogScore] = useState("");
   const [treatmentType, setTreatmentType] = useState("");
@@ -242,7 +244,7 @@ export default function SocioDemographic() {
 
           const formatted = res.data.ResponseData.map((item) => ({
             label: item.CancerType,
-            value: item.CancerType,
+            value: item.CancerTypeId ?? "",
           }));
           setCancerTypeOptions(formatted);
         } else {
@@ -833,12 +835,12 @@ export default function SocioDemographic() {
               {languages.map((lang) => (
                 <Pressable
                   key={lang.LID}
-                  onPress={() => handlePress(lang.Language)}
-                  className={`flex-1 px-8 py-4 items-center rounded-full ${KnowledgeIn === lang.Language ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
+                  onPress={() => handlePress(lang.LID ??"")}
+                  className={`flex-1 px-8 py-4 items-center rounded-full ${KnowledgeIn === lang.LID ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
                   <Text
-                    className={`font-medium text-base ${KnowledgeIn === lang.Language ? "text-white" : "text-[#2c4a43]"
+                    className={`font-medium text-base ${KnowledgeIn === lang.LID ? "text-white" : "text-[#2c4a43]"
                       }`}
                   >
                     {lang.Language}
@@ -967,7 +969,7 @@ export default function SocioDemographic() {
             <Segmented
               options={educationOptions.map((edu) => ({
                 label: edu.Education,
-                value: edu.Education,
+                value: edu.EID ?? ""
               }))}
               value={educationLevel}
               onChange={(val) => {
