@@ -507,12 +507,13 @@ export default function PreVR() {
           topOffset: 50,
         });
       }
-    } catch (error: any) {
-      console.error('Error saving assessment:', error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Error saving assessment:', errorMessage);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to save assessment.',
+        text2: `Failed to save assessment: ${errorMessage}`,
         position: 'top',
         topOffset: 50,
       });

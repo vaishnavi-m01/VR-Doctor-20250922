@@ -91,8 +91,14 @@ interface DistressWeeklyResponse {
   ResponseData: DistressWeeklyScore[];
 }
 
+interface FactGItem {
+  id: string;
+  score: number;
+  category: string;
+}
+
 interface FactGResponse {
-  ResponseData: any[];
+  ResponseData: FactGItem[];
   CategoryScore: Record<string, string>;
   FinalScore: string;
 }
@@ -571,12 +577,13 @@ const handleSave = async () => {
     } else {
       throw new Error(`Server returned status ${response.status}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Error saving observation:', error);
     Toast.show({
       type: 'error',
       text1: 'Error',
-      text2: error.message || 'Failed to save Study Observation. Please try again.',
+      text2: errorMessage || 'Failed to save Study Observation. Please try again.',
       position: 'top',
       topOffset: 50,
     });

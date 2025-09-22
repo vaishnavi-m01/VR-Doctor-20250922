@@ -13,8 +13,8 @@ export default function Header({ title, right, onBack }: { title: string; right?
         <Text className="text-[#5c716c] text-lg">‹</Text>
       </Pressable>
       <Text className="text-xl font-extrabold text-[#0b1f1c]">{title}</Text>
-      <View className="w-10 h-10 rounded-xl bg-[#0e4336] items-center justify-center">
-        {right ?? <Text className="text-white">⋯</Text>}
+      <View className="w-10 h-10">
+        {right}
       </View>
     </View>
   );

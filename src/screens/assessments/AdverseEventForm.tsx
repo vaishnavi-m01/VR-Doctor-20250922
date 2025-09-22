@@ -45,7 +45,18 @@ interface AeImmediateAction {
     Description: string;
     SortKey?: number;
     Status: number | string;
+}
 
+interface AdverseEventData {
+    AEId?: string;
+    DateOfReport?: string;
+    SeverityOutcomeData?: Array<{ OutcomeId?: string }>;
+    ImmediateActionData?: Array<{ ActionId?: string }>;
+    [key: string]: unknown;
+}
+
+interface AdverseEventResponse {
+    ResponseData: AdverseEventData[];
 }
 
 interface AddAdverseEventResponse {
@@ -365,12 +376,13 @@ export default function AdverseEventForm() {
                     topOffset: 50,
                 });
             }
-        } catch (error: any) {
-            console.error("Error saving participant:", error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            console.error("Error saving participant:", errorMessage);
             Toast.show({
                 type: "error",
                 text1: "Error",
-                text2: "Failed to save participant.",
+                text2: `Failed to save participant: ${errorMessage}`,
                 position: "top",
                 topOffset: 50,
             });
@@ -381,7 +393,7 @@ export default function AdverseEventForm() {
     useEffect(() => {
         const fetchAeData = async () => {
             try {
-                const res = await apiService.post<{ ResponseData: any[] }>(
+                const res = await apiService.post<AdverseEventResponse>(
                     "/GetParticipantAdverseEvent",
                     { ParticipantId: `${patientId}` }
                 );
@@ -429,12 +441,12 @@ export default function AdverseEventForm() {
                         setSeverity(ae.SeverityOutcomeData[0].SeverityId || "");
 
                         // Map outcome IDs
-                        const outcomeIds = ae.SeverityOutcomeData.map((o: any) => o.OutcomeId || "");
+                        const outcomeIds = ae.SeverityOutcomeData?.map((o) => o.OutcomeId || "") || [];
                         setOutcome(outcomeIds);
                     }
 
                     if (ae.ImmediateActionData && ae.ImmediateActionData.length > 0) {
-                        const actionIds = ae.ImmediateActionData.map((a: any) => a.ActionId || "");
+                        const actionIds = ae.ImmediateActionData?.map((a) => a.ActionId || "") || [];
                         setActions(actionIds);
                     }
                 }

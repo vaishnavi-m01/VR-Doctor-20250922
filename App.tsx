@@ -225,7 +225,7 @@ export default function App() {
                     name="DistressThermometerScreen"
                     component={DistressThermometerScreen}
                     options={{ headerShown: true, title: "Distress Thermometer" }}
-                  />
+                  />   
 
                   <Stack.Screen name="FactGAssessmentHistory"
                     component={FactGAssessmentHistory}

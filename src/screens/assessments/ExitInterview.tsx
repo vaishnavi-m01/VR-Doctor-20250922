@@ -29,8 +29,49 @@ interface ExitInterviewQuestion {
   QuestionStatus?: number;
 }
 
-interface ExitInterviewResponse<T> {
-  ResponseData: T;
+interface ExitInterviewData {
+  ExitInterviewId?: string;
+  MedicalReasons?: boolean;
+  TechnicalDifficulties?: boolean;
+  LackOfBenefit?: boolean;
+  TimeConstraints?: boolean;
+  AdherenceDifficulty?: boolean;
+  OtherReason?: boolean;
+  OtherReasonText?: string;
+  OverallExperience?: string;
+  Recommendation?: string;
+  AdditionalComments?: string;
+  [key: string]: unknown;
+}
+
+interface ExitInterviewResponse {
+  ResponseData: ExitInterviewData[];
+}
+
+interface ExitInterviewRequestBody {
+  ExitInterviewId?: string | null;
+  ParticipantId: string;
+  StudyId: string;
+  InterviewDate: string;
+  OtherReasonText: string;
+  MedicalReasons: boolean;
+  TechnicalDifficulties: boolean;
+  LackOfBenefit: boolean;
+  TimeConstraints: boolean;
+  AdherenceDifficulty: boolean;
+  OtherReason: boolean;
+  OverallExperience: string;
+  Recommendation: string;
+  AdditionalComments: string;
+  StudyImprovementSuggestions: string;
+  VRExperienceRating: string;
+  VRMostHelpfulAspects: string;
+  VRChallengingAspects: string;
+  ParticipantSignature: string;
+  InterviewerSignature: string;
+  ParticipantDate: string;
+  InterviewerDate: string;
+  [key: string]: unknown;
 }
 
 interface GroupedQuestion {
@@ -136,13 +177,13 @@ export default function ExitInterview() {
     if (Object.keys(groupedQuestions).length === 0) return;
     const filter = { ParticipantId: `${patientId}`, StudyId: `${studyId}` };
     apiService
-      .get<ExitInterviewResponse<any[]>>('/GetParticipantExitInterviews', filter)
+      .get<ExitInterviewResponse>('/GetParticipantExitInterviews', filter)
       .then((res) => {
         const interviews = res.data.ResponseData;
         if (!interviews || interviews.length === 0) return;
 
         // Consolidate data
-        const consolidated = interviews.reduce((acc: any, rec: any) => ({ ...acc, ...rec }), {});
+        const consolidated = interviews.reduce((acc: ExitInterviewData, rec: ExitInterviewData) => ({ ...acc, ...rec }), {} as ExitInterviewData);
         setExitInterviewId(consolidated.ExitInterviewId || null);
 
         const reasonAnswers: string[] = [];
@@ -193,17 +234,17 @@ export default function ExitInterview() {
   }, [patientId, studyId, groupedQuestions, todayStr]);
 
   // Validation helpers
-  const isEmptyString = (value: any) => !value || (typeof value === 'string' && value.trim() === '');
+  const isEmptyString = (value: unknown) => !value || (typeof value === 'string' && value.trim() === '');
 
   // Clear error helper
-  const clearError = (field: string, val: any) => {
+  const clearError = (field: string, val: unknown) => {
     if (errors[field] && !isEmptyString(val)) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
 
-  const setFieldAndClearError = (field: string, setter: (val: any) => void) => (val: any) => {
+  const setFieldAndClearError = (field: string, setter: (val: string) => void) => (val: string) => {
     setter(val);
     clearError(field, val);
   };
@@ -317,7 +358,7 @@ const handleClear = () => {
         other: 'OtherReason',
       };
 
-      const body: any = {
+      const body: ExitInterviewRequestBody = {
         ExitInterviewId: exitInterviewId,
         ParticipantId: `${patientId}`,
         StudyId: `${studyId}`,

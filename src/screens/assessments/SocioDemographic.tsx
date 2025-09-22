@@ -7,6 +7,7 @@ import DateField from '@components/DateField';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
@@ -26,16 +27,8 @@ interface ParticipantLifestyle {
 }
 
 
-// interface getLifeStyleData {
-//   HabitID?: string;
-//   StudyId?: string;
-//   Habit: string;
-//   LifestylePsychId?: string;
-//   ParticipantId?: string;
-//   ParticipantStudyId?: string;
-//   Level: string;
-// }
 interface ParticipantDetails {
+  RandomizationId?: string;
   Age?: number;
   PhoneNumber?: number;
   Gender?: string;
@@ -103,6 +96,7 @@ type DropdownOption = {
 
 export default function SocioDemographic() {
   // Personal Information fields
+  const [randomizationId, setRandomizationId] = useState("");
   const [ages, setAge] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
@@ -117,24 +111,18 @@ export default function SocioDemographic() {
   const [educationLevel, setEducationLevel] = useState<string>("");
   const [lifeStyleData, setLifeStyleData] = useState<LifeStyleData[]>([]);
   const [selectedValues, setSelectedValues] = useState<{ [key: string]: string }>({});
-  // const [getlifeStyleData, setGetLifeStyleData] = useState<getLifeStyleData[]>([]);
 
 
   const [employmentStatus, setEmploymentStatus] = useState("");
 
   const [languages, setLanguages] = useState<LanguageData[]>([]);
-  console.log("LANGUAGEDATAS", languages)
 
   const [KnowledgeIn, setKnowledgeIn] = useState<string>("");
-  console.log("KnowledgeIn", KnowledgeIn)
 
   // Medical History fields
   const [cancerTypes, setCancerTypes] = useState<CancerTypes[]>([]);
   const [cancerTypeOptions, setCancerTypeOptions] = useState<DropdownOption[]>([]);
-  console.log("cancerTypeOptions", cancerTypeOptions)
-  console.log("canerTypes", cancerTypes)
   const [cancerDiagnosis, setCancerDiagnosis] = useState("");
-  console.log("cancerDiagnosis", cancerDiagnosis)
   const [cancerStage, setCancerStage] = useState("");
   const [ecogScore, setEcogScore] = useState("");
   const [treatmentType, setTreatmentType] = useState("");
@@ -154,13 +142,11 @@ export default function SocioDemographic() {
 
   const [groupType, setGroupType] = useState("");
   const [groupTypeNumber, setGroupTypeNumber] = useState("");
-  console.log("groupType", groupType)
-  console.log("groupTypeNumber", groupTypeNumber)
 
   const route = useRoute<RouteProp<RootStackParamList, 'SocioDemographic'>>();
   const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
   const isEditMode = !!patientId;
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
 
 
@@ -272,6 +258,7 @@ export default function SocioDemographic() {
 
 
 
+
   useEffect(() => {
     if (isEditMode) {
       (async () => {
@@ -289,6 +276,8 @@ export default function SocioDemographic() {
 
           if (data) {
             // Personal
+            // Use GroupTypeNumber as Randomization ID
+            setRandomizationId(data.GroupTypeNumber ?? "");
             setAge(String(data.Age ?? ""));
             setPhoneNumber(data.PhoneNumber ? String(data.PhoneNumber) : "");
             setGender(data.Gender ?? "");
@@ -367,8 +356,6 @@ export default function SocioDemographic() {
   const handleValidate = () => {
     let newErrors: Record<string, string> = {};
     let newHabitErrors: Record<string, string> = {};
-
-
 
     if (!ages) {
       newErrors.ages = "Age is required";
@@ -476,6 +463,7 @@ export default function SocioDemographic() {
 
 
   const handleClear = () => {
+    // Don't clear Randomization ID as it comes from GroupTypeNumber
     setAge("");
     setPhoneNumber("");
     setGender("");
@@ -513,6 +501,7 @@ export default function SocioDemographic() {
       const payload = {
         ParticipantId: patientId,
         StudyId: "CS-0001",
+        RandomizationId: groupTypeNumber || randomizationId,
         Age: Number(ages),
         PhoneNumber: phoneNumber,
         Gender: gender,
@@ -555,11 +544,12 @@ export default function SocioDemographic() {
           onHide: () => navigation.goBack(),
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to save participant.",
+        text2: `Failed to save participant: ${errorMessage}`,
         position: "top",
         topOffset: 50,
       });
@@ -597,6 +587,16 @@ export default function SocioDemographic() {
         <FormCard icon="👤" title="Section 1: Personal Information">
           <View className="mt-6">
             <Field
+              label="Randomization ID"
+              placeholder="Auto-generated"
+              value={groupTypeNumber || randomizationId}
+              editable={false}
+              style={{ backgroundColor: '#f5f5f5', color: '#666' }}
+            />
+          </View>
+
+          <View className="mt-6">
+            <Field
               label="1. Age"
               placeholder="__ years"
               value={ages}
@@ -611,8 +611,6 @@ export default function SocioDemographic() {
                 }
               }}
             />
-
-
           </View>
 
 
@@ -1202,25 +1200,6 @@ export default function SocioDemographic() {
 
         </FormCard  >
 
-        {groupType && groupTypeNumber && (
-          <FormCard icon='5' title='Group Information' >
-            <Field
-              label="GroupType"
-              value={groupType}
-              isEditMode={false}
-              onChangeText={setGroupType}
-            />
-            <Field
-              label="Randomization ID"
-              placeholder="Enter your name"
-              value={groupTypeNumber}
-              isEditMode={false}
-              // error={errors.participantSignature}
-              onChangeText={setGroupTypeNumber}
-            />
-
-          </FormCard>
-        )}
   
       </ScrollView>
 

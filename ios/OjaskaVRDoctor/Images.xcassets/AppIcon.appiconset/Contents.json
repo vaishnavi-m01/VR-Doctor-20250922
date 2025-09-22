@@ -5,6 +5,36 @@
       "idiom": "universal",
       "platform": "ios",
       "size": "1024x1024"
+    },
+    {
+      "filename": "App-Icon-180x180@3x.png",
+      "idiom": "iphone",
+      "scale": "3x",
+      "size": "60x60"
+    },
+    {
+      "filename": "App-Icon-120x120@2x.png",
+      "idiom": "iphone",
+      "scale": "2x",
+      "size": "60x60"
+    },
+    {
+      "filename": "App-Icon-167x167@2x.png",
+      "idiom": "ipad",
+      "scale": "2x",
+      "size": "83.5x83.5"
+    },
+    {
+      "filename": "App-Icon-152x152@2x.png",
+      "idiom": "ipad",
+      "scale": "2x",
+      "size": "76x76"
+    },
+    {
+      "filename": "App-Icon-76x76@1x.png",
+      "idiom": "ipad",
+      "scale": "1x",
+      "size": "76x76"
     }
   ],
   "info": {

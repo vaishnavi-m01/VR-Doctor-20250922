@@ -41,6 +41,31 @@ export interface Patient {
   groupType?: string;
 }
 
+interface ParticipantRequest {
+  CriteriaStatus?: string;
+  GroupType?: string;
+  Gender?: string;
+  ParticipantId?: string;
+  StudyId?: string;
+}
+
+interface ParticipantApiResponse {
+  ResponseData: Array<{
+    ParticipantId: number;
+    Age: number;
+    StudyId: string;
+    GroupType: string;
+    GroupTypeNumber: string;
+    Gender: string;
+    CriteriaStatus: string;
+    PhoneNumber: string;
+    CreatedDate: string;
+    ModifiedDate: string;
+    Status: number;
+    [key: string]: unknown;
+  }>;
+}
+
 export default function ParticipantAssessmentSplit() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [participants, setParticipants] = useState<Patient[]>([]);
@@ -114,7 +139,6 @@ export default function ParticipantAssessmentSplit() {
      useFocusEffect(
       useCallback(() => {
         const refreshParticipants = async () => {
-          console.log(" Screen focused: fetching participants...");
           await fetchParticipants(appliedSearchText);
         };
         refreshParticipants();
@@ -166,10 +190,8 @@ export default function ParticipantAssessmentSplit() {
     try {
       if (participantId !== null) {
         await AsyncStorage.setItem(SELECTED_PARTICIPANT_KEY, participantId.toString());
-        console.log(`💾 Saved participant selection: ${participantId}`);
       } else {
         await AsyncStorage.removeItem(SELECTED_PARTICIPANT_KEY);
-        console.log(`🗑️ Cleared participant selection`);
       }
     } catch (error) {
       console.error('Error saving selected participant:', error);
@@ -214,7 +236,7 @@ export default function ParticipantAssessmentSplit() {
     try {
       setLoading(true);
       const trimmedSearch = search.trim().toLowerCase();
-      const requestBody: any = {};
+      const requestBody: ParticipantRequest = {};
 
       if (advFilters.criteriaStatus) {
         requestBody.CriteriaStatus = advFilters.criteriaStatus;
@@ -260,13 +282,12 @@ export default function ParticipantAssessmentSplit() {
           delete requestBody[key];
         }
       });
-      console.log('API Request Body:', requestBody);
-      const response = await apiService.post<any>(
+      const response = await apiService.post<ParticipantApiResponse>(
         "/GetParticipantsPaginationFilterSearch",
         requestBody
       );
       if (response.data?.ResponseData) {
-        const parsed: Patient[] = response.data.ResponseData.map((item: any) => ({
+        const parsed: Patient[] = response.data.ResponseData.map((item) => ({
           id: item.ParticipantId,
           ParticipantId: item.ParticipantId,
           studyId: item.StudyId,
@@ -363,12 +384,10 @@ export default function ParticipantAssessmentSplit() {
   useEffect(() => {
     const loadData = async () => {
       if (!hasLoadedDataRef.current) {
-        console.log(`📥 Loading participants data`);
         const fetchedParticipants = await fetchParticipants('');
         hasLoadedDataRef.current = true;
         const savedParticipantId = await loadSelectedParticipant();
         const savedTab = await loadSelectedTab();
-        console.log(`🔄 Restoring selection: ${savedParticipantId}`);
         if (savedParticipantId !== null && fetchedParticipants.length > 0) {
           const participantExists = fetchedParticipants.some(p => p.ParticipantId === savedParticipantId);
           if (participantExists) {
@@ -404,16 +423,13 @@ export default function ParticipantAssessmentSplit() {
   // Save selected participant when it changes
   useEffect(() => {
     if (selId !== null) {
-      console.log(`💾 Saving participant selection: ${selId}`);
       saveSelectedParticipant(selId);
 
       if ((tab === ' VR' || tab === 'orie') && sel?.groupType !== 'Study') {
-        console.log(`🔄 Switching tab`);
         setTab('assessment');
       }
 
       if (tab === 'assessment' && sel?.groupType === null) {
-        console.log(`🔄 Switching tab`);
         setTab('dash');
       }
     }
@@ -461,13 +477,11 @@ export default function ParticipantAssessmentSplit() {
 
   // Debug logging for GroupType
   if (sel) {
-    console.log(`🔍 Selected participant ${sel.ParticipantId} - GroupType: ${sel.groupType || 'null'}`);
   }
 
   const renderTabContent = () => {
     const patientId = sel?.ParticipantId || 0;
     const studyId = sel?.studyId || 0
-    console.log("StudyId", studyId)
     const age = sel?.age ?? 0;
 
     switch (tab) {
@@ -726,7 +740,6 @@ export default function ParticipantAssessmentSplit() {
                 { key: 'notification', label: 'Notification' },
               ];
 
-              console.log(`🎯 Rendering tabs for participant ${sel?.ParticipantId} (GroupType: ${sel?.groupType || 'null'}):`, tabs.map(t => t.label));
 
               return (
                 <TabPills
