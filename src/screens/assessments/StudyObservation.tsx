@@ -12,6 +12,10 @@ import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
 import Chip from '@components/Chip';
 import { PARTICIPANT_RESPONSES } from '../../constants/appConstants';
+import DateField from '@components/DateField';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
+
 
 const STATIC_DEVICE_ID = 'DEV-001';
 
@@ -95,6 +99,8 @@ interface FactGItem {
   id: string;
   score: number;
   category: string;
+  createdDate?: string;
+  [key: string]: any;
 }
 
 interface FactGResponse {
@@ -311,12 +317,19 @@ const StudyObservation = () => {
         CreatedDate: null,
       }) as { data: FactGResponse };
 
-      const factGDateList = factGDateRes.data.ResponseData;
-      let lastFactGDate: string | null = null;
+      const factGDateList = factGDateRes.data.ResponseData.map(item => ({
+        ...item,
+        createdDate: item["STR_TO_DATE(PFGQWK.CreatedDate, '%Y-%m-%d')"]
+      }));
+
+
+       let lastFactGDate: string | null = null;
 
       if (factGDateList && factGDateList.length > 0) {
-        lastFactGDate = factGDateList[factGDateList.length - 1]["STR_TO_DATE(PFGQWK.CreatedDate, '%Y-%m-%d')"];
+        lastFactGDate = factGDateList[factGDateList.length - 1].createdDate;
       }
+
+
 
       if (lastFactGDate) {
         const factGDetailsRes = await apiService.post('/GetParticipantFactGQuestionWeekly', {
@@ -449,10 +462,18 @@ const handleYesNoChange = (sofid: string, value: string) => {
   });
 
   // Check start time and end time fields only for format errors
-  ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
+  // ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
+  //   const value = getFormValue(timeField);
+  //   const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
+  //   if (value && !isValidTime(value)) {
+  //     errors[timeField] = `${label} must be in HH:MM:SS format.`;
+  //   }
+  // });
+
+   ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
     const value = getFormValue(timeField);
-    const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
     if (value && !isValidTime(value)) {
+      const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
       errors[timeField] = `${label} must be in HH:MM:SS format.`;
     }
   });
@@ -593,15 +614,50 @@ const handleSave = async () => {
 };
     
 
-  const handleClear = () => {
-    // setFormValues({});
-    setYesNoStates({});
-    setResp('');
-    setObservationId(null);
-    setFactGScore(null);
-    setDistressScore(null);
-    setFieldErrors({});
-  };
+const handleClear = () => {
+  setYesNoStates({});  
+  setResp('');         
+  setObservationId(null);
+  setFactGScore(null);
+  setDistressScore(null);
+  setFieldErrors({});
+
+  setFormValues(prev => ({
+    ...prev,
+   
+    'SOFID-1': prev['SOFID-1'], 
+    'SOFID-2': prev['SOFID-2'],  
+    'SOFID-3': prev['SOFID-3'],  
+    'SOFID-4': prev['SOFID-4'], 
+    'SOFID-5': prev['SOFID-5'],  
+    'SOFID-6': prev['SOFID-6'],  
+
+    'SOFID-7': '',
+    'SOFID-8': '',
+    'SOFID-9': '',
+    'SOFID-10': '',
+    'SOFID-11': '', 
+    'SOFID-12': '',
+    'SOFID-13': '',
+    'SOFID-13-OTHER': '',
+    'SOFID-14': '',
+    'SOFID-15': '',
+    'SOFID-16': '',
+    'SOFID-17': '',
+    'SOFID-18': '',
+    'SOFID-19': '',
+    'SOFID-20': '',
+    'SOFID-21': '',
+    'SOFID-22': '',
+    'SOFID-23': '',
+    'SOFID-24': '',
+    'SOFID-25': '',
+    'SOFID-26': '',
+    'SOFID-27': '',
+    'SOFID-28': '',
+  }));
+};
+
 
   const renderTextField = (sofid: string, label: string, placeholder?: string, multiline = false) => {
     const hasError = !!fieldErrors[sofid];
@@ -664,105 +720,131 @@ const handleSave = async () => {
   const groupedFields = groupFields(formFields);
 
   return (
-    <>
-      <View className="px-4" style={{ paddingTop: 8 }}>
-        <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
-          <Text className="text-lg font-bold text-green-600">Participant ID: {routePatientId}</Text>
-          <Text className="text-base font-semibold text-green-600">{`Study ID: ${studyIdState}`}</Text>
-          <Text className="text-base font-semibold text-gray-700">Age: {age ?? 'Not specified'}</Text>
+    
+     <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
+        <View className="px-4" style={{ paddingTop: 8 }}>
+          <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
+            <Text className="text-lg font-bold text-green-600">Participant ID: {routePatientId}</Text>
+            <Text className="text-base font-semibold text-green-600">{`Study ID: ${studyIdState}`}</Text>
+            <Text className="text-base font-semibold text-gray-700">Age: {age ?? 'Not specified'}</Text>
+          </View>
         </View>
-      </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}>
-        <FormCard icon="S" title="Study Observation - Basic Information">
-          <View className="flex-row flex-wrap gap-x-4 gap-y-3">
-            {groupedFields.basic.map((f) => (
-              <View key={f.SOFID} className="flex-1" style={{ minWidth: '45%' }}>
-                {renderTextField(f.SOFID, f.FieldLabel)}
-              </View>
-            ))}
-          </View>
-        </FormCard>
-
-        <FormCard icon="B" title="Baseline Assessment & Scores">
-          <View className="flex-row flex-wrap gap-3">
-            <View className="flex-1 mt-3">
-              <Text className="text-xs text-[#4b5f5a] mb-1">FACT G Score</Text>
-              <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
-                {baselineLoading ? (
-                  <ActivityIndicator size="small" color="#4FC264" />
-                ) : (
-                  <Text className="text-base text-gray-800">{(factGScore && factGScore !== '') ? factGScore : '0'}</Text>
-                )}
-              </View>
-            </View>
-            <View className="flex-1 mt-3">
-              <Text className="text-xs text-[#4b5f5a] mb-1">Distress Thermometer Score</Text>
-              <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
-                {baselineLoading ? (
-                  <ActivityIndicator size="small" color="#4FC264" />
-                ) : (
-                  <Text className="text-base text-gray-800">{(distressScore && distressScore !== '') ? distressScore : '0'}</Text>
-                )}
-              </View>
-            </View>
-          </View>
-        </FormCard>
-
-        <FormCard icon="S" title="Session Details & Responses">
-          {renderYesNoField('SOFID-9', 'Was the session completed?')}
-          {yesNoStates['SOFID-9'] === 'No' && renderTextField('SOFID-10', 'If No, specify reason')}
-          <View className="flex-row gap-4 mt-3">
-            {['SOFID-11', 'SOFID-12'].map((sofid) => {
-              const field = formFields.find((f) => f.SOFID === sofid);
-              if (!field) return null;
-              return <View key={sofid} className="flex-1">{renderTextField(sofid, field.FieldLabel, 'HH:MM:SS')}</View>;
-            })}
-          </View>
-          {renderPatientResponse()}
-          {renderYesNoField('SOFID-14', 'Any Technical Issues?')}
-          {yesNoStates['SOFID-14'] === 'Yes' && renderTextField('SOFID-15', 'If Yes, describe technical issues', undefined, true)}
-        </FormCard>
-
-        <FormCard icon="C" title="Counselor Compliance">
-          <View className="flex-col gap-4">
-            {['SOFID-16', 'SOFID-17', 'SOFID-18'].map((sofid) => {
-              const field = formFields.find((f) => f.SOFID === sofid);
-              if (!field) return null;
-              return (
-                <View key={sofid}>
-                  {renderYesNoField(sofid, field.FieldLabel)}
+        <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}>
+          <FormCard icon="S" title="Study Observation - Basic Information">
+            <View className="flex-row flex-wrap gap-x-4 gap-y-3">
+              {groupedFields.basic.map((f) => (
+                <View key={f.SOFID} className="flex-1" style={{ minWidth: '45%' }}>
+                  {renderTextField(f.SOFID, f.FieldLabel)}
                 </View>
-              );
-            })}
-          </View>
+              ))}
+            </View>
+          </FormCard>
 
-          {renderYesNoField('SOFID-20', 'Was the patient able to follow instructions?')}
-          {yesNoStates['SOFID-20'] === 'No' && renderTextField('SOFID-21', 'If No, explain instruction difficulties (optional)', undefined, true)}
-        </FormCard>
+          <FormCard icon="B" title="Baseline Assessment & Scores">
+            <View className="flex-row flex-wrap gap-3">
+              <View className="flex-1 mt-3">
+                <Text className="text-xs text-[#4b5f5a] mb-1">FACT G Score</Text>
+                <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
+                  {baselineLoading ? (
+                    <ActivityIndicator size="small" color="#4FC264" />
+                  ) : (
+                    <Text className="text-base text-gray-800">{(factGScore && factGScore !== '') ? factGScore : '0'}</Text>
+                  )}
+                </View>
+              </View>
+              <View className="flex-1 mt-3">
+                <Text className="text-xs text-[#4b5f5a] mb-1">Distress Thermometer Score</Text>
+                <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
+                  {baselineLoading ? (
+                    <ActivityIndicator size="small" color="#4FC264" />
+                  ) : (
+                    <Text className="text-base text-gray-800">{(distressScore && distressScore !== '') ? distressScore : '0'}</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          </FormCard>
+
+          <FormCard icon="S" title="Session Details & Responses">
+            {renderYesNoField('SOFID-9', 'Was the session completed?')}
+            {yesNoStates['SOFID-9'] === 'No' && renderTextField('SOFID-10', 'If No, specify reason')}
+            <View className="flex-row gap-4 mt-3">
+              {['SOFID-11', 'SOFID-12'].map((sofid) => {
+                const field = formFields.find((f) => f.SOFID === sofid);
+                if (!field) return null;
+                return (
+                <View key={sofid} className="flex-1">
+                  <Text style={{ color: fieldErrors[sofid] ? '#EF4444' : '#4b5f5a', marginBottom: 2, fontSize: 12 }}>
+                    {field.FieldLabel}
+                  </Text>
+                  <DateField
+                    // label={field.FieldLabel}
+                    value={formValues[sofid] || ''}
+                    onChange={(val) => updateFormValue(sofid, val)}
+                    mode="time"
+                    placeholder="HH:mm:ss"
+                  />
+                  {/* {fieldErrors[sofid] && (
+                    <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 2 }}>
+                      {fieldErrors[sofid]}
+                    </Text>
+                  )} */}
+                </View>
+
+                );
+              })}
+            </View>
+
+            {renderPatientResponse()}
+            {renderYesNoField('SOFID-14', 'Any Technical Issues?')}
+            {yesNoStates['SOFID-14'] === 'Yes' && renderTextField('SOFID-15', 'If Yes, describe technical issues', undefined, true)}
+          </FormCard>
+
+          <FormCard icon="C" title="Counselor Compliance">
+            <View className="flex-col gap-4">
+              {['SOFID-16', 'SOFID-17', 'SOFID-18'].map((sofid) => {
+                const field = formFields.find((f) => f.SOFID === sofid);
+                if (!field) return null;
+                return (
+                  <View key={sofid}>
+                    {renderYesNoField(sofid, field.FieldLabel)}
+                  </View>
+                );
+              })}
+            </View>
+
+            {renderYesNoField('SOFID-20', 'Was the patient able to follow instructions?')}
+            {yesNoStates['SOFID-20'] === 'No' && renderTextField('SOFID-21', 'If No, explain instruction difficulties (optional)', undefined, true)}
+          </FormCard>
 
 
-        <FormCard icon="A" title="Additional Observations & Side Effects">
-          {renderYesNoField('SOFID-22', 'Any visible signs of discomfort?')}
-          {yesNoStates['SOFID-22'] === 'Yes' && renderTextField('SOFID-23', 'If Yes, describe discomfort (optional)', undefined, true)}
-          {renderYesNoField('SOFID-24', 'Did the patient require assistance?')}
-          {yesNoStates['SOFID-24'] === 'Yes' && renderTextField('SOFID-25', 'If Yes, explain assistance provided (optional)', undefined, true)}
-          {renderYesNoField('SOFID-26', 'Any deviations from protocol?')}
-          {yesNoStates['SOFID-26'] === 'Yes' && renderTextField('SOFID-27', 'If Yes, explain protocol deviations (optional)', undefined, true)}
-          {renderTextField('SOFID-28', 'Other Observations', undefined, true)}
-          <View style={{ height: 150 }} />
-        </FormCard>
+          <FormCard icon="A" title="Additional Observations & Side Effects">
+            {renderYesNoField('SOFID-22', 'Any visible signs of discomfort?')}
+            {yesNoStates['SOFID-22'] === 'Yes' && renderTextField('SOFID-23', 'If Yes, describe discomfort (optional)', undefined, true)}
+            {renderYesNoField('SOFID-24', 'Did the patient require assistance?')}
+            {yesNoStates['SOFID-24'] === 'Yes' && renderTextField('SOFID-25', 'If Yes, explain assistance provided (optional)', undefined, true)}
+            {renderYesNoField('SOFID-26', 'Any deviations from protocol?')}
+            {yesNoStates['SOFID-26'] === 'Yes' && renderTextField('SOFID-27', 'If Yes, explain protocol deviations (optional)', undefined, true)}
+            {renderTextField('SOFID-28', 'Other Observations', undefined, true)}
+            <View style={{ height: 150 }} />
+          </FormCard>
 
-      </ScrollView>
+        </ScrollView>
 
-      <BottomBar>
-        <Btn variant="light" onPress={handleValidate}>Validate</Btn>
-        <Btn variant="light" onPress={handleClear}>Clear</Btn>
-        <Btn onPress={handleSave} disabled={saving || loading}>
-          {saving ? 'Saving...' : 'Save & Close'}
-        </Btn>
-      </BottomBar>
-    </>
+        <BottomBar>
+          <Btn variant="light" onPress={handleValidate}>Validate</Btn>
+          <Btn variant="light" onPress={handleClear}>Clear</Btn>
+          <Btn onPress={handleSave} disabled={saving || loading}>
+            {saving ? 'Saving...' : 'Save & Close'}
+          </Btn>
+        </BottomBar>
+      </KeyboardAvoidingView>
+   
   );
 };
 

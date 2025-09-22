@@ -5,7 +5,7 @@ import { Field } from "@components/Field";
 import { Ionicons } from "@expo/vector-icons";
 
 type Props = {
-  label: string;
+  label?: string;
   value: string;                 
   onChange: (val: string) => void;
   mode?: "date" | "time" | "datetime";
@@ -26,7 +26,8 @@ export default function DateField({
     if (mode === "time") {
       const hh = String(d.getHours()).padStart(2, "0");
       const mm = String(d.getMinutes()).padStart(2, "0");
-      return `${hh}:${mm}`;
+      const ss = String(d.getSeconds()).padStart(2, "0");  
+      return `${hh}:${mm}:${ss}`;
     }
     // default: date or datetime -> DD-MM-YYYY
     const day = String(d.getDate()).padStart(2, "0");

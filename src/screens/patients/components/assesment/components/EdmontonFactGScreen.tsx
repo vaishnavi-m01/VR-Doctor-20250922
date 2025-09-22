@@ -741,11 +741,11 @@ const handleClear = () => {
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
                       <Text
                        style={{
-              width: 64,
-              fontWeight: "700",
-              color: fieldErrors[item.code] ? "#dc2626" : "#1f2937", // red if error
-              marginLeft: 13,
-            }}
+                          width: 64,
+                          fontWeight: "700",
+                          color: fieldErrors[item.code] ? "#dc2626" : "#1f2937", 
+                          marginLeft: 13,
+                        }}
                        >
                         {item.code}
                         </Text>

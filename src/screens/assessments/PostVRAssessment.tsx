@@ -11,6 +11,8 @@ import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 interface AssessmentQuestion {
   AssessmentId: string;
@@ -519,7 +521,11 @@ export default function PostVRAssessment() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
       {/* Header */}
       <View
         className="px-4"
@@ -580,6 +586,6 @@ export default function PostVRAssessment() {
         <Btn variant="light" onPress={handleClear}>Clear</Btn>
         <Btn onPress={handleSave} disabled={saving || loading}>{saving ? 'Saving...' : 'Save & Close'}</Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }

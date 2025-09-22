@@ -18,6 +18,8 @@ import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
 import { formatDate } from 'src/utils/formUtils';
 import { formatDateDDMMYYYY } from 'src/utils/date';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 
 interface InformedConsentFormProps {
@@ -372,7 +374,11 @@ export default function InformedConsentForm({
 
     /* ============================ UI ============================ */
     return (
-        <>
+        <KeyboardAvoidingView
+             style={{ flex: 1 }}
+             behavior={Platform.OS === "ios" ? "padding" : "height"}
+             keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+           >
             <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
                 <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
@@ -656,7 +662,7 @@ export default function InformedConsentForm({
                 <Btn variant="light" onPress={handleClear}>Clear</Btn>
                 <Btn onPress={handleSubmit}>Save & Close</Btn>
             </BottomBar>
-        </>
+        </KeyboardAvoidingView>
     );
 }
 
