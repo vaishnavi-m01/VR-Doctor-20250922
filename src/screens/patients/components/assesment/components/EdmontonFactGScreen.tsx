@@ -8,6 +8,8 @@ import { RootStackParamList } from "../../../../../Navigation/types";
 import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
 import { UserContext } from 'src/store/context/UserContext';
+import { KeyboardAvoidingView } from "react-native";
+import { Platform } from "react-native";
 
 interface FactGQuestion {
   FactGCategoryId: string;
@@ -117,29 +119,29 @@ export default function EdmontonFactGScreen() {
     "Functional well-being": "F",
   };
 
-const setAnswer = (code: string, value: number) => {
-  setAnswers((prev) => ({ ...prev, [code]: value }));
-  setFieldErrors((prev) => {
-    if (prev[code]) {
-      const newErrors = { ...prev };
-      delete newErrors[code];
-      return newErrors;
-    }
-    return prev;
-  });
-};
+  const setAnswer = (code: string, value: number) => {
+    setAnswers((prev) => ({ ...prev, [code]: value }));
+    setFieldErrors((prev) => {
+      if (prev[code]) {
+        const newErrors = { ...prev };
+        delete newErrors[code];
+        return newErrors;
+      }
+      return prev;
+    });
+  };
 
 
-const handleClear = () => {
-  setAnswers({});
-  setSelectedDate("");
-  setShowDateDropdown(false);
-  setSubscales([]);
-  setError(null);
-  setFieldErrors({});
-  setIsDefaultForm(true);
-  fetchFactG(null);
-};
+  const handleClear = () => {
+    setAnswers({});
+    setSelectedDate("");
+    setShowDateDropdown(false);
+    setSubscales([]);
+    setError(null);
+    setFieldErrors({});
+    setIsDefaultForm(true);
+    fetchFactG(null);
+  };
 
 
   const formatDate = (dateString: string): string => {
@@ -474,7 +476,7 @@ const handleClear = () => {
       return;
     }
 
-    setFieldErrors({}); 
+    setFieldErrors({});
 
     try {
       setSaving(true);
@@ -522,8 +524,8 @@ const handleClear = () => {
           text2: isAdd ? "FactG Added successfully!" : "FactG Updated successfully!",
           position: 'top',
           topOffset: 50,
-          visibilityTime: 1000, 
-           onHide: () => {
+          visibilityTime: 1000,
+          onHide: () => {
             navigation.goBack();
             const navState = navigation.getState();
 
@@ -596,38 +598,42 @@ const handleClear = () => {
   };
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View
           style={{
             backgroundColor: "white",
-             borderBottomColor: "rgba(229, 231, 235, 1)", 
+            borderBottomColor: "rgba(229, 231, 235, 1)",
             borderBottomWidth: 1,
             borderRadius: 12,
             padding: 17,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-            shadowColor: "#000000",       
-            shadowOpacity: 0.35,          
-            shadowRadius: 1,           
-            shadowOffset: { width: 0, height: 1 },  
+            shadowColor: "#000000",
+            shadowOpacity: 0.35,
+            shadowRadius: 1,
+            shadowOffset: { width: 0, height: 1 },
           }}
         >
-          <Text 
-            style={{ 
-              color: "rgba(22, 163, 74, 1)", 
-              fontWeight: "700",             
-              fontSize: 18,                 
-              lineHeight: 28,     
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
+              fontWeight: "700",
+              fontSize: 18,
+              lineHeight: 28,
             }}
 
           >
             Participant ID: {patientId}
           </Text>
-          <Text 
+          <Text
             style={{
-              color: "rgba(22, 163, 74, 1)", 
+              color: "rgba(22, 163, 74, 1)",
               fontWeight: "600",
               fontSize: 16,
               lineHeight: 24,
@@ -709,7 +715,7 @@ const handleClear = () => {
       )}
 
       {/* <ScrollView style={{ flex: 1, paddingVertical: 5, paddingHorizontal: 16 }}> */}
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}    keyboardShouldPersistTaps="handled">
 
         <FormCard
           icon="FG"
@@ -740,15 +746,15 @@ const handleClear = () => {
                   <View key={item.code}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
                       <Text
-                       style={{
+                        style={{
                           width: 64,
                           fontWeight: "700",
-                          color: fieldErrors[item.code] ? "#dc2626" : "#1f2937", 
+                          color: fieldErrors[item.code] ? "#dc2626" : "#1f2937",
                           marginLeft: 13,
                         }}
-                       >
+                      >
                         {item.code}
-                        </Text>
+                      </Text>
                       <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>
@@ -797,6 +803,7 @@ const handleClear = () => {
         </Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
-    </>
+   </KeyboardAvoidingView>
+
   );
 }

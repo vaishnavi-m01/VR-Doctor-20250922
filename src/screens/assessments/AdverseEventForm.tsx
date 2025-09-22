@@ -20,6 +20,8 @@ import {
 import { apiService } from 'src/services';
 import Toast from "react-native-toast-message";
 import { UserContext } from 'src/store/context/UserContext';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 
 
@@ -49,11 +51,27 @@ interface AeImmediateAction {
 
 interface AdverseEventData {
     AEId?: string;
+    ParticipantId?: string;
     DateOfReport?: string;
-    SeverityOutcomeData?: Array<{ OutcomeId?: string }>;
+    OnsetDateTime?: string;
+    ReportedByName?: string;
+    ReportedByRole?: string;
+    AEDescription?: string;
+    VRSessionInProgress?: string;
+    ContentType?: string;
+    SessionInterrupted?: string;
+    PhysicianNotifiedDateTime?: string;
+    PhysicianNotifiedName?: string;
+    VRRelated?: string;
+    PreExistingContribution?: string;
+    FollowUpPatientStatus?: string;
+    InvestigatorSignature?: string;
+    FollowUpVisitDate?: string;
+    InvestigatorSignDate?: string;
+    SeverityOutcomeData?: Array<{ SeverityId?: string; OutcomeId?: string }>;
     ImmediateActionData?: Array<{ ActionId?: string }>;
-    [key: string]: unknown;
 }
+
 
 interface AdverseEventResponse {
     ResponseData: AdverseEventData[];
@@ -467,43 +485,47 @@ export default function AdverseEventForm() {
 
 
     return (
-        <>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        >
 
             <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
                 <View
                     style={{
                         backgroundColor: "white",
                         borderBottomWidth: 1,
-                        borderBottomColor: "rgba(229, 231, 235, 1)", 
+                        borderBottomColor: "rgba(229, 231, 235, 1)",
                         borderRadius: 12,
                         padding: 17,
                         flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        shadowColor: "#000000",       
-                        shadowOpacity: 0.35,          
-                        shadowRadius: 1,           
+                        shadowColor: "#000000",
+                        shadowOpacity: 0.35,
+                        shadowRadius: 1,
                         shadowOffset: { width: 0, height: 1 },
                     }}
                 >
 
 
-                    <Text 
-                        style={{ 
-                            color: "rgba(22, 163, 74, 1)", 
-                            fontWeight: "700",             
-                            fontSize: 18,                 
-                            lineHeight: 28,     
+                    <Text
+                        style={{
+                            color: "rgba(22, 163, 74, 1)",
+                            fontWeight: "700",
+                            fontSize: 18,
+                            lineHeight: 28,
                         }}
                     >
                         Participant ID: {patientId}
                     </Text>
-                    <Text 
-                     style={{
-                        color: "rgba(22, 163, 74, 1)", 
-                        fontWeight: "600",
-                        fontSize: 16,
-                        lineHeight: 24,
+                    <Text
+                        style={{
+                            color: "rgba(22, 163, 74, 1)",
+                            fontWeight: "600",
+                            fontSize: 16,
+                            lineHeight: 24,
                         }}
                     >
                         Study ID: {studyId ? (typeof studyId === "string" ? studyId : `${studyId}`) : "CS-0001"}
@@ -610,7 +632,8 @@ export default function AdverseEventForm() {
                 </>
             )}
 
-            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
+            <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }} keyboardShouldPersistTaps="handled"
+            >
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
@@ -922,13 +945,13 @@ export default function AdverseEventForm() {
                             <DateField label="Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
                         </View>
                         <View className="flex-1">
-                            <Field label="signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} error={errors?.investigatorSignature}/>
+                            <Field label="signature of Investigator" placeholder="Sign/name" value={investigatorSignature} onChangeText={setInvestigatorSignature} error={errors?.investigatorSignature} />
                         </View>
                     </View>
 
                     <View className="flex-row gap-3 mt-2">
                         <View className="flex-1">
-                            <Field label="Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} error={errors?.followUpParticipantStatus}/>
+                            <Field label="Participant status during follow-up" placeholder="Notes on Clinical status..." multiline value={followUpParticipantStatus} onChangeText={setFollowUpParticipantStatus} error={errors?.followUpParticipantStatus} />
                         </View>
                         <View className="flex-1">
                             <DateField label="Date" value={date} onChange={setDate} />
@@ -962,6 +985,6 @@ export default function AdverseEventForm() {
                 <Btn variant="light" onPress={handleClear}>Clear</Btn>
                 <Btn onPress={handleSave}>Save & Close</Btn>
             </BottomBar>
-        </>
+        </KeyboardAvoidingView>
     );
 }  

@@ -17,6 +17,8 @@ import { apiService } from "../../../../../services/api";
 import Toast from "react-native-toast-message";
 import { UserContext } from "src/store/context/UserContext";
 import { Field } from "@components/Field";
+import { KeyboardAvoidingView } from "react-native";
+import { Platform } from "react-native";
 
 type Question = {
   id: string;
@@ -490,7 +492,7 @@ export default function DistressThermometerScreen() {
       Toast.show({
         type: "success",
         text1: isAdd ? 'Added Successfully' : 'Updated Successfully',
-        text2:  isAdd? "Distress thermometer added successfully!" : "Distress thermometer Updated successfully!",
+        text2: isAdd ? "Distress thermometer added successfully!" : "Distress thermometer Updated successfully!",
         onHide: () => {
           navigation.goBack();
           fetchAvailableDates();
@@ -550,7 +552,11 @@ export default function DistressThermometerScreen() {
 
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       {/* Header with FactG-style dropdown */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View
@@ -709,7 +715,7 @@ export default function DistressThermometerScreen() {
       )}
 
       {/* Main content ScrollView */}
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}  keyboardShouldPersistTaps="handled">
         {/* Distress Thermometer Card */}
         <FormCard icon="DT" title={`Distress Thermometer ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}>
           <Text className="text-[12px] text-gray-500 mb-3">
@@ -834,6 +840,6 @@ export default function DistressThermometerScreen() {
         </Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }

@@ -11,6 +11,8 @@ import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 type Question = {
   PPVRQMID: string;
@@ -306,7 +308,11 @@ export default function PreAndPostVR() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View style={{
           backgroundColor: 'white',
@@ -436,7 +442,7 @@ export default function PreAndPostVR() {
         </>
       )}
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}>
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}  keyboardShouldPersistTaps="handled">
         <FormCard icon="I" title="Pre & Post VR">
           <View style={{ paddingBottom: 40 }}>
             <View className="flex-row gap-3">
@@ -651,6 +657,6 @@ export default function PreAndPostVR() {
           {saving ? 'Saving…' : 'Save & Close'}
         </Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }

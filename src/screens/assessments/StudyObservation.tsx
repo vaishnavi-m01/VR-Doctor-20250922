@@ -734,7 +734,7 @@ const handleClear = () => {
           </View>
         </View>
 
-        <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}>
+        <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}    keyboardShouldPersistTaps="handled">
           <FormCard icon="S" title="Study Observation - Basic Information">
             <View className="flex-row flex-wrap gap-x-4 gap-y-3">
               {groupedFields.basic.map((f) => (

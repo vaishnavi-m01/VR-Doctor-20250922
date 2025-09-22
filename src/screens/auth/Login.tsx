@@ -262,16 +262,16 @@ const Login = () => {
                         accessibilityHint="Tap to log in with your credentials"
                         accessibilityRole="button"
                         accessibilityState={{ disabled: isLoading }}
-                        style={{
-                            shadowColor: "#2F005A",
-                            shadowOffset: {
-                                width: 0,
-                                height: 4,
-                            },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 8,
-                            elevation: 6,
-                        }}
+                        // style={{
+                        //     shadowColor: "#2F005A",
+                        //     shadowOffset: {
+                        //         width: 0,
+                        //         height: 4,
+                        //     },
+                        //     shadowOpacity: 0.25,
+                        //     shadowRadius: 8,
+                        //     elevation: 6,
+                        // }}
                     >
                         <LinearGradient
                             colors={isLoading ? ["#64748b", "#475569"] : ["#2F005A", "#4A1B8A", "#6B2B9A"]}

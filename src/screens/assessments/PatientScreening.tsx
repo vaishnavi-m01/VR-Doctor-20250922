@@ -14,6 +14,8 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { formatForUI } from 'src/utils/date';
 import { UserContext } from "../../store/context/UserContext";
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 
 interface ClinicalChecklist {
@@ -297,7 +299,11 @@ export default function PatientScreening() {
 
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
         <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
@@ -315,7 +321,7 @@ export default function PatientScreening() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]"  keyboardShouldPersistTaps="handled">
         <FormCard icon="D" title="Patient Screening">
           <View className="flex-row gap-3">
             <View className="flex-1">
@@ -548,7 +554,7 @@ export default function PatientScreening() {
           Save & Close
         </Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 

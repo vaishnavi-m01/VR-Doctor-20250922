@@ -13,6 +13,8 @@ import { RootStackParamList } from '../../Navigation/types';
 import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
+import { KeyboardAvoidingView } from 'react-native';
+import { Platform } from 'react-native';
 
 interface ExitInterviewOptions {
   OptionId?: string;
@@ -43,9 +45,8 @@ interface ExitInterviewData {
   AdditionalComments?: string;
   [key: string]: unknown;
 }
-
-interface ExitInterviewResponse {
-  ResponseData: ExitInterviewData[];
+interface ExitInterviewResponse<T> {
+  ResponseData: T;
 }
 
 interface ExitInterviewRequestBody {
@@ -143,10 +144,10 @@ export default function ExitInterview() {
   useEffect(() => {
     async function fetchParticipantName() {
       try {
-         const res = await apiService.post<any>("/GetParticipantDetails", { ParticipantId: patientId });
-         const data = res.data?.ResponseData;
+        const res = await apiService.post<any>("/GetParticipantDetails", { ParticipantId: patientId });
+        const data = res.data?.ResponseData;
         if (data) {
-          setParticipantName(data.Signature ?? ''); 
+          setParticipantName(data.Signature ?? '');
         }
       } catch (err) {
         console.error('Error fetching participant details', err);
@@ -177,7 +178,8 @@ export default function ExitInterview() {
     if (Object.keys(groupedQuestions).length === 0) return;
     const filter = { ParticipantId: `${patientId}`, StudyId: `${studyId}` };
     apiService
-      .get<ExitInterviewResponse>('/GetParticipantExitInterviews', filter)
+      .get<ExitInterviewResponse<any[]>>('/GetParticipantExitInterviews', filter)
+
       .then((res) => {
         const interviews = res.data.ResponseData;
         if (!interviews || interviews.length === 0) return;
@@ -308,28 +310,28 @@ export default function ExitInterview() {
     return true;
   };
 
-const handleClear = () => {
-  setAnswers({});
-  setTraining('');
-  setTrainingExplain('');
-  setTechnicalIssues('');
-  setTechnicalDetails('');
-  setRequirements('');
-  setRequirementsExplain('');
-  setEngagementSuggestions('');
-  setFuture('');
-  setUpdates('');
-  setStudySuggestions('');
-  setOverallRating('');
-  setVrHelpful('');
-  setVrChallenging('');
-  setOtherReasonText('');
-  setParticipantSignature('');
-  setInterviewerSignature('');
-  setParticipantDate(todayStr);
-  setInterviewerDate(todayStr);
-  setErrors({}); 
-};
+  const handleClear = () => {
+    setAnswers({});
+    setTraining('');
+    setTrainingExplain('');
+    setTechnicalIssues('');
+    setTechnicalDetails('');
+    setRequirements('');
+    setRequirementsExplain('');
+    setEngagementSuggestions('');
+    setFuture('');
+    setUpdates('');
+    setStudySuggestions('');
+    setOverallRating('');
+    setVrHelpful('');
+    setVrChallenging('');
+    setOtherReasonText('');
+    setParticipantSignature('');
+    setInterviewerSignature('');
+    setParticipantDate(todayStr);
+    setInterviewerDate(todayStr);
+    setErrors({});
+  };
 
 
   // Save handler
@@ -397,7 +399,7 @@ const handleClear = () => {
 
       await apiService.post('/AddUpdateParticipantExitInterview', body);
 
-     Toast.show({
+      Toast.show({
         type: 'success',
         text1: exitInterviewId ? 'Updated Successfully' : 'Added Successfully',
         text2: exitInterviewId
@@ -406,7 +408,7 @@ const handleClear = () => {
         onHide: () => navigation.goBack(),
         position: 'top',
         topOffset: 50,
-        visibilityTime:1000
+        visibilityTime: 1000
       });
 
     } catch (error) {
@@ -430,37 +432,41 @@ const handleClear = () => {
   });
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <View style={{ paddingTop: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
         <View
           style={{
             backgroundColor: 'white',
             borderBottomWidth: 1,
-            borderBottomColor: "rgba(229, 231, 235, 1)", 
+            borderBottomColor: "rgba(229, 231, 235, 1)",
             borderRadius: 12,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: 24,
-            shadowColor: "#000000",       
-            shadowOpacity: 0.35,          
-            shadowRadius: 1,           
-            shadowOffset: { width: 0, height: 1 }, 
+            shadowColor: "#000000",
+            shadowOpacity: 0.35,
+            shadowRadius: 1,
+            shadowOffset: { width: 0, height: 1 },
           }}
         >
-          <Text 
-           style={{ 
-              color: "rgba(22, 163, 74, 1)", 
-              fontWeight: "700",             
-              fontSize: 18,                 
-              lineHeight: 28,     
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
+              fontWeight: "700",
+              fontSize: 18,
+              lineHeight: 28,
             }}
           >
             Participant ID: {patientId}
           </Text>
-          <Text 
-           style={{
-              color: "rgba(22, 163, 74, 1)", 
+          <Text
+            style={{
+              color: "rgba(22, 163, 74, 1)",
               fontWeight: "600",
               fontSize: 16,
               lineHeight: 24,
@@ -472,12 +478,12 @@ const handleClear = () => {
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6' ,paddingVertical:2, paddingHorizontal: 20}}>
+      <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6', paddingVertical: 2, paddingHorizontal: 20 }} keyboardShouldPersistTaps="handled">
         {/* Acknowledgment card */}
         <FormCard icon="E" title="Exit Interview">
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => {}} />
+              <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => { }} />
             </View>
             <View style={{ flex: 1 }}>
               <DateField label="Interview Date" value={participantDate} onChange={setParticipantDate} error={errors.participantDate} />
@@ -511,14 +517,14 @@ const handleClear = () => {
                   }}
                 />
 
-              
+
                 {(answers[qid] as string[])?.includes('Other') && (
                   <View style={{ marginTop: 8 }}>
                     <Field
                       label="Other (please specify)"
                       placeholder="Describe other reason…"
                       value={otherReasonText}
-                     onChangeText={(val) => {
+                      onChangeText={(val) => {
                         setOtherReasonText(val);
                         if (errors.otherReasonText && val.trim().length > 0) {
                           setErrors((prev) => ({ ...prev, otherReasonText: undefined }));
@@ -544,9 +550,9 @@ const handleClear = () => {
               <FormCard key={qid} icon="V" title="VR Experience Ratings">
                 <Text style={errorLabelStyle(qid)}>
                   {group.QuestionText}
-                 
+
                 </Text>
-               <Segmented
+                <Segmented
                   options={options.map((o) => ({ label: o, value: o }))}
                   value={(answers[qid] as string) || ''}
                   onChange={(val) => {
@@ -589,7 +595,7 @@ const handleClear = () => {
           <View style={{ marginBottom: 12 }}>
             <Text style={errorLabelStyle('training')}>
               {questions.find((q) => q.QuestionId === 'EIQID-6')?.QuestionText || ''}
-             
+
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <Pressable
@@ -629,7 +635,7 @@ const handleClear = () => {
                 <Text style={{ fontWeight: '500', fontSize: 12, color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
               </Pressable>
             </View>
-          
+
           </View>
           {training === 'No' && (
             <View style={{ marginTop: 8 }}>
@@ -645,7 +651,7 @@ const handleClear = () => {
           {/* Technical Issues */}
           <Text style={[errorLabelStyle('technicalIssues'), { marginTop: 12 }]}>
             {questions.find((q) => q.QuestionId === 'EIQID-5')?.QuestionText || ''}
-           
+
           </Text>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Pressable
@@ -685,7 +691,7 @@ const handleClear = () => {
               <Text style={{ fontWeight: '500', fontSize: 12, color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
           </View>
-        
+
           {technicalIssues === 'Yes' && (
             <View style={{ marginTop: 8 }}>
               <Field
@@ -703,7 +709,7 @@ const handleClear = () => {
         <FormCard icon="SP" title="Study Adherence & Protocol">
           <Text style={errorLabelStyle('requirements')}>
             {questions.find((q) => q.QuestionId === 'EIQID-7')?.QuestionText || ''}
-          
+
           </Text>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Pressable
@@ -743,7 +749,7 @@ const handleClear = () => {
               <Text style={{ fontWeight: '500', fontSize: 12, color: requirements === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
           </View>
-         
+
           {requirements === 'No' && (
             <View style={{ marginTop: 8 }}>
               <Field
@@ -773,7 +779,7 @@ const handleClear = () => {
             <View style={{ flex: 1 }}>
               <Text style={errorLabelStyle('future')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-9')?.QuestionText || ''}
-                
+
               </Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Pressable
@@ -813,13 +819,13 @@ const handleClear = () => {
                   <Text style={{ fontWeight: '500', fontSize: 12, color: future === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
-             
+
             </View>
 
             <View style={{ flex: 1 }}>
               <Text style={errorLabelStyle('updates')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-11')?.QuestionText || ''}
-               
+
               </Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Pressable
@@ -859,7 +865,7 @@ const handleClear = () => {
                   <Text style={{ fontWeight: '500', fontSize: 12, color: updates === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
-              
+
             </View>
           </View>
           <View style={{ marginTop: 12 }}>
@@ -880,14 +886,14 @@ const handleClear = () => {
               <Field
                 label="Participant Signature"
                 placeholder="Participant signature"
-                value={participantName }
+                value={participantName}
                 error={errors.participantSignature}
                 onChangeText={setFieldAndClearError('participantSignature', setParticipantSignature)}
               />
             </View>
             <View style={{ flex: 1 }}>
               <DateField label="Interview CreatedDate" value={participantDate} onChange={setParticipantDate} error={errors.participantDate} />
-              
+
             </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
@@ -902,7 +908,7 @@ const handleClear = () => {
             </View>
             <View style={{ flex: 1 }}>
               <DateField label="Modified Date" value={interviewerDate} onChange={setInterviewerDate} error={errors.interviewerDate} />
-             
+
             </View>
           </View>
           <View style={{ height: 150 }} />
@@ -918,7 +924,7 @@ const handleClear = () => {
         </Btn>
         <Btn onPress={handleSave}>Save & Close</Btn>
       </BottomBar>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 

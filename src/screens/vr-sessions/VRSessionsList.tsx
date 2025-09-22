@@ -355,11 +355,11 @@ useFocusEffect(
                 }`}
               >
                 <Text className="text-white font-semibold">
-                  {isCreatingSession ? 'Creating...' : 'Session List'}
+                  {isCreatingSession ? 'Creating...' : 'Create Session'}
                 </Text>
               </Pressable>
 
-              <Pressable
+              {/* <Pressable
                 onPress={() => handleCreateSession('setup')}
                 disabled={isCreatingSession}
                 className={`w-full py-3 rounded-xl items-center mb-4 ${
@@ -369,7 +369,7 @@ useFocusEffect(
                 <Text className="text-white font-semibold">
                   {isCreatingSession ? 'Creating...' : 'Session Setup'}
                 </Text>
-              </Pressable>
+              </Pressable> */}
 
               <View className="border-t border-green-300 pt-4">
                 <Pressable
