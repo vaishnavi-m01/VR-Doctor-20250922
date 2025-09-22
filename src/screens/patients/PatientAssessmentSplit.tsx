@@ -47,6 +47,10 @@ interface ParticipantRequest {
   Gender?: string;
   ParticipantId?: string;
   StudyId?: string;
+  AgeFrom?: number;          
+  AgeTo?: number;            
+  SearchString?: string;     
+  [key: string]: unknown;  
 }
 
 interface ParticipantApiResponse {
@@ -120,20 +124,34 @@ export default function ParticipantAssessmentSplit() {
   };
 
 
-  // Clear filters: reset advFilters, searchText, appliedSearchText and fetch all participants
-  const handleClearFilters = async () => {
-    setAdvFilters({
-      criteriaStatus: '',
-      gender: '',
-      ageFrom: '',
-      ageTo: '',
-      groupType: '',
-    });
-    setSearchText('');
-    setAppliedSearchText('');
-    setSelectedGroupFilter('All');
-    await fetchParticipants('');
-  };
+ const handleClearFilters = () => {
+  setAdvFilters({
+    criteriaStatus: '',
+    gender: '',
+    ageFrom: '',
+    ageTo: '',
+    groupType: '',
+  });
+  setSearchText('');
+  setAppliedSearchText('');
+  setSelectedGroupFilter('All');
+};
+
+const [didResetFilters, setDidResetFilters] = useState(false);
+
+
+const onFiltersReset = () => {
+  setDidResetFilters(true);
+};
+
+
+useEffect(() => {
+  if (didResetFilters) {
+    fetchParticipants('');
+    setDidResetFilters(false);
+  }
+}, [didResetFilters]);
+
 
 
      useFocusEffect(
@@ -290,7 +308,7 @@ export default function ParticipantAssessmentSplit() {
         const parsed: Patient[] = response.data.ResponseData.map((item) => ({
           id: item.ParticipantId,
           ParticipantId: item.ParticipantId,
-          studyId: item.StudyId,
+          studyId: Number(item.StudyId), 
           age: Number(item.Age) || 0,
           status: item.CriteriaStatus?.toLowerCase() || "pending",
           gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
@@ -655,6 +673,7 @@ export default function ParticipantAssessmentSplit() {
               onAgeChange={handleAgeChange}
               onGroupTypeChange={handleGroupTypeChange}
               onClearFilters={handleClearFilters}
+              onFiltersReset={onFiltersReset}
               ageRangeError={ageRangeError}
             />
             {/* Add Participant Button */}

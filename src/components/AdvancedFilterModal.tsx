@@ -54,6 +54,7 @@ interface AdvancedFilterModalProps {
   onAgeChange: (field: 'ageFrom' | 'ageTo', value: string) => void;
   onGroupTypeChange: (groupType: string) => void;
   onClearFilters: () => Promise<void>;
+  onFiltersReset?: () => void;
   ageRangeError?: string;
 }
 
@@ -67,15 +68,26 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   onGroupTypeChange,
   onClearFilters,
   ageRangeError,
+  onFiltersReset,
 }) => {
 
-  const handleCloseWithClear = async () => {
-    await onClearFilters(); // Wait for clearing filters and fetching all participants
-    onClose();              // Then close the modal
+
+  const handleCloseAndClear = async () => {
+    await onClearFilters();  
+    onClose();               
   };
 
+const handleResetAndClose = () => {
+  onClearFilters();
+  onClose();
+  onFiltersReset?.();
+};
+
+
+
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCloseAndClear}>
       <View className="flex-1 justify-center items-center p-5">
         <View className="w-full max-w-[23rem] max-h-[80%] bg-green-50 rounded-2xl shadow-lg overflow-hidden border-2 border-green-200">
 
@@ -83,9 +95,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
           <View className="pt-6 px-6 pb-4 border-b border-green-300 flex-row justify-between items-center">
             <Text className="text-lg font-bold text-gray-900 mb-1">Filters</Text>
             {/* ❌ Close button */}
-            <TouchableOpacity
-              onPress={onClose}
-            >
+           <TouchableOpacity onPress={handleCloseAndClear}>
               <MaterialIcons name="close" size={26} color="#e03a1d" />
             </TouchableOpacity>
           </View>
@@ -177,7 +187,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
                 }}
                 keyboardType="numeric"
                 value={filters.ageFrom}
-                onChangeText={val => onAgeChange("ageFrom", val)}
+                onChangeText={(val: string) => onAgeChange("ageFrom", val)}
                 maxLength={3}
                 returnKeyType="done"
                 placeholderTextColor="#999"
@@ -199,7 +209,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
                 }}
                 keyboardType="numeric"
                 value={filters.ageTo}
-                onChangeText={val => onAgeChange("ageTo", val)}
+                 onChangeText={(val: string) => onAgeChange("ageTo", val)}
                 maxLength={3}
                 returnKeyType="done"
                 placeholderTextColor="#999"
@@ -215,7 +225,13 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
           </ScrollView>
 
           {/* Footer */}
-          <View className="flex-row justify-end px-6 py-4 border-t border-green-300">
+          <View className="flex-row justify-between px-6 py-4 border-t border-green-300">
+            <Pressable
+              onPress={handleResetAndClose}
+              accessibilityLabel="Reset all filters and close modal"
+            >
+              <Text className="text-red-700 font-bold text-base">Reset</Text>
+            </Pressable>
             <Pressable
               onPress={onClose}
               accessibilityLabel="Apply filters and close modal"
