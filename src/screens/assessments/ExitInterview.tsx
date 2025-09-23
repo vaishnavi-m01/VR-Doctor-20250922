@@ -614,7 +614,9 @@ export default function ExitInterview() {
                 }}
               >
                 <Text style={{ fontSize: 18, marginRight: 8, color: training === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                <Text style={{ fontWeight: '500', fontSize: 12, color: training === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                <Text 
+                className={`text-sm `}
+                style={{ fontWeight: '500',color: training === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -632,7 +634,9 @@ export default function ExitInterview() {
                 }}
               >
                 <Text style={{ fontSize: 18, marginRight: 8, color: training === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                <Text style={{ fontWeight: '500', fontSize: 12, color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                <Text 
+                className={`text-sm `}
+                style={{ fontWeight: '500', color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
               </Pressable>
             </View>
 
@@ -670,7 +674,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-              <Text style={{ fontWeight: '500', fontSize: 12, color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+              <Text 
+              className={`text-sm `}
+              style={{ fontWeight: '500', color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -688,7 +694,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-              <Text style={{ fontWeight: '500', fontSize: 12, color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+              <Text 
+                className={`text-sm `}
+                style={{ fontWeight: '500', color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
           </View>
 
@@ -728,7 +736,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-              <Text style={{ fontWeight: '500', fontSize: 12, color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+              <Text 
+              className={`text-sm `}
+              style={{ fontWeight: '500', color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -746,7 +756,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: requirements === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-              <Text style={{ fontWeight: '500', fontSize: 12, color: requirements === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+              <Text 
+              className={`text-sm `}
+              style={{ fontWeight: '500', color: requirements === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
           </View>
 
@@ -798,7 +810,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: future === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                  <Text style={{ fontWeight: '500', fontSize: 12, color: future === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                  <Text 
+                  className={`text-sm `}
+                  style={{ fontWeight: '500', color: future === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -816,7 +830,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: future === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                  <Text style={{ fontWeight: '500', fontSize: 12, color: future === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                  <Text 
+                  className={`text-sm `}
+                  style={{ fontWeight: '500', color: future === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
 
@@ -844,7 +860,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: updates === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                  <Text style={{ fontWeight: '500', fontSize: 12, color: updates === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                  <Text 
+                  className={`text-sm `}
+                  style={{ fontWeight: '500', color: updates === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -862,7 +880,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: updates === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                  <Text style={{ fontWeight: '500', fontSize: 12, color: updates === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                  <Text 
+                  className={`text-sm `}
+                  style={{ fontWeight: '500', color: updates === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
 

@@ -307,68 +307,66 @@ const StudyObservation = () => {
     }
   };
 
-  const fetchBaselineScores = async (participantId: string, studyId: string) => {
-    setBaselineLoading(true);
-    try {
-      let factGScore = '';
-      const factGDateRes = await apiService.post('/GetParticipantFactGQuestionWeekly', {
-        StudyId: studyId,
-        ParticipantId: participantId,
-        CreatedDate: null,
-      }) as { data: FactGResponse };
+const fetchBaselineScores = async (participantId: string, studyId: string) => {
+  setBaselineLoading(true);
+  try {
+    let factGScore = 0;
+    let distressValue = '0';
 
-      const factGDateList = factGDateRes.data.ResponseData.map(item => ({
-        ...item,
-        createdDate: item["STR_TO_DATE(PFGQWK.CreatedDate, '%Y-%m-%d')"]
-      }));
+    // Today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
 
+    // Fetch FACT-G data for today only
+    const factGRes = await apiService.post('/getParticipantFactGQuestionWeekly', {
+      StudyId: studyId,
+      ParticipantId: participantId,
+      CreatedDate: today,
+    }) as { data: FactGResponse };
 
-       let lastFactGDate: string | null = null;
-
-      if (factGDateList && factGDateList.length > 0) {
-        lastFactGDate = factGDateList[factGDateList.length - 1].createdDate;
-      }
-
-
-
-      if (lastFactGDate) {
-        const factGDetailsRes = await apiService.post('/GetParticipantFactGQuestionWeekly', {
-          StudyId: studyId,
-          ParticipantId: participantId,
-          CreatedDate: lastFactGDate,
-        }) as { data: FactGResponse };
-        factGScore = factGDetailsRes.data.FinalScore || '';
-      }
-
-      let distressValue = '';
-      const distressRes = await apiService.post('/GetParticipantDistressWeeklyScore', {
-        ParticipantId: participantId,
-        CreatedDate: null,
-      }) as { data: DistressWeeklyResponse };
-
-      if (distressRes.data.ResponseData && distressRes.data.ResponseData.length > 0) {
-        distressValue = distressRes.data.ResponseData[distressRes.data.ResponseData.length - 1].ScaleValue;
-      }
-
-      setDistressScore(distressValue);
-      setFactGScore(factGScore);
-      setFormValues(prev => ({
-        ...prev,
-        'SOFID-7': factGScore,
-        'SOFID-8': distressValue,
-      }));
-    } catch (error) {
-      setDistressScore('');
-      setFactGScore('');
-      setFormValues(prev => ({
-        ...prev,
-        'SOFID-7': '',
-        'SOFID-8': '',
-      }));
-    } finally {
-      setBaselineLoading(false);
+    if (factGRes.data && factGRes.data.FinalScore) {
+      const parsedScore = Number(factGRes.data.FinalScore);
+      factGScore = isNaN(parsedScore) ? 0 : parsedScore;
+    } else {
+      factGScore = 0;
     }
-  };
+
+    // Fetch distress score for today only
+    const distressRes = await apiService.post('/GetParticipantDistressWeeklyScore', {
+      ParticipantId: participantId,
+      CreatedDate: today,
+    }) as { data: DistressWeeklyResponse };
+
+    if (distressRes.data?.ResponseData.length) {
+      const todayDistress = distressRes.data.ResponseData.find(item =>
+        item.CreatedDate?.split('T')[0] === today
+      );
+      distressValue = todayDistress?.ScaleValue || '0';
+    } else {
+      distressValue = '0';
+    }
+
+    // Update the form and state values
+    setFactGScore(factGScore.toString());
+    setDistressScore(distressValue);
+    setFormValues(prev => ({
+      ...prev,
+      'SOFID-7': factGScore.toString(),
+      'SOFID-8': distressValue,
+    }));
+
+  } catch (error) {
+    setFactGScore('0');
+    setDistressScore('0');
+    setFormValues(prev => ({
+      ...prev,
+      'SOFID-7': '0',
+      'SOFID-8': '0',
+    }));
+  } finally {
+    setBaselineLoading(false);
+  }
+};
+
 
   useEffect(() => {
     const participantId = `${routePatientId}`;
@@ -424,7 +422,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
       <Text className={`text-lg mr-1 ${selected === value ? 'text-white' : 'text-black'}`}>
         {value === 'Yes' ? '✅' : '❌'}
       </Text>
-      <Text className={`font-medium text-xs ${selected === value ? 'text-white' : 'text-black'}`}>{label}</Text>
+      <Text className={`font-medium text-sm ${selected === value ? 'text-white' : 'text-black'}`}>{label}</Text>
     </Pressable>
   );
 
@@ -460,15 +458,6 @@ const handleYesNoChange = (sofid: string, value: string) => {
       errors[field] = `${label} is required.`;
     }
   });
-
-  // Check start time and end time fields only for format errors
-  // ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
-  //   const value = getFormValue(timeField);
-  //   const label = formFields.find((f) => f.SOFID === timeField)?.FieldLabel || timeField;
-  //   if (value && !isValidTime(value)) {
-  //     errors[timeField] = `${label} must be in HH:MM:SS format.`;
-  //   }
-  // });
 
    ['SOFID-11', 'SOFID-12'].forEach((timeField) => {
     const value = getFormValue(timeField);
@@ -663,7 +652,9 @@ const handleClear = () => {
     const hasError = !!fieldErrors[sofid];
     return (
       <View key={sofid} className="mt-3">
-        <Text style={{ color: hasError ? '#EF4444' : 'black', marginBottom: 2 ,fontSize: 12,}}>
+        <Text 
+          className={`text-sm `}
+          style={{ color: hasError ? '#EF4444' : 'black', marginBottom: 2}}>
           {label}
         </Text>
         <Field
@@ -680,7 +671,7 @@ const handleClear = () => {
       const hasError = !!fieldErrors[sofid];
       return (
       <View key={sofid} className="mt-3">
-      <Text className="text-xs mb-2" style={{ color: hasError ? '#EF4444' : '#4b5f5a' }}>
+      <Text className="text-sm mb-2" style={{ color: hasError ? '#EF4444' : '#4b5f5a' }}>
           {label}
         </Text>
         
@@ -699,7 +690,7 @@ const handleClear = () => {
       return (
 
       <View className="mt-3" key="patient-response-chips">
-        <Text className="text-xs text-[#4b5f5a] mb-2" 
+        <Text className="text-sm text-[#4b5f5a] mb-2" 
         style={{ color: hasError ? '#EF4444' : '#4b5f5a' }}
         >
           Patient Response During Session
@@ -748,7 +739,7 @@ const handleClear = () => {
           <FormCard icon="B" title="Baseline Assessment & Scores">
             <View className="flex-row flex-wrap gap-3">
               <View className="flex-1 mt-3">
-                <Text className="text-xs text-[#4b5f5a] mb-1">FACT G Score</Text>
+                <Text className="text-sm text-[#4b5f5a] mb-1">FACT G Score</Text>
                 <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
                   {baselineLoading ? (
                     <ActivityIndicator size="small" color="#4FC264" />
@@ -758,7 +749,7 @@ const handleClear = () => {
                 </View>
               </View>
               <View className="flex-1 mt-3">
-                <Text className="text-xs text-[#4b5f5a] mb-1">Distress Thermometer Score</Text>
+                <Text className="text-sm text-[#4b5f5a] mb-1">Distress Thermometer Score</Text>
                 <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
                   {baselineLoading ? (
                     <ActivityIndicator size="small" color="#4FC264" />
@@ -779,7 +770,9 @@ const handleClear = () => {
                 if (!field) return null;
                 return (
                 <View key={sofid} className="flex-1">
-                  <Text style={{ color: fieldErrors[sofid] ? '#EF4444' : '#4b5f5a', marginBottom: 2, fontSize: 12 }}>
+                  <Text 
+                   className={`text-sm `}
+                   style={{ color: fieldErrors[sofid] ? '#EF4444' : '#4b5f5a', marginBottom: 2, }}>
                     {field.FieldLabel}
                   </Text>
                   <DateField
