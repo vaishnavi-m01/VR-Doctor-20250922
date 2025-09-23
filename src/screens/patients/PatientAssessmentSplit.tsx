@@ -309,7 +309,7 @@ useEffect(() => {
         const parsed: Patient[] = response.data.ResponseData.map((item) => ({
           id: item.ParticipantId,
           ParticipantId: item.ParticipantId,
-          studyId: Number(item.StudyId), 
+          studyId: item.StudyId, 
           age: Number(item.Age) || 0,
           status: item.CriteriaStatus?.toLowerCase() || "pending",
           gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
