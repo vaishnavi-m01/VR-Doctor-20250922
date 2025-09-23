@@ -24,7 +24,7 @@ export default function SessionControlScreen() {
 
   const route = useRoute<RouteProp<RootStackParamList, 'SessionControlScreen'>>();
   const { patientId, studyId, therapy, backgroundMusic, language, session, SessionNo } = route.params;
-  console.log("VRSession", therapy, backgroundMusic, language, session, SessionNo)
+  console.log("VRSessionnnnn", therapy, backgroundMusic, language, session, SessionNo)
 
   // Simulate time progression when playing
   useEffect(() => {
@@ -82,6 +82,15 @@ export default function SessionControlScreen() {
           <Text className="text-base font-semibold text-gray-700">
             Age: {age || "Not specified"}
           </Text>
+        </View>
+      </View>
+
+      <View className="px-4 pt-2 mt-4">
+        <View className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <Text className="text-sm text-gray-600">Session Number:  <Text className="text-lg font-semibold text-green-600 mt-1">
+            {SessionNo || "N/A"}
+          </Text></Text>
+          
         </View>
       </View>
 

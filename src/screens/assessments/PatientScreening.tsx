@@ -321,7 +321,7 @@ export default function PatientScreening() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]"  keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" keyboardShouldPersistTaps="handled">
         <FormCard icon="D" title="Patient Screening">
           <View className="flex-row gap-3">
             <View className="flex-1">
@@ -380,7 +380,7 @@ export default function PatientScreening() {
 
 
 
-          {/* <View className="flex-row gap-3 mt-6">
+          <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
                 <Text className="text-xs text-[#4b5f5a]">FACT-G Total Score</Text>
@@ -400,7 +400,7 @@ export default function PatientScreening() {
                 onChangeText={setFactGScore}
               />
             </View>
-          </View> */}
+          </View>
 
           <Text className="text-lg mt-3 font-semibold">Vitals</Text>
           <View className="flex-row gap-3 mt-3">

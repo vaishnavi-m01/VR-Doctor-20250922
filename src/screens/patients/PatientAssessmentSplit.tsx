@@ -39,6 +39,7 @@ export interface Patient {
   name?: string;
   weightKg?: number;
   groupType?: string;
+   CriteriaStatus?:string;
 }
 
 interface ParticipantRequest {
@@ -316,6 +317,7 @@ useEffect(() => {
           stage: item.StageOfCancer || "N/A",
           name: item.Name ?? undefined,
           groupType: item.GroupType || null,
+          CriteriaStatus:item.CriteriaStatus || null
         }));
         setParticipants(parsed);
         // if (selId === null && parsed.length > 0) {
@@ -710,14 +712,15 @@ useEffect(() => {
               <ActivityIndicator color="#0ea06c" />
             ) : filteredParticipants.length > 0 ? (
               filteredParticipants.map((p) => (
-                <ListItem
+               <ListItem
                   key={p.ParticipantId}
                   item={{
                     ...p,
                     ParticipantId: `${p.ParticipantId}`,
                     status: p.status as 'ok' | 'pending' | 'alert',
                     gender: p.gender as 'Male' | 'Female' | 'Other',
-                    groupType: p.groupType
+                    groupType: p.groupType,
+                    CriteriaStatus:p.CriteriaStatus
                   }}
                   selected={p.ParticipantId === selId}
                   onPress={() => setSelId(p.ParticipantId)}
