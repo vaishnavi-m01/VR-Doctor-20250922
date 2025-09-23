@@ -201,7 +201,7 @@ export default function SessionDetailsScreen() {
 
           {/* Language Selection */}
           <Card className="p-4">
-            <Text className="font-bold text-base mb-4 text-gray-700">Languageeee</Text>
+            <Text className="font-bold text-base mb-4 text-gray-700">Language</Text>
             <View className="flex-row flex-wrap gap-3">
               {['English', 'Hindi', 'Khasi'].map(l => (
                 <Pressable

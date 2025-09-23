@@ -230,7 +230,7 @@ export default function PostVRAssessment() {
           }`}
         >
           <Text className={`text-lg mr-1 ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>✅</Text>
-          <Text className={`font-medium text-xs ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
+          <Text className={`font-medium text-sm ${value === 'Yes' ? 'text-white' : 'text-[#2c4a43]'}`}>
             Yes
           </Text>
         </Pressable>
@@ -241,7 +241,7 @@ export default function PostVRAssessment() {
           }`}
         >
           <Text className={`text-lg mr-1 ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>❌</Text>
-          <Text className={`font-medium text-xs ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
+          <Text className={`font-medium text-sm ${value === 'No' ? 'text-white' : 'text-[#2c4a43]'}`}>No</Text>
         </Pressable>
       </View>
     );
@@ -260,7 +260,7 @@ export default function PostVRAssessment() {
                   value === option ? 'bg-[#4FC264]' : 'bg-white'
                 }`}
               >
-                <Text className={`font-medium text-xs text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'}`}>
+                <Text className={`font-medium text-sm text-center ${value === option ? 'text-white' : 'text-[#4b5f5a]'}`}>
                   {option}
                 </Text>
               </Pressable>
@@ -284,13 +284,13 @@ export default function PostVRAssessment() {
 
     return (
       <View key={questionId} className="mt-3">
-        <Text  className={`text-xs mb-2 ${
+        <Text  className={`text-sm mb-2 ${
           hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
           }`}
         >
           {question.AssessmentTitle}
         </Text>
-        <Text className="text-xs text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
+        <Text className="text-sm text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
 
         {questionType === 'scale_5' && renderScale(questionId, 5, index)}
         {questionType === 'scale_10' && (
@@ -570,7 +570,7 @@ export default function PostVRAssessment() {
         {!error && postQuestions.length > 0 && (
           <View className="bg-blue-50 rounded-lg p-4 shadow-md mb-4">
             <Text className="font-semibold text-sm text-blue-800 mb-2">Instructions:</Text>
-            <Text className="text-xs text-blue-700">
+            <Text className="text-sm text-blue-700">
               • For scale questions (1-5): 1 = Lowest/Worst, 5 = Highest/Best{'\n'}
               • For scale questions (1-10): 1 = Very Bad, 10 = Excellent{'\n'}
               • Answer all applicable questions for complete assessment

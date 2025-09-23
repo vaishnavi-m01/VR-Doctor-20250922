@@ -553,7 +553,7 @@ export default function PreAndPostVR() {
               return (
                 <View key={q.PPVRQMID} className="mb-3">
                   <Text
-                    className={`text-xs text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                    className={`text-sm text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
                       }`}
                   >
                     {q.QuestionName}
@@ -568,7 +568,7 @@ export default function PreAndPostVR() {
                         <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                           {opt === 'Yes' ? '✅' : '❌'}
                         </Text>
-                        <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                        <Text className={`font-medium text-sm ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                           {opt}
                         </Text>
                       </Pressable>
@@ -598,7 +598,7 @@ export default function PreAndPostVR() {
               return (
                 <View key={q.PPVRQMID} className="mb-3">
                   <Text
-                    className={`text-xs text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                    className={`text-sm text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
                       }`}
                   >
                     {q.QuestionName}
@@ -613,7 +613,7 @@ export default function PreAndPostVR() {
                         <Text className={`text-lg mr-1 ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                           {opt === 'Yes' ? '✅' : '❌'}
                         </Text>
-                        <Text className={`font-medium text-xs ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
+                        <Text className={`font-medium text-sm ${responses[q.PPVRQMID]?.ScaleValue === opt ? 'text-white' : 'text-[#2c4a43]'}`}>
                           {opt}
                         </Text>
                       </Pressable>

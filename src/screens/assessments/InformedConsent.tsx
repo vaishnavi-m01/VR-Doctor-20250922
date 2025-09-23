@@ -20,6 +20,7 @@ import { formatDate } from 'src/utils/formUtils';
 import { formatDateDDMMYYYY } from 'src/utils/date';
 import { KeyboardAvoidingView } from 'react-native';
 import { Platform } from 'react-native';
+import DateField from '@components/DateField';
 
 
 interface InformedConsentFormProps {
@@ -601,6 +602,7 @@ export default function InformedConsentForm({
                                 dateValue={signatures.subjectDate}
                                 onChangeDate={(v) => setSig("subjectDate", v)}
                             />
+                         
 
 
                             <SignatureBlock

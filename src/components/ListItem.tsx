@@ -14,6 +14,7 @@ export type Patient = {
   stage?: string;
   gender: 'Male' | 'Female' | 'Other';
   groupType?: string | null;
+  CriteriaStatus?:string | null;
 };
 
 export default function PatientCard({
@@ -64,6 +65,13 @@ export default function PatientCard({
             >
               {item.cancerType}
               {item.stage ? ` • Stage: ${item.stage}` : ''}
+            </Text>
+          )}
+
+
+          {item.CriteriaStatus && (
+            <Text  className={`text-md mt-1 ${selected ? 'text-white/90' : 'text-gray-500'}`}>
+              {item.CriteriaStatus}
             </Text>
           )}
         </View>
