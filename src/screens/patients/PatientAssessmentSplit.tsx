@@ -531,7 +531,7 @@ useEffect(() => {
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center gap-2">
                 <Text className="font-extrabold">Participant List</Text>
-                <Text></Text>
+               
                 <Image source={require("../../../assets/patientList.png")} />
               </View>
 
@@ -548,7 +548,7 @@ useEffect(() => {
               </TouchableOpacity>
 
             </View>
-            <Text className="text-xs text-[#6b7a77]">
+            <Text className="text-sm text-[#6b7a77]">
               List of Participants ({participants.length})
               {lastRefreshTime && (
                 <Text className="text-[#999]">
@@ -740,7 +740,7 @@ useEffect(() => {
               <Text className="font-extrabold">
                 {sel?.name ?? `Participant ${sel?.ParticipantId ?? ''}`}
               </Text>
-              <Text className="text-xs text-[#6b7a77]">
+              <Text className="text-xs text-[#6b7a77] py-1">
                 Participant setup {sel?.age ? `• Age ${sel.age}` : ''}
               </Text>
             </View>
