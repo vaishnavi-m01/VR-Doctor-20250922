@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import EvilIcons from '@expo/vector-icons/EvilIcons';
 import type { RootStackParamList } from '../../Navigation/types';
 import BottomBar from '../../components/BottomBar';
 import { Btn } from '../../components/Button';
@@ -21,7 +20,7 @@ import { formatDateDDMMYYYY } from 'src/utils/date';
 import { KeyboardAvoidingView } from 'react-native';
 import { Platform } from 'react-native';
 import DateField from '@components/DateField';
-
+// import EvilIcons from '@expo/vector-icons/EvilIcons';
 
 interface InformedConsentFormProps {
     patientId?: number;
@@ -792,7 +791,7 @@ export function SignatureBlock({
             {/* Name + Date */}
             <View className="flex-row space-x-3">
                 {/* Name */}
-                <View className="flex-[1.4]">
+                <View className="flex-[0.8]">
                     <Text
                         className={`text-[12px] mb-1 ${nameError ? "text-red-500" : "text-[#6b7a77]"
                             }`}
@@ -805,23 +804,32 @@ export function SignatureBlock({
                         placeholder="Enter name"
                         placeholderTextColor="#9ca3af"
                         className={`text-sm text-[#0b1f1c] border rounded-xl px-3 py-2 border-[#dce9e4]
-            }`}
+                        }`}
+                        style={{ lineHeight: 30.4 }} 
                     />
                 </View>
 
                 {/* Date */}
                 <View className="flex-[0.8]">
-                    <Text className="text-[12px] text-[#6b7a77] mb-1">Date</Text>
-                    <View className="flex-row items-center border border-[#dce9e4] rounded-xl px-3 py-2">
-                        <TextInput
+                    {/* <Text className="text-[12px] text-[#6b7a77] mb-1">Date</Text> */}
+                    {/* <View className="flex-row items-center border border-[#dce9e4] rounded-xl px-3 py-2"> */}
+                        {/* <TextInput
                             value={dateValue}
                             onChangeText={onChangeDate}
                             placeholder="dd/mm/yyyy"
                             placeholderTextColor="#9ca3af"
                             className="flex-1 text-sm text-[#0b1f1c]"
                         />
-                        <EvilIcons name="calendar" size={22} color="#6b7a77" />
-                    </View>
+                        <EvilIcons name="calendar" size={22} color="#6b7a77" /> */}
+                        <DateField
+                            label="Date"
+                            value={dateValue}
+                            onChange={onChangeDate}
+                            mode="date"
+                            placeholder="dd/mm/yyyy"
+                        />
+
+                    {/* </View> */}
                 </View>
             </View>
         </View>
