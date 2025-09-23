@@ -382,24 +382,12 @@ export default function PreVR() {
 
     setValidationErrors(newErrors);
 
-    // Valid if no errors found (all questions have at least one field filled)
     return Object.keys(newErrors).length === 0;
   };
 
   const handleValidate = () => {
-      if (Object.keys(responses).length === 0) {
-        Toast.show({
-          type: 'error',
-          text1: 'Validation Error',
-          text2: 'No responses entered. Please fill the form.',
-          position: 'top',
-          topOffset: 50,
-        });
-        setValidationErrors({});
-        return;
-      }
-
-      const passed = validateResponses();
+     
+    const passed = validateResponses();
 
     if (passed) {
       Toast.show

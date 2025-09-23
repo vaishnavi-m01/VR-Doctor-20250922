@@ -63,7 +63,13 @@ export default function DateField({
           name={mode === "time" ? "time-outline" : "calendar-outline"}
           size={20}
           color="#4b5f5a"
-          className="absolute right-3 top-[26px]"
+          // className="absolute right-3 top-[26px]"
+          style={{
+            position: 'absolute',
+            right: 12,
+            top: mode === "time" ? '42%' : '50%',
+            transform: [{ translateY: -10 }], 
+          }}
         />
       </Pressable>
 

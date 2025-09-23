@@ -89,7 +89,7 @@ const handleResetAndClose = () => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCloseAndClear}>
       <View className="flex-1 justify-center items-center p-5">
-        <View className="w-full max-w-[23rem] max-h-[80%] bg-green-50 rounded-2xl shadow-lg overflow-hidden border-2 border-green-200">
+        <View className="w-full max-w-[27rem] max-h-[80%] bg-green-50 rounded-2xl shadow-lg overflow-hidden border-2 border-green-200">
 
           {/* Header */}
           <View className="pt-6 px-6 pb-4 border-b border-green-300 flex-row justify-between items-center">
@@ -123,7 +123,7 @@ const handleResetAndClose = () => {
             {/* Group Type */}
             <View className="mb-6">
               <Text className="text-gray-700 font-semibold text-base mb-3">Group Type</Text>
-              <View className="flex-row space-x-4">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {GROUP_TYPES.map(type => {
                   const isActive = filters.groupType === type;
                   return (
@@ -146,7 +146,7 @@ const handleResetAndClose = () => {
             {/* Gender */}
             <View className="mb-6">
               <Text className="text-gray-700 font-semibold text-base mb-3">Gender</Text>
-              <View className="flex-row space-x-4">
+              <View className="flex-row" style={{ gap: 12 }}>
                 {['Male', 'Female'].map(g => {
                   const isActive = filters.gender === g;
                   return (

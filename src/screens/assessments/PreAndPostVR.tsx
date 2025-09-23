@@ -223,17 +223,6 @@ export default function PreAndPostVR() {
 
 
   const handleValidate = () => {
-    if (Object.keys(responses).length === 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'No responses entered. Please fill the form.',
-        position: 'top',
-        topOffset: 50,
-      });
-      setValidationErrors({});
-      return;
-    }
 
     const passed = validateResponses();
 
@@ -432,44 +421,16 @@ export default function PreAndPostVR() {
         <>
           {/* Backdrop */}
           <Pressable
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 9998,
-            }}
+            className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
             onPress={() => setShowSessionDropdown(false)}
           />
-          <View style={{
-            position: 'absolute',
-            top: 76,
-            right: 30,
-            backgroundColor: 'white',
-            borderColor: '#e5e7eb',
-            borderWidth: 1,
-            borderRadius: 8,
-            shadowColor: '#000',
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 10,
-            width: 128,
-            maxHeight: 192,
-            zIndex: 9999,
-            overflow: 'hidden',
-          }}>
+          <View 
+             className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
+            >
             {availableSessions.map((session, index) => (
               <Pressable
                 key={session}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
-                  borderBottomColor: '#f1f5f9',
-                  backgroundColor: selectedSession === session ? '#e6f4ea' : 'white',
-                }}
+                className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
                 onPress={() => {
                   if (session !== "No session") {
                     setSelectedSession(session);
@@ -480,11 +441,7 @@ export default function PreAndPostVR() {
                 }}
 
               >
-                <Text style={{
-                  fontSize: 14,
-                  color: selectedSession === session ? '#2f855a' : '#374151',
-                  fontWeight: selectedSession === session ? '600' : undefined,
-                }}>
+                <Text className="text-sm text-gray-700">
                   {session}
                 </Text>
               </Pressable>

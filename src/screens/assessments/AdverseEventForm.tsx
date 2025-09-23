@@ -611,47 +611,18 @@ export default function AdverseEventForm() {
                 <>
                     {/* Backdrop to close dropdown */}
                     <Pressable
-                        style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            zIndex: 9998,
-                        }}
+                        className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
                         onPress={() => setShowSessionDropdown(false)}
                     />
 
                     <View
-                        style={{
-                            position: "absolute",
-                            top: 80,
-                            right: 30,
-                            backgroundColor: "white",
-                            borderColor: "#e5e7eb",
-                            borderWidth: 1,
-                            borderRadius: 8,
-                            shadowColor: "#000",
-                            shadowOpacity: 0.15,
-                            shadowRadius: 10,
-                            shadowOffset: { width: 0, height: 4 },
-                            zIndex: 9999,
-                            elevation: 10,
-                            width: 128,
-                            maxHeight: 192,
-                        }}
+                       className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
                     >
                         {availableSessions.length > 0 ? (
                             availableSessions.map((session, index) => (
                                 <Pressable
                                     key={session}
-                                    style={{
-                                        paddingHorizontal: 12,
-                                        paddingVertical: 8,
-                                        borderBottomColor: index < availableSessions.length - 1 ? "#f3f4f6" : undefined,
-                                        borderBottomWidth: index < availableSessions.length - 1 ? 1 : 0,
-                                        backgroundColor: selectedSession === session ? "#ecfdf5" : "white",
-                                    }}
+                                    className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
                                     onPress={() => {
                                         if (session !== "No session") {
                                             setSelectedSession(session);
@@ -662,19 +633,15 @@ export default function AdverseEventForm() {
                                     }}
                                 >
                                     <Text
-                                        style={{
-                                            fontSize: 14,
-                                            color: selectedSession === session ? "#2f855a" : "#374151",
-                                            fontWeight: selectedSession === session ? "600" : "400",
-                                        }}
+                                        className="text-sm text-gray-700"
                                     >
                                         {session}
                                     </Text>
                                 </Pressable>
                             ))
                         ) : (
-                            <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-                                <Text style={{ fontSize: 14, color: "#9ca3af" }}>No sessions available</Text>
+                            <View className="px-3 py-2">
+                                <Text className="text-sm text-gray-500">No sessions available</Text>
                             </View>
                         )}
                     </View>
