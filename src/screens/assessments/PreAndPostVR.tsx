@@ -247,17 +247,7 @@ export default function PreAndPostVR() {
 
 
   const handleSave = async () => {
-    if (Object.keys(responses).length === 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'No responses entered. Please fill the form before saving.',
-        position: 'top',
-        topOffset: 50
-      });
-      return;
-    }
-
+    
     const passedValidation = validateResponses();
 
     if (!passedValidation) {

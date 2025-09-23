@@ -367,7 +367,7 @@ export default function DistressThermometerScreen() {
   }, [selectedDate, enteredPatientId]);
 
 
-  const handleValidate =  () => {
+  const handleValidate =  (showSuccessToast = true) => {
     const newErrors: typeof errors = {};
 
     const hasDistressScore = v > 0;
@@ -398,20 +398,23 @@ export default function DistressThermometerScreen() {
          return false;
        }
    
-       Toast.show({
-         type: "success",
-         text1: "Validation Passed",
-         text2: "All required fields are valid",
-         position: "top",
-         topOffset: 50,
-       });
-   
+       if (showSuccessToast) {
+          Toast.show({
+            type: "success",
+            text1: "Validation Passed",
+            text2: "All required fields are valid",
+            position: "top",
+            topOffset: 50,
+          });
+        }
+
+  
        return true;
   };
 
   const handleSave = async () => {
 
-   if (!handleValidate()) return
+   if (!handleValidate(false)) return
    
     try {
       setLoading(true);

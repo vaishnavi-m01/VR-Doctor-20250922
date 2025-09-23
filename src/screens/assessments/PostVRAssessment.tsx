@@ -408,18 +408,6 @@ export default function PostVRAssessment() {
 
 
   const handleSave = async () => {
-  const hasAnyResponse = Object.keys(responses).length > 0;
-
-    if (!hasAnyResponse) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'No responses entered. Please fill the form before saving.',
-        position: 'top',
-        topOffset: 50,
-      });
-      return;
-    }
 
     const passedValidation = validateResponses();
 
