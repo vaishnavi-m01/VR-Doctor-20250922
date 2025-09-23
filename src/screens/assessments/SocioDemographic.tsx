@@ -26,7 +26,7 @@ type LifeStyleData = {
 interface ParticipantLifestyle {
   Lifestyle: string;
   Level: string;
-  
+
 }
 
 
@@ -126,7 +126,7 @@ export default function SocioDemographic() {
   const [cancerTypes, setCancerTypes] = useState<CancerTypes[]>([]);
   const [cancerTypeOptions, setCancerTypeOptions] = useState<DropdownOption[]>([]);
   const [cancerDiagnosis, setCancerDiagnosis] = useState("");
-  console.log("cancerDiagnosis",cancerDiagnosis)
+  console.log("cancerDiagnosis", cancerDiagnosis)
   const [cancerStage, setCancerStage] = useState("");
   const [ecogScore, setEcogScore] = useState("");
   const [treatmentType, setTreatmentType] = useState("");
@@ -574,7 +574,8 @@ export default function SocioDemographic() {
       {isEditMode && (
         <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
-          <View className="bg-white border-b border-gray-200 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+          <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+
             <Text className="text-lg font-bold text-green-600">
               Participant ID: {patientId}
             </Text>
@@ -835,7 +836,7 @@ export default function SocioDemographic() {
               {languages.map((lang) => (
                 <Pressable
                   key={lang.LID}
-                  onPress={() => handlePress(lang.LID ??"")}
+                  onPress={() => handlePress(lang.LID ?? "")}
                   className={`flex-1 px-8 py-4 items-center rounded-full ${KnowledgeIn === lang.LID ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >

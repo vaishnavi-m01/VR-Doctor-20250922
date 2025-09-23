@@ -604,7 +604,7 @@ export default function EdmontonFactGScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-        <View
+         <View
           style={{
             backgroundColor: "white",
             borderBottomColor: "rgba(229, 231, 235, 1)",
@@ -618,6 +618,7 @@ export default function EdmontonFactGScreen() {
             shadowOpacity: 0.35,
             shadowRadius: 1,
             shadowOffset: { width: 0, height: 1 },
+
           }}
         >
           <Text

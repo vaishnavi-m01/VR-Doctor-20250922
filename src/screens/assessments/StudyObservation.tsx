@@ -726,7 +726,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
     >
         <View className="px-4" style={{ paddingTop: 8 }}>
-          <View className="bg-white border-b border-gray-200 rounded-xl p-[24px] flex-row justify-between items-center shadow-sm">
+          <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
             <Text className="text-lg font-bold text-green-600">Participant ID: {routePatientId}</Text>
             <Text className="text-base font-semibold text-green-600">{`Study ID: ${studyIdState}`}</Text>
             <Text className="text-base font-semibold text-gray-700">Age: {age ?? 'Not specified'}</Text>

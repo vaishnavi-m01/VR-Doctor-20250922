@@ -438,20 +438,21 @@ export default function ExitInterview() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
       <View style={{ paddingTop: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
-        <View
+          <View
           style={{
-            backgroundColor: 'white',
-            borderBottomWidth: 1,
+            backgroundColor: "white",
             borderBottomColor: "rgba(229, 231, 235, 1)",
+            borderBottomWidth: 1,
             borderRadius: 12,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: 24,
+            padding: 17,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
             shadowColor: "#000000",
             shadowOpacity: 0.35,
             shadowRadius: 1,
             shadowOffset: { width: 0, height: 1 },
+
           }}
         >
           <Text
