@@ -59,8 +59,8 @@ export default function PatientScreening() {
   const routes = useRoute();
   const { CreatedDate: routeCreatedDate, PatientId: routePatientId } = (routes.params as any) ?? {};
 
-  const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? null);
-  const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? null);
+  const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? today ?? null);
+  const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? patientId ?? null);
 
 
 
@@ -94,14 +94,16 @@ export default function PatientScreening() {
 
 
   const fetchPatientFinalScore = async (pid: string, createdDate?: string | null) => {
+    const today = new Date().toISOString().split("T")[0]; 
+
     try {
       const response = await apiService.post<any>("/getParticipantFactGQuestionWeekly", {
-        ParticipantId: pid,
-        StudyId: studyId,
+        ParticipantId: pid ?? patientId,
+        StudyId: studyId ?? studyId,
         CreatedDate: createdDate ?? undefined,
       });
 
-      const score = response.data?.FinalScore ?? null;
+      const score = response.data?.FinalScore ?? today ;
       setFactGScore(score);
     } catch (err) {
       console.error("Failed to fetch finalScore:", err);

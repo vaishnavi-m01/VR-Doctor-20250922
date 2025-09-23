@@ -87,6 +87,24 @@ interface AddAdverseEventResponse {
     };
 }
 
+
+interface Session {
+    SessionNo: string;
+    ParticipantId: string;
+    StudyId: string;
+    Description: string;
+    SessionStatus: string;
+    Status: number;
+    CreatedBy: string;
+    CreatedDate: string;
+    ModifiedBy: string | null;
+    ModifiedDate: string | null;
+}
+
+interface GetSessionsResponse {
+    ResponseData: Session[];
+}
+
 export default function AdverseEventForm() {
     const today = new Date().toISOString().split("T")[0];
 
@@ -131,24 +149,51 @@ export default function AdverseEventForm() {
     const [AEId, setAEId] = useState<string | null>(null);
     console.log("AEID", AEId)
 
-    // Sessions dropdown state
-    const [selectedSession, setSelectedSession] = useState<string>('Select Session');
-    const [showSessionDropdown, setShowSessionDropdown] = useState(false);
-    const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+
     const { userId } = useContext(UserContext);
 
+    const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+    const [sessionNo, setSessionNo] = useState<string | null>(null);
+    console.log("sessionNo", sessionNo)
+    const [selectedSession, setSelectedSession] = useState<string>("No session");
+    const [showSessionDropdown, setShowSessionDropdown] = useState(false);
 
-    // Fetch available sessions
     const fetchAvailableSessions = async () => {
         try {
-            const mockSessions = [
-                'Session 1',
-                'Session 2',
-                'Session 3'
-            ];
-            setAvailableSessions(mockSessions);
+            const response = await apiService.post<GetSessionsResponse>("/GetParticipantVRSessions", {
+                ParticipantId: patientId,
+                StudyId: studyId,
+            });
+
+            const { ResponseData } = response.data;
+
+            if (ResponseData && ResponseData.length > 0) {
+                // Convert to display format: SessionNo-40 → Session 40
+                const sessions = ResponseData.map((s: any) =>
+                    `Session ${s.SessionNo.replace("SessionNo-", "")}`
+                );
+
+                setAvailableSessions(sessions);
+
+                const latestSession = ResponseData[0];
+                const latestSessionDisplay = `Session ${latestSession.SessionNo.replace(
+                    "SessionNo-",
+                    ""
+                )}`;
+
+                setSelectedSession(latestSessionDisplay);
+                setSessionNo(latestSession.SessionNo);
+            } else {
+
+                setAvailableSessions(["No session"]);
+                setSelectedSession("No session");
+                setSessionNo(null);
+            }
         } catch (error) {
-            console.error('Error fetching sessions:', error);
+            console.error("Error fetching sessions:", error);
+            setAvailableSessions(["No session"]);
+            setSelectedSession("No session");
+            setSessionNo(null);
         }
     };
 
@@ -581,7 +626,7 @@ export default function AdverseEventForm() {
                         style={{
                             position: "absolute",
                             top: 80,
-                            right: 24,
+                            right: 30,
                             backgroundColor: "white",
                             borderColor: "#e5e7eb",
                             borderWidth: 1,
@@ -608,7 +653,11 @@ export default function AdverseEventForm() {
                                         backgroundColor: selectedSession === session ? "#ecfdf5" : "white",
                                     }}
                                     onPress={() => {
-                                        setSelectedSession(session);
+                                        if (session !== "No session") {
+                                            setSelectedSession(session);
+                                            const sessionNumber = session.replace("Session ", "SessionNo-");
+                                            setSessionNo(sessionNumber);
+                                        }
                                         setShowSessionDropdown(false);
                                     }}
                                 >

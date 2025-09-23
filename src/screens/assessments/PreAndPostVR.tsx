@@ -28,6 +28,23 @@ type Question = {
   Notes?: string | null;
 };
 
+interface Session {
+  SessionNo: string;
+  ParticipantId: string;
+  StudyId: string;
+  Description: string;
+  SessionStatus: string;
+  Status: number;
+  CreatedBy: string;
+  CreatedDate: string;
+  ModifiedBy: string | null;
+  ModifiedDate: string | null;
+}
+
+interface GetSessionsResponse {
+  ResponseData: Session[];
+}
+
 export default function PreAndPostVR() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'PreAndPostVR'>>();
@@ -45,7 +62,6 @@ export default function PreAndPostVR() {
   };
   const studyIdFormatted = formatStudyId(studyId);
 
-  const [sessionNo, setSessionNo] = useState("SessionNo-1");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [responses, setResponses] = useState<Record<string, { ScaleValue: string; Notes: string }>>({});
   const [loading, setLoading] = useState(false);
@@ -53,23 +69,56 @@ export default function PreAndPostVR() {
   const [dateInput, setDateInput] = useState(new Date().toISOString().split('T')[0]);
   const [selectedAssessmentType, setSelectedAssessmentType] = useState<'Pre' | 'Post'>('Pre');
   const [showAssessmentDropdown, setShowAssessmentDropdown] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<string>('Session 1');
-  const [showSessionDropdown, setShowSessionDropdown] = useState(false);
-  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
   const { userId } = useContext(UserContext);
   const [validationError, setValidationError] = useState('');
+
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
+  const [sessionNo, setSessionNo] = useState<string | null>(null);
+  console.log("sessionNo", sessionNo)
+  const [selectedSession, setSelectedSession] = useState<string>("No session");
+  const [showSessionDropdown, setShowSessionDropdown] = useState(false);
 
   // Assessment type options
   const assessmentTypes: Array<'Pre' | 'Post'> = ['Pre', 'Post'];
 
   const fetchAvailableSessions = async () => {
     try {
-      const mockSessions = ['Session 1', 'Session 2', 'Session 3', 'Session 4', 'Session 5'];
-      setAvailableSessions(mockSessions);
+      const response = await apiService.post<GetSessionsResponse>("/GetParticipantVRSessions", {
+        ParticipantId: participantIdInput,
+        StudyId: studyIdFormatted,
+      });
+
+      const { ResponseData } = response.data;
+
+      if (ResponseData && ResponseData.length > 0) {
+
+        const sessions = ResponseData.map((s: any) =>
+          `Session ${s.SessionNo.replace("SessionNo-", "")}`
+        );
+
+        setAvailableSessions(sessions);
+
+
+        if (!selectedSession || selectedSession === "No session") {
+         
+          setSelectedSession(sessions[0]);
+          setSessionNo(ResponseData[0].SessionNo);
+        }
+
+      } else {
+        setAvailableSessions(["No session"]);
+        setSelectedSession("No session");
+        setSessionNo(null);
+      }
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      console.error("Error fetching sessions:", error);
+      setAvailableSessions(["No session"]);
+      setSelectedSession("No session");
+      setSessionNo(null);
     }
   };
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -395,8 +444,8 @@ export default function PreAndPostVR() {
           />
           <View style={{
             position: 'absolute',
-            top: 96,
-            right: 24,
+            top: 76,
+            right: 30,
             backgroundColor: 'white',
             borderColor: '#e5e7eb',
             borderWidth: 1,
@@ -422,12 +471,14 @@ export default function PreAndPostVR() {
                   backgroundColor: selectedSession === session ? '#e6f4ea' : 'white',
                 }}
                 onPress={() => {
-                  setSelectedSession(session);
-                  // Convert session name to session number format
-                  const sessionNumber = session.replace('Session ', 'SessionNo-');
-                  setSessionNo(sessionNumber);
+                  if (session !== "No session") {
+                    setSelectedSession(session);
+                    const sessionNumber = session.replace("Session ", "SessionNo-");
+                    setSessionNo(sessionNumber);
+                  }
                   setShowSessionDropdown(false);
                 }}
+
               >
                 <Text style={{
                   fontSize: 14,
@@ -442,7 +493,7 @@ export default function PreAndPostVR() {
         </>
       )}
 
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}  keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }} keyboardShouldPersistTaps="handled">
         <FormCard icon="I" title="Pre & Post VR">
           <View style={{ paddingBottom: 40 }}>
             <View className="flex-row gap-3">
