@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import FormCard from '@components/FormCard';
 import Thermometer from '@components/Thermometer';
@@ -7,7 +7,7 @@ import DateField from '@components/DateField';
 import Chip from '@components/Chip';
 import BottomBar from '@components/BottomBar';
 import { Btn } from '@components/Button';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { apiService } from 'src/services';
@@ -61,6 +61,7 @@ export default function PatientScreening() {
 
   const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? today ?? null);
   const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? patientId ?? null);
+  const [apiCalled, setApiCalled] = useState(false)
 
 
 
@@ -74,11 +75,13 @@ export default function PatientScreening() {
   }, []);
 
 
-  useEffect(() => {
-    if (currentPatientId) {
-      fetchPatientFinalScore(currentPatientId, selectedCreatedDate);
-    }
-  }, [currentPatientId, selectedCreatedDate]);
+  useFocusEffect(
+    useCallback(() => {
+      if (currentPatientId) {
+        fetchPatientFinalScore(currentPatientId, selectedCreatedDate);
+      }
+    }, [currentPatientId, selectedCreatedDate])
+  );
 
   useEffect(() => {
     if (routeCreatedDate && routeCreatedDate !== selectedCreatedDate) {
@@ -94,7 +97,7 @@ export default function PatientScreening() {
 
 
   const fetchPatientFinalScore = async (pid: string, createdDate?: string | null) => {
-    const today = new Date().toISOString().split("T")[0]; 
+    const today = new Date().toISOString().split("T")[0];
 
     try {
       const response = await apiService.post<any>("/getParticipantFactGQuestionWeekly", {
@@ -103,7 +106,7 @@ export default function PatientScreening() {
         CreatedDate: createdDate ?? undefined,
       });
 
-      const score = response.data?.FinalScore ?? today ;
+      const score = response.data?.FinalScore ?? today;
       setFactGScore(score);
     } catch (err) {
       console.error("Failed to fetch finalScore:", err);
@@ -180,7 +183,7 @@ export default function PatientScreening() {
       newErrors.prosthetics = "Select Yes/No for prosthetics";
     }
     if (conds.length === 0) {
-      newErrors.conds="This field required"
+      newErrors.conds = "This field required"
     }
 
     setErrors(newErrors);
