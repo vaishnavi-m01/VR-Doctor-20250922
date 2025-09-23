@@ -502,7 +502,7 @@ export default function ExitInterview() {
             const options = group.options.map((o) => o.OptionText || '');
             return (
               <FormCard key={qid} icon="R" title={group.QuestionText} desc="Select all that apply">
-                <Text style={errorLabelStyle(qid)}>
+                <Text className="text-sm" style={errorLabelStyle(qid)}>
                   {group.QuestionText}
                 </Text>
 
@@ -548,7 +548,7 @@ export default function ExitInterview() {
             const options = group.options.map((o) => o.OptionText || '');
             return (
               <FormCard key={qid} icon="V" title="VR Experience Ratings">
-                <Text style={errorLabelStyle(qid)}>
+                <Text className="text-sm" style={errorLabelStyle(qid)}>
                   {group.QuestionText}
 
                 </Text>
@@ -565,19 +565,27 @@ export default function ExitInterview() {
                 />
 
                 {/* VR helpful and challenging aspects */}
-                <View style={{ marginTop: 12, flexDirection: 'row', gap: 12 }}>
-                  <View style={{ flex: 1 }}>
+               
+                <View style={{ gap: 12, marginTop: 12 }}>
+                  <View style={{ flex: 1 }} >
                     <Field
-                      label="What aspects of the VR sessions did you find most helpful?"
+                      label={
+                        questions.find(q => q.QuestionId === 'EIQID-3')?.QuestionText ||
+                        'Loading question...'
+                      }
                       placeholder="Your notes…"
                       value={vrHelpful}
                       onChangeText={setFieldAndClearError('vrHelpful', setVrHelpful)}
                       error={errors.vrHelpful}
+                      
                     />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Field
-                      label="What aspects of the VR sessions did you find challenging?"
+                      label={
+                        questions.find(q => q.QuestionId === 'EIQID-4')?.QuestionText ||
+                        'Loading question...'
+                      }
                       placeholder="Your notes…"
                       value={vrChallenging}
                       onChangeText={setFieldAndClearError('vrChallenging', setVrChallenging)}
@@ -585,6 +593,7 @@ export default function ExitInterview() {
                     />
                   </View>
                 </View>
+
               </FormCard>
             );
           })}
@@ -593,7 +602,7 @@ export default function ExitInterview() {
         <FormCard icon="TU" title="Technical & Usability Issues">
           {/* Training */}
           <View style={{ marginBottom: 12 }}>
-            <Text style={errorLabelStyle('training')}>
+            <Text className="text-sm" style={errorLabelStyle('training')}>
               {questions.find((q) => q.QuestionId === 'EIQID-6')?.QuestionText || ''}
 
             </Text>
@@ -635,7 +644,7 @@ export default function ExitInterview() {
               >
                 <Text style={{ fontSize: 18, marginRight: 8, color: training === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
                 <Text 
-                className={`text-sm `}
+                className={`text-sm`}
                 style={{ fontWeight: '500', color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
               </Pressable>
             </View>
@@ -653,7 +662,7 @@ export default function ExitInterview() {
             </View>
           )}
           {/* Technical Issues */}
-          <Text style={[errorLabelStyle('technicalIssues'), { marginTop: 12 }]}>
+          <Text className="text-sm" style={[errorLabelStyle('technicalIssues'), { marginTop: 12 }]}>
             {questions.find((q) => q.QuestionId === 'EIQID-5')?.QuestionText || ''}
 
           </Text>
@@ -715,7 +724,7 @@ export default function ExitInterview() {
 
         {/* Study Adherence Card */}
         <FormCard icon="SP" title="Study Adherence & Protocol">
-          <Text style={errorLabelStyle('requirements')}>
+          <Text className="text-sm" style={errorLabelStyle('requirements')}>
             {questions.find((q) => q.QuestionId === 'EIQID-7')?.QuestionText || ''}
 
           </Text>
@@ -789,7 +798,7 @@ export default function ExitInterview() {
         <FormCard icon="FR" title="Future Recommendations">
           <View style={{ flexDirection: 'column', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Text style={errorLabelStyle('future')}>
+              <Text className="text-sm" style={errorLabelStyle('future')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-9')?.QuestionText || ''}
 
               </Text>
@@ -839,7 +848,7 @@ export default function ExitInterview() {
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={errorLabelStyle('updates')}>
+              <Text className="text-sm" style={errorLabelStyle('updates')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-11')?.QuestionText || ''}
 
               </Text>

@@ -23,7 +23,7 @@ export function Field({ label, error, value, isEditMode = true,...props }: Field
   return (
     <View className="mb-3">
       <Text
-        className={`text-xs mb-1 ${showError ? "text-red-500" : "text-[#4b5f5a]"}`}
+        className={`text-sm mb-1 ${showError ? "text-red-500" : "text-[#4b5f5a]"}`}
       >
         {label}
       </Text>
