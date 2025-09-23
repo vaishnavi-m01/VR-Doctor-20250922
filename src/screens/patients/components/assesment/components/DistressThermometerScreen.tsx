@@ -367,7 +367,7 @@ export default function DistressThermometerScreen() {
   }, [selectedDate, enteredPatientId]);
 
 
-  const handleValidate = () => {
+  const handleValidate =  () => {
     const newErrors: typeof errors = {};
 
     const hasDistressScore = v > 0;
@@ -387,41 +387,32 @@ export default function DistressThermometerScreen() {
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      Toast.show({
-        type: "success",
-        text1: "Validation Passed",
-        text2: "All required fields are filled",
-        position: "top",
-        topOffset: 50,
-      });
-    } else {
-      Toast.show({
-        type: "error",
-        text1: "Validation Error",
-        text2: Object.values(newErrors).join(" "),
-        position: "top",
-        topOffset: 50,
-      });
-    }
+      if (Object.keys(newErrors).length > 0) {
+         Toast.show({
+           type: "error",
+           text1: "Validation Error",
+           text2: "Please correct the highlighted fields",
+           position: "top",
+           topOffset: 50,
+         });
+         return false;
+       }
+   
+       Toast.show({
+         type: "success",
+         text1: "Validation Passed",
+         text2: "All required fields are valid",
+         position: "top",
+         topOffset: 50,
+       });
+   
+       return true;
   };
 
   const handleSave = async () => {
 
-    const hasDistressScore = v > 0;
-    const hasSelectedProblem = Object.values(selectedProblems).some((val) => val === true);
-
-    if (!hasDistressScore || !hasSelectedProblem) {
-      Toast.show({
-        type: "error",
-        text1: "Validation Error",
-        text2: "All fields are required",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
-    }
-
+   if (!handleValidate()) return
+   
     try {
       setLoading(true);
 
@@ -754,7 +745,7 @@ export default function DistressThermometerScreen() {
         {/* Rate Distress */}
         <View className="bg-white rounded-lg p-4 mb-4">
           <FormCard icon="DT" title="Distress Thermometer">
-            <Text className={`font-bold text-lg mb-4 ${errors.selectedProblems ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+            <Text className={`font-bold text-lg mb-4 ${errors.distressScore ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
               }`}
             >
               Rate Your Distress (0-10)

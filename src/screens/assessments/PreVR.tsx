@@ -311,7 +311,7 @@ export default function PreVR() {
         >
           {question.AssessmentTitle}
         </Text>
-        <Text className="text-sm text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
+        <Text className="text-base text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
 
         {questionType === 'scale_5' && renderScale(questionId, 5, index)}
         {questionType === 'scale_10' && (

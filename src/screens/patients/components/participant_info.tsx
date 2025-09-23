@@ -26,7 +26,7 @@ export default function ParticipantInfo({ patientId = 1, age = 0, studyId = 1 }:
 
       <AssessItem
         icon="❤️"
-        title="Particpant Screening Form"
+        title="Participant Screening Form"
         subtitle="Assess eligibility, medical history, and clinical checklist"
         onPress={() => navigation.navigate("PatientScreening", { patientId, age: age || 0, studyId: studyId || 1 })}
         className="bg-[#F6F7F7] border-[#F6F7F7]"

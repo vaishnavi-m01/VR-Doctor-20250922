@@ -51,6 +51,7 @@ import InformedConsent from '@screens/assessments/InformedConsent';
 import VRSessionsList from './src/screens/vr-sessions/VRSessionsList';
 import SessionDetailsScreen from './src/screens/vr-sessions/SessionDetailsScreen';
 import { UserProvider } from 'src/store/context/UserContext';
+import About from '@screens/auth/About';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -157,181 +158,190 @@ export default function App() {
                     initialRouteName="Splash"
                     screenOptions={{ headerShown: false }}
                   >
-                  {/* Core Screens */}
-                  <Stack.Screen name="Splash" component={Splash} />
-                  <Stack.Screen name="Login" component={Login} />
-                  <Stack.Screen name="Home" component={HomeScreen} />
-                  <Stack.Screen name="Participants" component={ParticipantsScreen} />
-                  <Stack.Screen name="Reports" component={ReportsScreen} />
-                  <Stack.Screen name="Profile" component={Profile} />
+                    {/* Core Screens */}
+                    <Stack.Screen name="Splash" component={Splash} />
+                    <Stack.Screen name="Login" component={Login} />
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="Participants" component={ParticipantsScreen} />
+                    <Stack.Screen name="Reports" component={ReportsScreen} />
+                    <Stack.Screen name="Profile" component={Profile} />
 
-                  {/* Patient Dashboard */}
-                  <Stack.Screen
-                    name="PatientDashboard"
-                    component={ParticipantDashboard}
-                    options={{ headerShown: true, title: "Participant Dashboard" }}
-                  />
+                    {/* Patient Dashboard */}
+                    <Stack.Screen
+                      name="PatientDashboard"
+                      component={ParticipantDashboard}
+                      options={{ headerShown: true, title: "Participant Dashboard" }}
+                    />
 
-                  {/* VR/Session Flow */}
-                  <Stack.Screen
-                    name="VRSessionsList"
-                    component={VRSessionsList}
-                    options={{ headerShown: true, title: "VR Sessions" }}
-                  />
-                  
-                  <Stack.Screen
-                    name="SessionDetailsScreen"
-                    component={SessionDetailsScreen}
-                    options={{ headerShown: true, title: "Session Details" }}
-                  />
-                  
-                  <Stack.Screen
-                    name="SessionSetupScreen"
-                    component={SessionSetupScreen}
-                    options={{
-                      headerShown: true,
-                      title: "Session Setup"
-                    }}
-                  />
+                    {/* VR/Session Flow */}
+                    <Stack.Screen
+                      name="VRSessionsList"
+                      component={VRSessionsList}
+                      options={{ headerShown: true, title: "VR Sessions" }}
+                    />
 
-                  <Stack.Screen
-                    name="SessionControlScreen"
-                    component={SessionControlScreen}
-                    options={{ headerShown: true, title: "New Session Setup" }}
-                  />
-                  <Stack.Screen
-                    name="SessionCompletedScreen"
-                    component={SessionCompletedScreen}
-                    options={{ headerShown: true, title: "Complete Session Setup" }}
-                  />
+                    <Stack.Screen
+                      name="SessionDetailsScreen"
+                      component={SessionDetailsScreen}
+                      options={{ headerShown: true, title: "Session Details" }}
+                    />
 
-                  {/* Assessment Forms */}
-                  <Stack.Screen
-                    name="PreVR"
-                    component={PreVR}
-                    options={{ headerShown: true, title: "Pre-VR Assessment" }}
-                  />
-                  <Stack.Screen
-                    name="PostVRAssessment"
-                    component={PostVRAssessment}
-                    options={{ headerShown: true, title: "Post-VR Assessment" }}
-                  />
-                  <Stack.Screen
-                    name="PreAndPostVR"
-                    component={PreAndPostVR}
-                    options={{ headerShown: true, title: "Pre & Post VR Assessment" }}
-                  />
-                  <Stack.Screen
-                    name="DistressThermometerScreen"
-                    component={DistressThermometerScreen}
-                    options={{ headerShown: true, title: "Distress Thermometer" }}
-                  />   
+                    <Stack.Screen
+                      name="SessionSetupScreen"
+                      component={SessionSetupScreen}
+                      options={{
+                        headerShown: true,
+                        title: "Session Setup"
+                      }}
+                    />
 
-                  <Stack.Screen name="FactGAssessmentHistory"
-                    component={FactGAssessmentHistory}
-                    options={{ headerShown: true, title: "Fact-G Assessment History" }}
-                  />
+                    <Stack.Screen
+                      name="SessionControlScreen"
+                      component={SessionControlScreen}
+                      options={{ headerShown: true, title: "New Session Setup" }}
+                    />
+                    <Stack.Screen
+                      name="SessionCompletedScreen"
+                      component={SessionCompletedScreen}
+                      options={{ headerShown: true, title: "Complete Session Setup" }}
+                    />
+
+                    {/* Assessment Forms */}
+                    <Stack.Screen
+                      name="PreVR"
+                      component={PreVR}
+                      options={{ headerShown: true, title: "Pre-VR Assessment" }}
+                    />
+                    <Stack.Screen
+                      name="PostVRAssessment"
+                      component={PostVRAssessment}
+                      options={{ headerShown: true, title: "Post-VR Assessment" }}
+                    />
+                    <Stack.Screen
+                      name="PreAndPostVR"
+                      component={PreAndPostVR}
+                      options={{ headerShown: true, title: "Pre & Post VR Assessment" }}
+                    />
+                    <Stack.Screen
+                      name="DistressThermometerScreen"
+                      component={DistressThermometerScreen}
+                      options={{ headerShown: true, title: "Distress Thermometer" }}
+                    />
+
+                    <Stack.Screen name="FactGAssessmentHistory"
+                      component={FactGAssessmentHistory}
+                      options={{ headerShown: true, title: "Fact-G Assessment History" }}
+                    />
 
 
 
-                  <Stack.Screen
-                    name="EdmontonFactGScreen"
-                    component={EdmontonFactGScreen}
-                    options={{ headerShown: true, title: "Edmonton FACT-G" }}
-                  />
+                    <Stack.Screen
+                      name="EdmontonFactGScreen"
+                      component={EdmontonFactGScreen}
+                      options={{ headerShown: true, title: "Edmonton FACT-G" }}
+                    />
 
-                  <Stack.Screen
-                    name="AdverseEventReportsHistory"
-                    component={AdverseEventReportsHistory}
-                    options={{ headerShown: true, title: "VR Adverse Event Reports" }}
-                  />
-                  <Stack.Screen
-                    name="AdverseEventForm"
-                    component={AdverseEventForm}
-                    options={{ headerShown: true, title: "Adverse Event Form" }}
-                  />
+                    <Stack.Screen
+                      name="AdverseEventReportsHistory"
+                      component={AdverseEventReportsHistory}
+                      options={{ headerShown: true, title: "VR Adverse Event Reports" }}
+                    />
+                    <Stack.Screen
+                      name="AdverseEventForm"
+                      component={AdverseEventForm}
+                      options={{ headerShown: true, title: "Adverse Event Form" }}
+                    />
 
-                  <Stack.Screen
-                    name="StudyObservation_List"
-                    component={StudyObservation_List}
-                    options={{ headerShown: true, title: "Study Observation List" }}
-                  />
-                  <Stack.Screen
-                    name="StudyObservation"
-                    component={StudyObservation}
-                    options={{ headerShown: true, title: "Study Observation" }}
-                  />
-                  <Stack.Screen
-                    name="ExitInterview"
-                    component={ExitInterview}
-                    options={{ headerShown: true, title: "Exit Interview" }}
-                  />
+                    <Stack.Screen
+                      name="StudyObservation_List"
+                      component={StudyObservation_List}
+                      options={{ headerShown: true, title: "Study Observation List" }}
+                    />
+                    <Stack.Screen
+                      name="StudyObservation"
+                      component={StudyObservation}
+                      options={{ headerShown: true, title: "Study Observation" }}
+                    />
+                    <Stack.Screen
+                      name="ExitInterview"
+                      component={ExitInterview}
+                      options={{ headerShown: true, title: "Exit Interview" }}
+                    />
 
-                  <Stack.Screen
-                    name="InformedConsent"
-                    component={InformedConsent}
-                    options={{
-                      headerShown: true,
-                      title: "Informed Consent Form",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="SocioDemographic"
-                    component={SocioDemographic}
-                    options={{ headerShown: true, title: "Socio-Demographic" }}
-                  />
-                  <Stack.Screen
-                    name="PatientScreening"
-                    component={PatientScreening}
-                    options={{ headerShown: true, title: "Participant Screening" }}
-                  />
-                  <Stack.Screen
-                    name="Screening"
-                    component={Screening}
-                    options={{ headerShown: true, title: "Participant Screening" }}
-                  />
-                  <Stack.Screen
-                    name="FactG"
-                    component={FactG}
-                    options={{ headerShown: true, title: "FACT-G Assessment" }}
-                  />
-                  <Stack.Screen
-                    name="DistressThermometerList"
-                    component={DistressThermometerList}
-                    options={{ headerShown: true, title: "Distress Thermometer List" }}
-                  />
+                    <Stack.Screen
+                      name="InformedConsent"
+                      component={InformedConsent}
+                      options={{
+                        headerShown: true,
+                        title: "Informed Consent Form",
+                      }}
+                    />
+                    <Stack.Screen
+                      name="SocioDemographic"
+                      component={SocioDemographic}
+                      options={{ headerShown: true, title: "Socio-Demographic" }}
+                    />
+                    <Stack.Screen
+                      name="PatientScreening"
+                      component={PatientScreening}
+                      options={{ headerShown: true, title: "Participant Screening" }}
+                    />
+                    <Stack.Screen
+                      name="Screening"
+                      component={Screening}
+                      options={{ headerShown: true, title: "Participant Screening" }}
+                    />
+                    <Stack.Screen
+                      name="FactG"
+                      component={FactG}
+                      options={{ headerShown: true, title: "FACT-G Assessment" }}
+                    />
+                    <Stack.Screen
+                      name="DistressThermometerList"
+                      component={DistressThermometerList}
+                      options={{ headerShown: true, title: "Distress Thermometer List" }}
+                    />
 
-                  {/* Doctor View */}
-                  <Stack.Screen
-                    name="DoctorDashboard"
-                    component={DoctorDashboard}
-                    options={{ headerShown: true, title: "Doctor Dashboard" }}
-                  />
+                    {/* Doctor View */}
+                    <Stack.Screen
+                      name="DoctorDashboard"
+                      component={DoctorDashboard}
+                      options={{ headerShown: true, title: "Doctor Dashboard" }}
+                    />
 
-                  {/* Physician Dashboard */}
-                  <Stack.Screen
-                    name="PhysicianDashboard"
-                    component={PhysicianDashboard}
-                    options={{ headerShown: true, title: "Physician Dashboard" }}
-                  />
+                    {/* Physician Dashboard */}
+                    <Stack.Screen
+                      name="PhysicianDashboard"
+                      component={PhysicianDashboard}
+                      options={{ headerShown: true, title: "Physician Dashboard" }}
+                    />
 
-                  {/* Participant Info */}
-                  <Stack.Screen
-                    name="ParticipantInfo"
-                    component={ParticipantInfo}
-                    options={{ headerShown: true, title: "Participant Information" }}
-                  />
-                  <Stack.Screen
-                    name="VRPrePostList"
-                    component={VRPrePostList}
-                    options={{ headerShown: true, title: "VR Pre & Post List" }}
-                  />
-                  <Stack.Screen
-                    name="StudyGroupAssignment"
-                    component={StudyGroupAssignment}
-                    options={{ headerShown: true, title: "Study Group Assignment" }}
-                  />
-                </Stack.Navigator>
+                    {/* Participant Info */}
+                    <Stack.Screen
+                      name="ParticipantInfo"
+                      component={ParticipantInfo}
+                      options={{ headerShown: true, title: "Participant Information" }}
+                    />
+                    <Stack.Screen
+                      name="VRPrePostList"
+                      component={VRPrePostList}
+                      options={{ headerShown: true, title: "VR Pre & Post List" }}
+                    />
+                    <Stack.Screen
+                      name="StudyGroupAssignment"
+                      component={StudyGroupAssignment}
+                      options={{ headerShown: true, title: "Study Group Assignment" }}
+                    />
+
+                    <Stack.Screen
+                      name="AboutUs"
+                      component={About}
+                      options={{ headerShown: true, title: "About Us" }}
+                    />
+
+
+
+                  </Stack.Navigator>
 
                   {/* Bottom Navigation - Always visible on main screens */}
                   {shouldShowBottomNav(currentRoute) && (

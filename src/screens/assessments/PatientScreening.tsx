@@ -180,7 +180,7 @@ export default function PatientScreening() {
       newErrors.prosthetics = "Select Yes/No for prosthetics";
     }
     if (conds.length === 0) {
-      newErrors.conds
+      newErrors.conds="This field required"
     }
 
     setErrors(newErrors);
@@ -436,7 +436,7 @@ export default function PatientScreening() {
                 placeholder="36.8"
                 value={temperature}
                 onChangeText={setTemperature}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
 
@@ -447,7 +447,7 @@ export default function PatientScreening() {
                 placeholder="22.5"
                 value={bmi}
                 onChangeText={setBmi}
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
 
             </View>

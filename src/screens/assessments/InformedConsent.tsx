@@ -826,7 +826,7 @@ export function SignatureBlock({
                             value={dateValue}
                             onChange={onChangeDate}
                             mode="date"
-                            placeholder="dd/mm/yyyy"
+                            // placeholder="dd/mm/yyyy"
                         />
 
                     {/* </View> */}

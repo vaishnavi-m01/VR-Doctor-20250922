@@ -17,6 +17,7 @@ import { apiService } from "src/services";
 import { useAuth } from "../../hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import { TouchableOpacity } from "react-native";
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -228,9 +229,8 @@ export default function Profile() {
           ].map((item, index) => (
             <View
               key={index}
-              className={`flex-row items-center justify-between py-4 ${
-                index !== 4 ? "border-b border-gray-100" : ""
-              }`}
+              className={`flex-row items-center justify-between py-4 ${index !== 4 ? "border-b border-gray-100" : ""
+                }`}
             >
               <View className="flex-row items-center">
                 <Ionicons name={item.icon as any} size={20} color="#6b7280" />
@@ -292,12 +292,24 @@ export default function Profile() {
         </View>
 
 
-  <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
-          <View className="flex-row items-center mb-6">
+        <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
+          <View className="flex-row justify-between items-center mb-6">
+
             <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-4">
               <Ionicons name="information-circle" size={20} color="#6b7280" />
             </View>
-            <Text className="text-lg font-bold text-gray-800">App Information</Text>
+
+
+            <View className="flex-1 flex-row justify-between items-center">
+              <Text className="text-lg font-bold text-gray-800">App Information</Text>
+              <TouchableOpacity activeOpacity={0.8}    onPress={() => navigation.navigate("AboutUs")}>
+                <View className="flex-row items-center bg-green-500 rounded-full px-4 py-2 ">
+                  <Text className="text-white text-base  font-semibold">About Us</Text>
+                </View>
+              </TouchableOpacity>
+
+
+            </View>
           </View>
 
           <View className="space-y-4">

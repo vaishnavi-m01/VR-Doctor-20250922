@@ -33,5 +33,6 @@ export type RootStackParamList = {
   InformedConsent: { patientId: number,age:number,studyId:number };
   VRSessionsList: { patientId: number,age:number,studyId:number };
   SessionDetailsScreen: { patientId: number,age:number,studyId:number,sessionDetails:any };
+  AboutUs:undefined;
 };
  
