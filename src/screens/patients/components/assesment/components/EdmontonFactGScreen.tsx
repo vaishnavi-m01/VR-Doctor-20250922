@@ -608,7 +608,7 @@ export default function EdmontonFactGScreen() {
           style={{
             backgroundColor: "white",
             borderBottomColor: "rgba(229, 231, 235, 1)",
-            borderBottomWidth: 1,
+            borderBottomWidth: 2,
             borderRadius: 12,
             padding: 17,
             flexDirection: "row",

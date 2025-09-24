@@ -115,7 +115,7 @@ export default function DistressThermometerScreen() {
       const studyIdFormatted = studyId || `${studyId}`;
 
       const response = await apiService.post<WeeklyDatesResponse>(
-        "/GetParticipantDistressThermometerWeeklyQAWeeks",
+        "/GetParticipantDistressThermometerWeeks",
         {
           ParticipantId: participantId,
           StudyId: studyIdFormatted,
