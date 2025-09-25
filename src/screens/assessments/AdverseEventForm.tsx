@@ -109,10 +109,11 @@ interface GetSessionsResponse {
 
 export default function AdverseEventForm() {
     const today = new Date().toISOString().split("T")[0];
-    console.log("today",today)
+    console.log("today", today)
 
-    const [reportDate, setReportDate] = useState(today);
-    const [dateOfAE, setdateOfAE] = useState(today);
+    const [reportDate, setReportDate] = useState("");
+    console.log("reportDate", reportDate)
+    const [dateOfAE, setdateOfAE] = useState("");
     const [timeOfAE, settimeOfAE] = useState("");
     const [_participantIdField, setParticipantIdField] = useState("");
     const [reportedBy, setReportedBy] = useState("");
@@ -142,9 +143,9 @@ export default function AdverseEventForm() {
     const [investigatorSignature, setInvestigatorSignature] = useState<string | undefined>("");
     const [followUpParticipantStatus, setFollowUpParticipantStatus] = useState<string | undefined>("");
 
-    const [followUpDate, setFollowUpDate] = useState(today);
-    const [date, setDate] = useState(today);
-    const [physicianDateTime, setPhysicianDateTime] = useState(today);
+    const [followUpDate, setFollowUpDate] = useState("");
+    const [date, setDate] = useState("");
+    const [physicianDateTime, setPhysicianDateTime] = useState("");
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
     const [loading, setLoading] = useState(false);
 
@@ -294,11 +295,8 @@ export default function AdverseEventForm() {
                     setConditionContribution(ae.PreExistingContribution || "");
                     setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
                     setInvestigatorSignature(ae.InvestigatorSignature || "");
-                    setFollowUpDate(
-                        ae.FollowUpVisitDate?.
-                            split("T")[0] || ""
-                    );
-                    setDate(ae.InvestigatorSignDate?.split("T")[0] || "");
+                    setFollowUpDate(format(ae.FollowUpVisitDate ??"") );
+                    setDate(format(ae.InvestigatorSignDate ?? ""));
 
 
 
@@ -483,20 +481,21 @@ export default function AdverseEventForm() {
                 DateOfReport: reportDate ? formatForDB(reportDate) : today,
                 ReportedByName: reportedBy.split("(")[0]?.trim() || "",
                 ReportedByRole: reportedBy.match(/\((.*?)\)/)?.[1] || "",
-                OnsetDateTime: dateOfAE ? formatForDB(dateOfAE):today,
+                OnsetDateTime: dateOfAE ? formatForDB(dateOfAE) : today,
                 AEDescription: Description,
                 VRSessionInProgress: completed,
                 ContentType: vrContentType,
                 SessionInterrupted: guidance,
                 PhysicianNotifiedDateTime:
-                    physicianDateTime ? formatForDB (physicianDateTime) :today,
+                    physicianDateTime ? formatForDB(physicianDateTime) : today,
                 PhysicianNotifiedName: physicianName,
                 VRRelated: aeRelated,
                 PreExistingContribution: conditionContribution,
-                FollowUpVisitDate: formatForDB(followUpDate) ?followUpDate :today,
+                FollowUpVisitDate: followUpDate ? formatForDB(followUpDate) : today,
+
                 FollowUpPatientStatus: followUpParticipantStatus,
                 InvestigatorSignature: investigatorSignature || "",
-                InvestigatorSignDate: formatForDB(date) ?date :today,
+                InvestigatorSignDate: date ? formatForDB(date) : today,
 
                 SeverityOutcomeData: severity
                     ? outcome.map((outcomeId) => ({
