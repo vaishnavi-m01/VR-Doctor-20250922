@@ -99,6 +99,7 @@ export default function EdmontonFactGScreen() {
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
+  const [initialized, setInitialized] = useState(false);
 
   const { userId } = useContext(UserContext);
 
@@ -182,9 +183,10 @@ export default function EdmontonFactGScreen() {
       );
 
       const weeklyData = response.data?.ResponseData ?? [];
-      const uniqueDatesSet = new Set(weeklyData.map((item) => item.CreatedDate));
+
+      const uniqueDatesSet = new Set(weeklyData.map(item => item.CreatedDate));
       const formattedDates = Array.from(uniqueDatesSet)
-        .filter(date => date) // Filter out null/undefined dates
+        .filter(date => date) // filters out null/undefined
         .map(formatDate);
 
       const sortedDates = formattedDates.sort((a, b) => {
@@ -343,21 +345,39 @@ export default function EdmontonFactGScreen() {
     }
   };
 
+  // useEffect(() => {
+  //   if (patientId) {
+  //     fetchAvailableDates();
+  //     setSelectedDate("");
+  //     setIsDefaultForm(true);
+  //   }
+  // }, [patientId]);
+
+  // useEffect(() => {
+  //   if (patientId && selectedDate) {
+  //     fetchFactG(selectedDate);
+  //   } else if (patientId && !selectedDate) {
+  //     fetchFactG(null);
+  //   }
+  // }, [selectedDate, patientId]);
+
+
   useEffect(() => {
     if (patientId) {
-      fetchAvailableDates();
-      setSelectedDate("");
+      fetchAvailableDates().then(() => setInitialized(true));
+      setSelectedDate("");           
       setIsDefaultForm(true);
     }
   }, [patientId]);
 
   useEffect(() => {
+    if (!initialized) return;
     if (patientId && selectedDate) {
       fetchFactG(selectedDate);
     } else if (patientId && !selectedDate) {
       fetchFactG(null);
     }
-  }, [selectedDate, patientId]);
+  }, [selectedDate, patientId, initialized]);
 
   const formatTodayDateForAPI = (): string => {
     const today = new Date();
@@ -677,7 +697,9 @@ export default function EdmontonFactGScreen() {
             className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
             onPress={() => setShowDateDropdown(false)}
           />
-          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}>
+          <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48"
+             style={{ elevation: 10, maxHeight: 112, overflow: 'hidden' }}
+           >
             <Pressable
               className="px-3 py-2 border-b border-gray-100"
               onPress={() => {
@@ -692,25 +714,28 @@ export default function EdmontonFactGScreen() {
               <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
             </Pressable>
 
-            {availableDates.length > 0 ? (
-              availableDates.map((date, index) => (
-                <Pressable
-                  key={date}
-                  className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
-                  onPress={() => {
-                    setSelectedDate(date);
-                    setShowDateDropdown(false);
-                    setIsDefaultForm(false);
-                  }}
-                >
-                  <Text className="text-sm text-gray-700">{date}</Text>
-                </Pressable>
-              ))
-            ) : (
-              <View className="px-3 py-2">
-                <Text className="text-sm text-gray-500">No saved dates</Text>
-              </View>
-            )}
+            <ScrollView style={{ maxHeight: 140}}>
+              {availableDates.length > 0 ? (
+                availableDates.map((date, index) => (
+                  <Pressable
+                    key={date}
+                    className={`px-3 py-2 ${index < availableDates.length - 1 ? 'border-b border-gray-100' : ''}`}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      setShowDateDropdown(false);
+                      setIsDefaultForm(false);
+                    }}
+                  >
+                    <Text className="text-sm text-gray-700">{date}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <View className="px-3 py-2">
+                  <Text className="text-sm text-gray-500">No saved dates</Text>
+                </View>
+              )}
+            </ScrollView>
+
           </View>
         </>
       )}

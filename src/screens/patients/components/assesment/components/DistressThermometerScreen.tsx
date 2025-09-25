@@ -254,8 +254,10 @@ export default function DistressThermometerScreen() {
       // Filter data by date if we have a specific date
       if (apiDate) {
         responseData = responseData.filter((item) => {
-          const itemDate = item.CreatedDate ? item.CreatedDate.split('T')[0] : null;
-          const itemModifiedDate = item.ModifiedDate ? item.ModifiedDate.split('T')[0] : null;
+          // const itemDate = item.CreatedDate ? item.CreatedDate.split('T')[0] : null;
+          // const itemModifiedDate = item.ModifiedDate ? item.ModifiedDate.split('T')[0] : null;
+          const itemDate = item.CreatedDate ? item.CreatedDate.split(' ')[0] : null;
+          const itemModifiedDate = item.ModifiedDate ? item.ModifiedDate.split(' ')[0] : null;
           return itemDate === apiDate || itemModifiedDate === apiDate;
         });
       }
@@ -657,7 +659,8 @@ export default function DistressThermometerScreen() {
               zIndex: 9999,
               elevation: 10,
               width: 128,
-              maxHeight: 192,
+              maxHeight: 112,
+              overflow: 'hidden'
             }}
           >
             <Pressable
@@ -680,30 +683,33 @@ export default function DistressThermometerScreen() {
               <Text style={{ fontSize: 14, color: "#374151", fontWeight: "600" }}>New Form</Text>
             </Pressable>
 
-            {availableDates.length > 0 ? (
-              availableDates.map((date, index) => (
-                <Pressable
-                  key={date}
-                  style={{
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderBottomColor: index < availableDates.length - 1 ? "#f3f4f6" : undefined,
-                    borderBottomWidth: index < availableDates.length - 1 ? 1 : 0,
-                  }}
-                  onPress={() => {
-                    setSelectedDate(date);
-                    setShowDateDropdown(false);
-                    setIsDefaultForm(false);
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: "#374151" }}>{date}</Text>
-                </Pressable>
-              ))
-            ) : (
-              <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-                <Text style={{ fontSize: 14, color: "#9ca3af" }}>No saved dates</Text>
-              </View>
-            )}
+
+            <ScrollView style={{ maxHeight: 140}}>
+              {availableDates.length > 0 ? (
+                availableDates.map((date, index) => (
+                  <Pressable
+                    key={date}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderBottomColor: index < availableDates.length - 1 ? "#f3f4f6" : undefined,
+                      borderBottomWidth: index < availableDates.length - 1 ? 1 : 0,
+                    }}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      setShowDateDropdown(false);
+                      setIsDefaultForm(false);
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, color: "#374151" }}>{date}</Text>
+                  </Pressable>
+                ))
+              ) : (
+                <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                  <Text style={{ fontSize: 14, color: "#9ca3af" }}>No saved dates</Text>
+                </View>
+              )}
+            </ScrollView>
           </View>
         </>
       )}
