@@ -75,14 +75,8 @@ export default function DistressThermometerScreen() {
 
   const navigation = useNavigation<any>();
   const { userId } = useContext(UserContext);
-  const route = useRoute<RouteProp<RootStackParamList, "DistressThermometerScreen">>();
-  const { patientId, age, studyId } = route.params as {
-    patientId: number;
-    age: number;
-    studyId: number | string;
-  };
-  const [enteredPatientId, setEnteredPatientId] = useState<string>(`${patientId}`);
 
+  
   const formatDate = (dateString: string): string => {
     if (!dateString) return "";
     let d = dateString;
@@ -108,6 +102,18 @@ export default function DistressThermometerScreen() {
     const [day, month, year] = parts;
     return `${year}-${month}-${day}`;
   };
+
+
+  const todayFormatted = formatTodayDate();
+  const isTodayInAvailableDates = availableDates.includes(todayFormatted);
+
+  const route = useRoute<RouteProp<RootStackParamList, "DistressThermometerScreen">>();
+  const { patientId, age, studyId } = route.params as {
+    patientId: number;
+    age: number;
+    studyId: number | string;
+  };
+  const [enteredPatientId, setEnteredPatientId] = useState<string>(`${patientId}`);
 
   const fetchAvailableDates = async () => {
     try {
@@ -663,25 +669,28 @@ export default function DistressThermometerScreen() {
               overflow: 'hidden'
             }}
           >
-            <Pressable
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderBottomColor: "#f3f4f6",
-                borderBottomWidth: 1,
-              }}
-              onPress={() => {
-                setSelectedDate("");
-                setShowDateDropdown(false);
-                setIsDefaultForm(true);
-                setCategories([]);
-                setSelectedProblems({});
-                setOtherProblems("");
-                getData(null);
-              }}
-            >
-              <Text style={{ fontSize: 14, color: "#374151", fontWeight: "600" }}>New Form</Text>
-            </Pressable>
+
+            {!isTodayInAvailableDates && (
+              <Pressable
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderBottomColor: "#f3f4f6",
+                  borderBottomWidth: 1,
+                }}
+                onPress={() => {
+                  setSelectedDate("");
+                  setShowDateDropdown(false);
+                  setIsDefaultForm(true);
+                  setCategories([]);
+                  setSelectedProblems({});
+                  setOtherProblems("");
+                  getData(null);
+                }}
+              >
+                <Text style={{ fontSize: 14, color: "#374151", fontWeight: "600" }}>New Form</Text>
+              </Pressable>
+            )}
 
 
             <ScrollView style={{ maxHeight: 140}}>

@@ -71,6 +71,41 @@ const calculateSubscaleScore = (
   }, 0);
 };
 
+  const formatTodayDateForAPI = (): string => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  
+  const formatDate = (dateString: string): string => {
+    // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const convertDateForAPI = (dateString: string): string => {
+    // Convert DD-MM-YYYY to YYYY-MM-DD for API
+    const [day, month, year] = dateString.split("-");
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatTodayDate = (): string => {
+    const today = new Date();
+    const dd = today.getDate().toString().padStart(2, "0");
+    const mm = (today.getMonth() + 1).toString().padStart(2, "0");
+    const yyyy = today.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  
+
+
 const computeScores = (answers: Record<string, number | null>, subscales: Subscale[]): ScoreResults => {
   const PWB_subscale = subscales.find((s) => s.key === "Physical well-being");
   const SWB_subscale = subscales.find((s) => s.key === "Social/Family well-being");
@@ -102,6 +137,9 @@ export default function EdmontonFactGScreen() {
   const [initialized, setInitialized] = useState(false);
 
   const { userId } = useContext(UserContext);
+
+  const todayFormatted = formatTodayDate();
+  const isTodayInAvailableDates = availableDates.includes(todayFormatted);
 
   const route = useRoute<RouteProp<RootStackParamList, "EdmontonFactGScreen">>();
   const navigation = useNavigation();
@@ -145,30 +183,6 @@ export default function EdmontonFactGScreen() {
   };
 
 
-  const formatDate = (dateString: string): string => {
-    // Handle ISO datetime strings like "2025-09-12T12:25:48.000Z"
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  const convertDateForAPI = (dateString: string): string => {
-    // Convert DD-MM-YYYY to YYYY-MM-DD for API
-    const [day, month, year] = dateString.split("-");
-    return `${year}-${month}-${day}`;
-  };
-
-  const formatTodayDate = (): string => {
-    const today = new Date();
-    const dd = today.getDate().toString().padStart(2, "0");
-    const mm = (today.getMonth() + 1).toString().padStart(2, "0");
-    const yyyy = today.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
-
   const fetchAvailableDates = async () => {
     try {
       const participantId = `${patientId}`;
@@ -198,6 +212,8 @@ export default function EdmontonFactGScreen() {
       setAvailableDates(sortedDates);
 
       const todayFormatted = formatTodayDate();
+
+
       if (sortedDates.includes(todayFormatted)) {
         setSelectedDate(todayFormatted);
         setIsDefaultForm(false);
@@ -217,6 +233,8 @@ export default function EdmontonFactGScreen() {
       });
     }
   };
+
+  
 
   const fetchFactG = async (dateToUse?: string | null) => {
     try {
@@ -379,13 +397,6 @@ export default function EdmontonFactGScreen() {
     }
   }, [selectedDate, patientId, initialized]);
 
-  const formatTodayDateForAPI = (): string => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
 
   const handleValidate = () => {
@@ -700,19 +711,21 @@ export default function EdmontonFactGScreen() {
           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48"
              style={{ elevation: 10, maxHeight: 112, overflow: 'hidden' }}
            >
-            <Pressable
-              className="px-3 py-2 border-b border-gray-100"
-              onPress={() => {
-                setSelectedDate("");
-                setShowDateDropdown(false);
-                setIsDefaultForm(true);
-                setSubscales([]);
-                setAnswers({});
-                fetchFactG(null);
-              }}
-            >
-              <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
-            </Pressable>
+            {!isTodayInAvailableDates && (
+              <Pressable
+                className="px-3 py-2 border-b border-gray-100"
+                onPress={() => {
+                  setSelectedDate("");
+                  setShowDateDropdown(false);
+                  setIsDefaultForm(true);
+                  setSubscales([]);
+                  setAnswers({});
+                  fetchFactG(null);
+                }}
+              >
+                <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
+              </Pressable>
+             )}
 
             <ScrollView style={{ maxHeight: 140}}>
               {availableDates.length > 0 ? (
