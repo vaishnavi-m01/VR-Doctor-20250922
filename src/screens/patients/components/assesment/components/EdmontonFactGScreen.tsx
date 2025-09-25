@@ -709,7 +709,7 @@ export default function EdmontonFactGScreen() {
             onPress={() => setShowDateDropdown(false)}
           />
           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48"
-             style={{ elevation: 10, maxHeight: 112, overflow: 'hidden' }}
+             style={{ elevation: 10, maxHeight: 80, overflow: 'hidden' }}
            >
             {!isTodayInAvailableDates && (
               <Pressable

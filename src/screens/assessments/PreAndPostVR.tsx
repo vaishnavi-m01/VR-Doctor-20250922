@@ -415,27 +415,31 @@ export default function PreAndPostVR() {
             onPress={() => setShowSessionDropdown(false)}
           />
           <View
-            className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
+            className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" 
+            style={{ elevation: 10, maxHeight: 80, overflow: 'hidden' }}
           >
-            {availableSessions.map((session, index) => (
-              <Pressable
-                key={session}
-                className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
-                onPress={() => {
-                  if (session !== "No session") {
-                    setSelectedSession(session);
-                    const sessionNumber = session.replace("Session ", "SessionNo-");
-                    setSessionNo(sessionNumber);
-                  }
-                  setShowSessionDropdown(false);
-                }}
 
-              >
-                <Text className="text-sm text-gray-700">
-                  {session}
-                </Text>
-              </Pressable>
-            ))}
+            <ScrollView style={{ maxHeight: 140}}>
+              {availableSessions.map((session, index) => (
+                <Pressable
+                  key={session}
+                  className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  onPress={() => {
+                    if (session !== "No session") {
+                      setSelectedSession(session);
+                      const sessionNumber = session.replace("Session ", "SessionNo-");
+                      setSessionNo(sessionNumber);
+                    }
+                    setShowSessionDropdown(false);
+                  }}
+
+                >
+                  <Text className="text-sm text-gray-700">
+                    {session}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         </>
       )}

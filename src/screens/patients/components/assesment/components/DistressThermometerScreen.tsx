@@ -121,7 +121,7 @@ export default function DistressThermometerScreen() {
       const studyIdFormatted = studyId || `${studyId}`;
 
       const response = await apiService.post<WeeklyDatesResponse>(
-        "/GetParticipantDistressThermometerWeeks",
+        "/GetParticipantDistressThermometerWeeklyQAWeeks",
         {
           ParticipantId: participantId,
           StudyId: studyIdFormatted,
@@ -278,13 +278,12 @@ export default function DistressThermometerScreen() {
         return;
       }
 
-      // Group questions by category and deduplicate, prioritizing records with PDTWQID
       const grouped: Record<string, Category> = {};
       const seenQuestions = new Map<string, any>();
 
       responseData.forEach((item) => {
         if (item.CategoryName && item.DistressQuestionId) {
-          // Create unique key for deduplication
+        
           const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
 
           // If we haven't seen this question, or if this item has PDTWQID and the previous one doesn't
@@ -295,7 +294,6 @@ export default function DistressThermometerScreen() {
         }
       });
 
-      // Now build the grouped structure from the deduplicated items
       seenQuestions.forEach((item, questionKey) => {
         const [categoryName] = questionKey.split('-');
         if (!grouped[categoryName]) {
@@ -309,7 +307,6 @@ export default function DistressThermometerScreen() {
       });
       setCategories(Object.values(grouped));
 
-      // Set answers for selected problems (handle duplicates by taking the first "Yes" answer)
       const existingAnswers: Record<string, boolean> = {};
       const processedQuestions = new Set<string>();
 
@@ -665,7 +662,7 @@ export default function DistressThermometerScreen() {
               zIndex: 9999,
               elevation: 10,
               width: 128,
-              maxHeight: 112,
+              maxHeight: 80,
               overflow: 'hidden'
             }}
           >
