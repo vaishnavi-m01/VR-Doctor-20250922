@@ -100,7 +100,7 @@ export default function PreAndPostVR() {
 
 
         if (!selectedSession || selectedSession === "No session") {
-         
+
           setSelectedSession(sessions[0]);
           setSessionNo(ResponseData[0].SessionNo);
         }
@@ -247,7 +247,7 @@ export default function PreAndPostVR() {
 
 
   const handleSave = async () => {
-    
+
     const passedValidation = validateResponses();
 
     if (!passedValidation) {
@@ -414,9 +414,9 @@ export default function PreAndPostVR() {
             className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
             onPress={() => setShowSessionDropdown(false)}
           />
-          <View 
-             className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
-            >
+          <View
+            className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
+          >
             {availableSessions.map((session, index) => (
               <Pressable
                 key={session}

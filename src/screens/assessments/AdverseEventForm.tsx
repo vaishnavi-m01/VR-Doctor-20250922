@@ -22,6 +22,8 @@ import Toast from "react-native-toast-message";
 import { UserContext } from 'src/store/context/UserContext';
 import { KeyboardAvoidingView } from 'react-native';
 import { Platform } from 'react-native';
+import { ActivityIndicator } from 'react-native';
+import { format, formatForDB } from 'src/utils/date';
 
 
 
@@ -107,6 +109,7 @@ interface GetSessionsResponse {
 
 export default function AdverseEventForm() {
     const today = new Date().toISOString().split("T")[0];
+    console.log("today",today)
 
     const [reportDate, setReportDate] = useState(today);
     const [dateOfAE, setdateOfAE] = useState(today);
@@ -143,6 +146,8 @@ export default function AdverseEventForm() {
     const [date, setDate] = useState(today);
     const [physicianDateTime, setPhysicianDateTime] = useState(today);
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+    const [loading, setLoading] = useState(false);
+
 
 
 
@@ -158,6 +163,12 @@ export default function AdverseEventForm() {
     const [selectedSession, setSelectedSession] = useState<string>("No session");
     const [showSessionDropdown, setShowSessionDropdown] = useState(false);
 
+
+
+    useEffect(() => {
+        fetchAvailableSessions();
+    }, []);
+
     const fetchAvailableSessions = async () => {
         try {
             const response = await apiService.post<GetSessionsResponse>("/GetParticipantVRSessions", {
@@ -168,23 +179,21 @@ export default function AdverseEventForm() {
             const { ResponseData } = response.data;
 
             if (ResponseData && ResponseData.length > 0) {
-                // Convert to display format: SessionNo-40 → Session 40
+
                 const sessions = ResponseData.map((s: any) =>
                     `Session ${s.SessionNo.replace("SessionNo-", "")}`
                 );
 
                 setAvailableSessions(sessions);
 
-                const latestSession = ResponseData[0];
-                const latestSessionDisplay = `Session ${latestSession.SessionNo.replace(
-                    "SessionNo-",
-                    ""
-                )}`;
 
-                setSelectedSession(latestSessionDisplay);
-                setSessionNo(latestSession.SessionNo);
+                if (!selectedSession || selectedSession === "No session") {
+
+                    setSelectedSession(sessions[0]);
+                    setSessionNo(ResponseData[0].SessionNo);
+                }
+
             } else {
-
                 setAvailableSessions(["No session"]);
                 setSelectedSession("No session");
                 setSessionNo(null);
@@ -207,8 +216,6 @@ export default function AdverseEventForm() {
     };
 
     useEffect(() => {
-        fetchAvailableSessions();
-
         apiService
             .post<{ ResponseData: AeSeverity[] }>("/GetAeSeverityMaster")
             .then((res) => {
@@ -239,6 +246,98 @@ export default function AdverseEventForm() {
 
 
 
+    useEffect(() => {
+        if (!sessionNo) return;
+        const fetchAeData = async () => {
+            setLoading(true);
+            try {
+                // await fetchAvailableSessions();
+                const res = await apiService.post<AdverseEventResponse>(
+                    "/GetParticipantAdverseEvent",
+                    { ParticipantId: `${patientId}`, SessionNo: sessionNo, StudyId: studyId }
+                );
+
+                if (res.data.ResponseData && res.data.ResponseData.length > 0) {
+                    const ae = res.data.ResponseData[0];
+
+                    setAEId(ae.AEId || "");
+                    // if (ae.DateOfReport) {
+                    //     const [datePart] = ae.DateOfReport.split(" "); // "2025-09-25"
+                    //     const [year, month, day] = datePart.split("-");
+                    //     setReportDate(`${day}-${month}-${year}`); // "25-09-2025"
+                    // } else {
+                    //     setReportDate("");
+                    // }
+                    setReportDate(format(ae.DateOfReport ?? ""))
+                    setdateOfAE(format(ae.OnsetDateTime ?? "") || "");
+
+
+                    settimeOfAE(
+                        ae.OnsetDateTime
+                            ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                            : ""
+                    );
+                    setParticipantIdField(ae.ParticipantId || "");
+                    setReportedBy(
+                        ae.ReportedByRole
+                            ? `${ae.ReportedByName} (${ae.ReportedByRole})`
+                            : ae.ReportedByName || ""
+                    );
+                    setdescription(ae.AEDescription || "");
+                    setCompleted(ae.VRSessionInProgress || "");
+                    setVrContentType(ae.ContentType || "");
+                    setGuidance(ae.SessionInterrupted || "");
+                    // setPhysicianDateTime(ae.PhysicianNotifiedDateTime?.split("T")[0] || "");
+                    setPhysicianDateTime(format(ae.PhysicianNotifiedDateTime ?? ""));
+                    setPhysicianName(ae.PhysicianNotifiedName || "");
+                    setAeRelated(ae.VRRelated || "");
+                    setConditionContribution(ae.PreExistingContribution || "");
+                    setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
+                    setInvestigatorSignature(ae.InvestigatorSignature || "");
+                    setFollowUpDate(
+                        ae.FollowUpVisitDate?.
+                            split("T")[0] || ""
+                    );
+                    setDate(ae.InvestigatorSignDate?.split("T")[0] || "");
+
+
+
+                    // -----------------------------
+                    // Set severity, outcome, and actions from response
+                    // -----------------------------
+                    if (ae.SeverityOutcomeData && ae.SeverityOutcomeData.length > 0) {
+                        // Assuming only one severity can be selected
+                        setSeverity(ae.SeverityOutcomeData[0].SeverityId || "");
+
+                        // Map outcome IDs
+                        const outcomeIds = ae.SeverityOutcomeData?.map((o) => o.OutcomeId || "") || [];
+                        setOutcome(outcomeIds);
+                    }
+
+                    if (ae.ImmediateActionData && ae.ImmediateActionData.length > 0) {
+                        const actionIds = ae.ImmediateActionData?.map((a) => a.ActionId || "") || [];
+                        setActions(actionIds);
+                    }
+                }
+
+            } catch (err) {
+                console.error("Error fetching AE data:", err);
+                Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to fetch AE data",
+                    position: "top",
+                    topOffset: 50,
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAeData();
+    }, [patientId, sessionNo, studyId]);
+
+
     const handleValidate = () => {
         const newErrors: { [key: string]: string } = {};
 
@@ -249,9 +348,9 @@ export default function AdverseEventForm() {
         // if (!dateOfAE) newErrors.dateOfAE = "Date of AE is required";
         // if (!timeOfAE) newErrors.timeOfAE = "Time of AE is required";
 
-        if (!reportedBy) {
-            newErrors.reportedBy = "Reported By is required";
-        }
+        // if (!reportedBy) {
+        //     newErrors.reportedBy = "Reported By is required";
+        // }
 
         if (!Description?.trim()) {
             newErrors.Description = "Description is required";
@@ -269,9 +368,9 @@ export default function AdverseEventForm() {
             newErrors.guidance = "Guidance is required";
         }
 
-        if (!physicianDateTime) {
-            newErrors.physicianDateTime = "Physician Date & Time is required";
-        }
+        // if (!physicianDateTime) {
+        //     newErrors.physicianDateTime = "Physician Date & Time is required";
+        // }
 
         if (!physicianName?.trim()) {
             newErrors.physicianName = "Physician Name is required";
@@ -346,20 +445,29 @@ export default function AdverseEventForm() {
         setVrContentType('');
         setPhysicianDateTime("");
         setPhysicianName('');
-        setAeRelated(null);
-        setConditionContribution(null);
+        setAeRelated('');
+        setConditionContribution('');
         setOutcome([]);
         setActions([]);
-        setSeverity(null);
+        setSeverity('');
         setdescription('');
         setFollowUpParticipantStatus('');
         setFollowUpDate('');
         setInvestigatorSignature('');
         setDate('');
 
-        setAEId(null);
-        setSelectedSession('Select Session');
+        setAEId('');
+        // setSelectedSession('Select Session');
     };
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color="#4FC264" />
+                <Text style={{ marginTop: 8 }}>Loading questions…</Text>
+            </View>
+        );
+    }
 
 
 
@@ -370,25 +478,25 @@ export default function AdverseEventForm() {
             const payload = {
                 AEId: AEId || null,
                 ParticipantId: String(patientId),
+                SessionNo: sessionNo || "",
                 StudyId: studyId,
-                DateOfReport: reportDate || new Date().toISOString(),
+                DateOfReport: reportDate ? formatForDB(reportDate) : today,
                 ReportedByName: reportedBy.split("(")[0]?.trim() || "",
                 ReportedByRole: reportedBy.match(/\((.*?)\)/)?.[1] || "",
-                OnsetDateTime: dateOfAE || new Date().toISOString(),
+                OnsetDateTime: dateOfAE ? formatForDB(dateOfAE):today,
                 AEDescription: Description,
                 VRSessionInProgress: completed,
                 ContentType: vrContentType,
                 SessionInterrupted: guidance,
                 PhysicianNotifiedDateTime:
-                    physicianDateTime
-                    || new Date().toISOString(),
+                    physicianDateTime ? formatForDB (physicianDateTime) :today,
                 PhysicianNotifiedName: physicianName,
                 VRRelated: aeRelated,
                 PreExistingContribution: conditionContribution,
-                FollowUpVisitDate: followUpDate || new Date().toISOString(),
+                FollowUpVisitDate: formatForDB(followUpDate) ?followUpDate :today,
                 FollowUpPatientStatus: followUpParticipantStatus,
                 InvestigatorSignature: investigatorSignature || "",
-                InvestigatorSignDate: date || new Date().toISOString(),
+                InvestigatorSignDate: formatForDB(date) ?date :today,
 
                 SeverityOutcomeData: severity
                     ? outcome.map((outcomeId) => ({
@@ -453,80 +561,7 @@ export default function AdverseEventForm() {
     };
 
 
-    useEffect(() => {
-        const fetchAeData = async () => {
-            try {
-                const res = await apiService.post<AdverseEventResponse>(
-                    "/GetParticipantAdverseEvent",
-                    { ParticipantId: `${patientId}` }
-                );
 
-                if (res.data.ResponseData && res.data.ResponseData.length > 0) {
-                    const ae = res.data.ResponseData[0];
-
-                    setAEId(ae.AEId || "");
-                    setReportDate(ae.DateOfReport?.split("T")[0] || "");
-                    setdateOfAE(ae.OnsetDateTime?.split("T")[0] || "");
-                    settimeOfAE(
-                        ae.OnsetDateTime
-                            ? new Date(ae.OnsetDateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                            : ""
-                    );
-                    setParticipantIdField(ae.ParticipantId || "");
-                    setReportedBy(
-                        ae.ReportedByRole
-                            ? `${ae.ReportedByName} (${ae.ReportedByRole})`
-                            : ae.ReportedByName || ""
-                    );
-                    setdescription(ae.AEDescription || "");
-                    setCompleted(ae.VRSessionInProgress || "");
-                    setVrContentType(ae.ContentType || "");
-                    setGuidance(ae.SessionInterrupted || "");
-                    setPhysicianDateTime(ae.PhysicianNotifiedDateTime?.split("T")[0] || "");
-                    setPhysicianName(ae.PhysicianNotifiedName || "");
-                    setAeRelated(ae.VRRelated || "");
-                    setConditionContribution(ae.PreExistingContribution || "");
-                    setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
-                    setInvestigatorSignature(ae.InvestigatorSignature || "");
-                    setFollowUpDate(
-                        ae.FollowUpVisitDate?.
-                            split("T")[0] || ""
-                    );
-                    setDate(ae.InvestigatorSignDate?.split("T")[0] || "");
-
-
-
-                    // -----------------------------
-                    // Set severity, outcome, and actions from response
-                    // -----------------------------
-                    if (ae.SeverityOutcomeData && ae.SeverityOutcomeData.length > 0) {
-                        // Assuming only one severity can be selected
-                        setSeverity(ae.SeverityOutcomeData[0].SeverityId || "");
-
-                        // Map outcome IDs
-                        const outcomeIds = ae.SeverityOutcomeData?.map((o) => o.OutcomeId || "") || [];
-                        setOutcome(outcomeIds);
-                    }
-
-                    if (ae.ImmediateActionData && ae.ImmediateActionData.length > 0) {
-                        const actionIds = ae.ImmediateActionData?.map((a) => a.ActionId || "") || [];
-                        setActions(actionIds);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching AE data:", err);
-                Toast.show({
-                    type: "error",
-                    text1: "Error",
-                    text2: "Failed to fetch AE data",
-                    position: "top",
-                    topOffset: 50,
-                });
-            }
-        };
-
-        fetchAeData();
-    }, [patientId]);
 
 
     return (
@@ -609,41 +644,42 @@ export default function AdverseEventForm() {
             {/* Session Dropdown Menu */}
             {showSessionDropdown && (
                 <>
-                    {/* Backdrop to close dropdown */}
+                    {/* Backdrop */}
                     <Pressable
                         className="absolute top-0 left-0 right-0 bottom-0 z-[9998]"
                         onPress={() => setShowSessionDropdown(false)}
                     />
-
                     <View
-                       className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
+                        className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48" style={{ elevation: 10 }}
                     >
-                        {availableSessions.length > 0 ? (
-                            availableSessions.map((session, index) => (
-                                <Pressable
-                                    key={session}
-                                    className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
-                                    onPress={() => {
-                                        if (session !== "No session") {
-                                            setSelectedSession(session);
-                                            const sessionNumber = session.replace("Session ", "SessionNo-");
-                                            setSessionNo(sessionNumber);
-                                        }
-                                        setShowSessionDropdown(false);
-                                    }}
-                                >
-                                    <Text
-                                        className="text-sm text-gray-700"
-                                    >
-                                        {session}
-                                    </Text>
-                                </Pressable>
-                            ))
-                        ) : (
-                            <View className="px-3 py-2">
-                                <Text className="text-sm text-gray-500">No sessions available</Text>
-                            </View>
-                        )}
+                        {availableSessions.map((session, index) => (
+                            <Pressable
+                                key={session}
+                                className={`px-3 py-2 ${index < availableSessions.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                onPress={() => {
+                                    if (session !== "No session") {
+                                        setSelectedSession(session);
+                                        const sessionNumber = session.replace("Session ", "SessionNo-");
+                                        setAEId(null);
+                                        handleClear();
+
+                                        setSessionNo(sessionNumber);
+                                    } else {
+                                        setSelectedSession("No session");
+                                        setSessionNo(null);
+                                        handleClear();
+                                    }
+                                    setShowSessionDropdown(false);
+                                }}
+
+
+
+                            >
+                                <Text className="text-sm text-gray-700">
+                                    {session}
+                                </Text>
+                            </Pressable>
+                        ))}
                     </View>
                 </>
             )}

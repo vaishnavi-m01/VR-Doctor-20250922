@@ -22,3 +22,11 @@ export const formatDateDDMMYYYY = (dateStr: string): string => {
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
 };
+
+export const format = (dateStr: string): string => {
+  if (!dateStr) return "";
+  // Take only the date part before the space
+  const [datePart] = dateStr.split(" "); // "2025-09-25"
+  const [y, m, d] = datePart.split("-");
+  return `${d}-${m}-${y}`;
+};
