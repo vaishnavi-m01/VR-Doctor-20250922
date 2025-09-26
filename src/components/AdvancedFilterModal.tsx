@@ -18,6 +18,8 @@ interface AdvancedFilters {
   ageFrom: string;
   ageTo: string;
   groupType: string;
+  cancerDiagnosis: string;    
+  stageOfCancer: string; 
 }
 
 interface OptionRowProps {
@@ -53,8 +55,11 @@ interface AdvancedFilterModalProps {
   onGenderChange: (gender: string) => void;
   onAgeChange: (field: 'ageFrom' | 'ageTo', value: string) => void;
   onGroupTypeChange: (groupType: string) => void;
+  onCancerDiagnosisChange: (value: string) => void;
+  onStageOfCancerChange: (value: string) => void;
   onClearFilters: () => Promise<void>;
   onFiltersReset?: () => void;
+  
   ageRangeError?: string;
 }
 
@@ -66,6 +71,8 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   onGenderChange,
   onAgeChange,
   onGroupTypeChange,
+  onCancerDiagnosisChange,
+  onStageOfCancerChange,
   onClearFilters,
   ageRangeError,
   onFiltersReset,
@@ -82,9 +89,6 @@ const handleResetAndClose = () => {
   onClose();
   onFiltersReset?.();
 };
-
-
-
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCloseAndClear}>
@@ -222,6 +226,33 @@ const handleResetAndClose = () => {
                 </Text>
               ) : null}
           </View>
+
+          {/* Cancer Diagnosis */}
+          <View className="mb-6">
+            <Text className="text-gray-700 font-semibold text-base mb-3">Cancer Diagnosis</Text>
+            <TextInput
+              placeholder="e.g. Ovarian"
+              className="bg-white border border-gray-300 rounded-xl py-3 px-4 text-gray-700 text-base"
+              value={filters.cancerDiagnosis}
+              onChangeText={onCancerDiagnosisChange}
+              returnKeyType="done"
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          {/* Stage Of Cancer */}
+          <View className="mb-6">
+            <Text className="text-gray-700 font-semibold text-base mb-3">Stage Of Cancer</Text>
+            <TextInput
+              placeholder="e.g. III"
+              className="bg-white border border-gray-300 rounded-xl py-3 px-4 text-gray-700 text-base"
+              value={filters.stageOfCancer}
+              onChangeText={onStageOfCancerChange}
+              returnKeyType="done"
+              placeholderTextColor="#999"
+            />
+          </View>
+
           </ScrollView>
 
           {/* Footer */}

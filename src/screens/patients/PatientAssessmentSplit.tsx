@@ -51,6 +51,8 @@ interface ParticipantRequest {
   AgeFrom?: number;          
   AgeTo?: number;            
   SearchString?: string;     
+  CancerDiagnosis?: string;    
+  StageOfCancer?: string; 
   [key: string]: unknown;  
 }
 
@@ -95,6 +97,8 @@ export default function ParticipantAssessmentSplit() {
     ageFrom: '',
     ageTo: '',
     groupType: '',
+    cancerDiagnosis: '',     // new
+    stageOfCancer: '', 
   });
 
   const SELECTED_PARTICIPANT_KEY = 'selectedParticipantId';
@@ -124,44 +128,51 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-
- const handleClearFilters = () => {
-  setAdvFilters({
-    criteriaStatus: '',
-    gender: '',
-    ageFrom: '',
-    ageTo: '',
-    groupType: '',
-  });
-  setSearchText('');
-  setAppliedSearchText('');
-  setSelectedGroupFilter('All');
-};
-
-const [didResetFilters, setDidResetFilters] = useState(false);
+  const handleCancerDiagnosisChange = (value: string) => {
+    setAdvFilters(prev => ({ ...prev, cancerDiagnosis: value }));
+  };
+  const handleStageOfCancerChange = (value: string) => {
+    setAdvFilters(prev => ({ ...prev, stageOfCancer: value }));
+  };
 
 
-const onFiltersReset = () => {
-  setDidResetFilters(true);
-};
+  const handleClearFilters = () => {
+    setAdvFilters({
+      criteriaStatus: '',
+      gender: '',
+      ageFrom: '',
+      ageTo: '',
+      groupType: '',
+      cancerDiagnosis: '',     
+      stageOfCancer: '', 
+    });
+    setSearchText('');
+    setAppliedSearchText('');
+    setSelectedGroupFilter('All');
+  };
+
+  const [didResetFilters, setDidResetFilters] = useState(false);
 
 
-useEffect(() => {
-  if (didResetFilters) {
-    fetchParticipants('');
-    setDidResetFilters(false);
-  }
-}, [didResetFilters]);
+  const onFiltersReset = () => {
+    setDidResetFilters(true);
+  };
+
+  useEffect(() => {
+    if (didResetFilters) {
+      fetchParticipants('');
+      setDidResetFilters(false);
+    }
+  }, [didResetFilters]);
 
 
-
-    useFocusEffect(
+  useFocusEffect(
     useCallback(() => {
       const refreshParticipants = async () => {
         await fetchParticipants(appliedSearchText);
       };
       refreshParticipants();
-    }, [appliedSearchText]) // re-fetch if applied search text changes
+    }, [appliedSearchText])
   );
 
   useEffect(() => {
@@ -193,6 +204,13 @@ useEffect(() => {
   }, []);
 
 
+  // const handleAdvancedDone = async () => {
+  //   if (!validateAgeRange()) {
+  //     return; 
+  //   }
+  //   setShowAdvancedSearch(false);
+  //   await fetchParticipants(appliedSearchText);
+  // };
 
   const handleAdvancedDone = async () => {
     if (!validateAgeRange()) {
@@ -253,6 +271,10 @@ useEffect(() => {
     }
   };
 
+  const CANCER_DIAGNOSES = ['ovarian', 'lungs', 'breast', 'defuse Large B cell Lymphoma',];
+  const STAGES = ['i', 'ii', 'iii', 'iv']; 
+
+
   // Enhanced fetch function with advanced filters updated for CriteriaStatus
   const fetchParticipants = async (search: string = '') => {
     try {
@@ -260,9 +282,6 @@ useEffect(() => {
       const trimmedSearch = search.trim().toLowerCase();
       const requestBody: ParticipantRequest = {};
 
-     
-    if (trimmedSearch === '') {
-      // Only apply advanced filters if no search text provided
       if (advFilters.criteriaStatus) {
         requestBody.CriteriaStatus = advFilters.criteriaStatus;
       }
@@ -272,6 +291,12 @@ useEffect(() => {
       if (advFilters.gender) {
         requestBody.Gender = advFilters.gender;
       }
+      if (advFilters.cancerDiagnosis?.trim()) {
+      requestBody.CancerDiagnosis = advFilters.cancerDiagnosis.trim();
+      }
+      if (advFilters.stageOfCancer?.trim()) {
+        requestBody.StageOfCancer = advFilters.stageOfCancer.trim();
+      }
       const ageFromNum = Number(advFilters.ageFrom);
       if (!isNaN(ageFromNum) && advFilters.ageFrom !== '') {
         requestBody.AgeFrom = ageFromNum;
@@ -280,32 +305,47 @@ useEffect(() => {
       if (!isNaN(ageToNum) && advFilters.ageTo !== '') {
         requestBody.AgeTo = ageToNum;
       }
-    } else {
-      // When search is present, apply conditions for search - ignoring advanced filters to avoid conflict
-      const searchCap = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
-      if ((trimmedSearch === 'male' || trimmedSearch === 'female') && !advFilters.gender) {
-        requestBody.Gender = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
-      } else if ((trimmedSearch === 'included' || trimmedSearch === 'excluded') && !advFilters.criteriaStatus) {
-        requestBody.CriteriaStatus = searchCap;
-      } else if ((trimmedSearch === 'study' || trimmedSearch === 'controlled') && !advFilters.groupType) {
-        requestBody.GroupType = searchCap;
-      } else if (/^pid-\d+$/i.test(trimmedSearch)) {
-        requestBody.SearchString = trimmedSearch.toUpperCase();
-      } else if (/^\d+$/i.test(trimmedSearch)) {
-        requestBody.SearchString = `PID-${trimmedSearch}`;
-      } else if (
-        !isNaN(Number(trimmedSearch)) &&
-        Number(trimmedSearch) >= 1 &&
-        Number(trimmedSearch) <= 120 &&
-        !advFilters.ageFrom &&
-        !advFilters.ageTo
-      ) {
-        requestBody.AgeFrom = Number(trimmedSearch);
-        requestBody.AgeTo = Number(trimmedSearch);
-      } else {
-        requestBody.SearchString = trimmedSearch;
+       const searchCap = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
+
+      if (trimmedSearch !== '') {
+        if ((trimmedSearch === 'male' || trimmedSearch === 'female') && !advFilters.gender) {
+          requestBody.Gender = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
+        } 
+        else if ((trimmedSearch === 'included' || trimmedSearch === 'excluded') && !advFilters.criteriaStatus) {
+          requestBody.CriteriaStatus = searchCap;
+        }
+        // GroupType
+        else if ((trimmedSearch === 'study' || trimmedSearch === 'controlled') && !advFilters.groupType) {
+          requestBody.GroupType = searchCap;
+        }
+        else if (CANCER_DIAGNOSES.includes(trimmedSearch) && !advFilters.cancerDiagnosis) { 
+          requestBody.CancerDiagnosis = searchCap;
+        } 
+        else if (STAGES.includes(trimmedSearch.toLowerCase()) && !advFilters.stageOfCancer) {   
+          requestBody.StageOfCancer = trimmedSearch.toUpperCase();
+        }
+
+        else if (/^pid-\d+$/i.test(trimmedSearch)) {
+          requestBody.SearchString = trimmedSearch.toUpperCase();
+        } 
+        else if (/^\d+$/i.test(trimmedSearch)) {
+          requestBody.SearchString = `PID-${trimmedSearch}`;
+        }
+         else if (
+          !isNaN(Number(trimmedSearch)) &&
+          Number(trimmedSearch) >= 1 &&
+          Number(trimmedSearch) <= 120 &&
+          !advFilters.ageFrom &&
+          !advFilters.ageTo
+        ) 
+        {
+          requestBody.AgeFrom = Number(trimmedSearch);
+          requestBody.AgeTo = Number(trimmedSearch);
+        }
+         else {
+          requestBody.SearchString = trimmedSearch;
+        }
       }
-    }
 
       Object.keys(requestBody).forEach(key => {
         const val = requestBody[key];
@@ -391,6 +431,7 @@ useEffect(() => {
         if (groupFilter === 'Study') return p.groupType === 'Study';
         if (groupFilter === 'Controlled') return p.groupType === 'Controlled';
         if (groupFilter === 'Unassign') return p.groupType === null || p.groupType === undefined;
+        
         return true;
       });
     }
@@ -402,19 +443,22 @@ useEffect(() => {
       const pidStr = p.ParticipantId.toString().toLowerCase();
       const genderStr = p.gender.toLowerCase();
       const cancerTypeStr = p.cancerType.toLowerCase();
-      const stageStr = p.stage.toLowerCase();
       const nameStr = p.name?.toLowerCase() || '';
       const criteriaStatusStr = (p.CriteriaStatus || '').toLowerCase();
       const groupTypeStr = (p.groupType || '').toLowerCase();
+      const cancerDiagnosisStr = p.cancerType?.toLowerCase() || '';
+      const stageOfCancerStr = p.stage?.toLowerCase() || '';
 
       return (
           pidStr.includes(q) ||
           genderStr.includes(q) ||
           cancerTypeStr.includes(q) ||
-          stageStr.includes(q) || 
           nameStr.includes(q) ||
           criteriaStatusStr.includes(q) ||
+          cancerDiagnosisStr.includes(q) ||
+          stageOfCancerStr.includes(q) ||
           groupTypeStr.includes(q)
+
       );
     });
   };
@@ -490,24 +534,11 @@ useEffect(() => {
     saveSelectedTab(tab);
   }, [tab]);
 
-const handleApplySearch = () => {
-  if (searchText.trim() !== '') {
-    // Clear advanced filters when using simple search
-    setAdvFilters({
-      criteriaStatus: '',
-      gender: '',
-      ageFrom: '',
-      ageTo: '',
-      groupType: '',
-    });
+  // Function to apply search filter when user clicks search or submits input
+  const handleApplySearch = () => {
+    setAppliedSearchText(searchText.trim());
     fetchParticipants(searchText.trim());
-  } else {
-    // If search is cleared, you may want to fetch with advanced filters or clear selections
-    fetchParticipants('');
-  }
-  setAppliedSearchText(searchText.trim());
-};
-
+  };
 
   // Effect to clear filters when search is cleared by user typing empty string
   useEffect(() => {
@@ -592,7 +623,7 @@ const handleApplySearch = () => {
               {/* Search Bar */}
               <View className="flex-row items-center bg-white border border-[#e6eeeb] rounded-2xl px-4 py-3 flex-1">
                 <TextInput
-                  placeholder="Search by Patient ID,Gender"
+                  placeholder="Search by Patient ID,Cancer type,Gender,Group,status,stage"
                   value={searchText}
                   onChangeText={(val:any) => {
                     setSearchText(val);
@@ -612,13 +643,7 @@ const handleApplySearch = () => {
                 </Pressable>
               </View>
               {/* Filter Icon */}
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchText('');     
-                  setAppliedSearchText('');
-                  setShowAdvancedSearch(true);
-                }}
-              >
+              <TouchableOpacity onPress={() => setShowAdvancedSearch(true)}>
                 <MaterialCommunityIcons name="tune" size={24} color="black" />
               </TouchableOpacity>
             </View>
@@ -712,6 +737,8 @@ const handleApplySearch = () => {
               onGenderChange={handleGenderChange}
               onAgeChange={handleAgeChange}
               onGroupTypeChange={handleGroupTypeChange}
+                onCancerDiagnosisChange={handleCancerDiagnosisChange}   // new
+              onStageOfCancerChange={handleStageOfCancerChange} 
               onClearFilters={handleClearFilters}
               onFiltersReset={onFiltersReset}
               ageRangeError={ageRangeError}
