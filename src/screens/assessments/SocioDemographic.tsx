@@ -1206,7 +1206,7 @@ export default function SocioDemographic() {
                   setConsentGiven(!consentGiven);
                   if (!consentGiven) setConsentError(false); // clear error on check
                 }}
-                className={`w-6 h-6 rounded-md border mr-3 flex items-center justify-center ${consentGiven ? "bg-[#0ea06c] border-[#0ea06c]" : "border-gray-300"
+                className={`w-7 h-7 rounded-md border mr-3 flex items-center justify-center ${consentGiven ? "bg-[#0ea06c] border-[#0ea06c]" : "border-gray-300"
                   }`}
               >
                 {consentGiven && <Text className="text-white text-sm">✔</Text>}

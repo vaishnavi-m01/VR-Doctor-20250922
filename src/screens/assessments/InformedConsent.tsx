@@ -566,7 +566,7 @@ export default function InformedConsentForm({
                                         return newVal;
                                     });
                                 }}
-                                className={`w-6 h-6 mr-3 rounded-[6px] border-2 items-center justify-center  ${agree ? "bg-[#0ea06c] border-[#0ea06c]" : "border-[#cfe0db]"
+                                className={`w-7 h-7 mr-3 rounded-[6px] border-2 items-center justify-center  ${agree ? "bg-[#0ea06c] border-[#0ea06c]" : "border-[#cfe0db]"
                                     }`}
                             >
                                 {agree && <Text className="text-white text-[10px]">✓</Text>}
