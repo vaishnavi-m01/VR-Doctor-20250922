@@ -23,9 +23,9 @@ export default function FormCard({ icon, title, desc, children, error }: Props) 
       {/* Content with left gutter */}
       <View style={{ paddingLeft: ICON_COL }}>
         {/* Title and description */}
-        <View className="mb-2">
+        <View className="mb-2 justify-center flex-1">
           <Text
-            className={`text-base font-semibold ${error ? "text-red-500" : "text-[#0b1f1c]"
+            className={`text-base font-semibold  mt-1 ${error ? "text-red-500" : "text-[#0b1f1c]"
               }`}
           >
             {title}

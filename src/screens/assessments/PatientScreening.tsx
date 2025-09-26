@@ -310,7 +310,7 @@ export default function PatientScreening() {
     >
       <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
-          <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+        <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
           <Text className="text-lg font-bold text-green-600">
             Participant ID: {patientId}
           </Text>
@@ -531,16 +531,19 @@ export default function PatientScreening() {
           title="Clinical Checklist"
           error={errors.conds ? true : false}
         >
-          <Chip
-            items={clinicalChecklist.map((item) => item.ExeperiencType)}
-            value={conds}
-            onChange={(selected) => {
-              setConds(selected);
-              if (errors.conds && selected.length > 0) {
-                setErrors((prev) => ({ ...prev, conds: "" }));
-              }
-            }}
-          />
+          <View className="mt-2">
+            <Chip
+              items={clinicalChecklist.map((item) => item.ExeperiencType)}
+              value={conds}
+              onChange={(selected) => {
+                setConds(selected);
+                if (errors.conds && selected.length > 0) {
+                  setErrors((prev) => ({ ...prev, conds: "" }));
+                }
+              }}
+            />
+          </View>
+
           <View style={{ height: 150 }} />
         </FormCard>
 
