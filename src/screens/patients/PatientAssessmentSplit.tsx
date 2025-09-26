@@ -155,14 +155,14 @@ useEffect(() => {
 
 
 
-     useFocusEffect(
-      useCallback(() => {
-        const refreshParticipants = async () => {
-          await fetchParticipants(appliedSearchText);
-        };
-        refreshParticipants();
-      }, [appliedSearchText]) // re-fetch if applied search text changes
-    );
+    useFocusEffect(
+    useCallback(() => {
+      const refreshParticipants = async () => {
+        await fetchParticipants(appliedSearchText);
+      };
+      refreshParticipants();
+    }, [appliedSearchText]) // re-fetch if applied search text changes
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -194,14 +194,17 @@ useEffect(() => {
 
 
 
- const handleAdvancedDone = async () => {
-  if (!validateAgeRange()) {
-    return; // Prevent closing modal and fetching if validation fails
-  }
-  setShowAdvancedSearch(false);
-  await fetchParticipants(appliedSearchText);
-};
-
+  const handleAdvancedDone = async () => {
+    if (!validateAgeRange()) {
+      return; 
+    }
+    
+    setSearchText('');
+    setAppliedSearchText('');
+    setSelectedGroupFilter('All');
+    setShowAdvancedSearch(false);
+    await fetchParticipants('');
+  };
 
 
   // Save selected participant ID to AsyncStorage
@@ -257,6 +260,9 @@ useEffect(() => {
       const trimmedSearch = search.trim().toLowerCase();
       const requestBody: ParticipantRequest = {};
 
+     
+    if (trimmedSearch === '') {
+      // Only apply advanced filters if no search text provided
       if (advFilters.criteriaStatus) {
         requestBody.CriteriaStatus = advFilters.criteriaStatus;
       }
@@ -274,26 +280,32 @@ useEffect(() => {
       if (!isNaN(ageToNum) && advFilters.ageTo !== '') {
         requestBody.AgeTo = ageToNum;
       }
-      if (trimmedSearch !== '') {
-        if ((trimmedSearch === 'male' || trimmedSearch === 'female') && !advFilters.gender) {
-          requestBody.Gender = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
-        } else if (/^pid-\d+$/i.test(trimmedSearch)) {
-          requestBody.SearchString = trimmedSearch.toUpperCase();
-        } else if (/^\d+$/i.test(trimmedSearch)) {
-          requestBody.SearchString = `PID-${trimmedSearch}`;
-        } else if (
-          !isNaN(Number(trimmedSearch)) &&
-          Number(trimmedSearch) >= 1 &&
-          Number(trimmedSearch) <= 120 &&
-          !advFilters.ageFrom &&
-          !advFilters.ageTo
-        ) {
-          requestBody.AgeFrom = Number(trimmedSearch);
-          requestBody.AgeTo = Number(trimmedSearch);
-        } else {
-          requestBody.SearchString = trimmedSearch;
-        }
+    } else {
+      // When search is present, apply conditions for search - ignoring advanced filters to avoid conflict
+      const searchCap = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
+      if ((trimmedSearch === 'male' || trimmedSearch === 'female') && !advFilters.gender) {
+        requestBody.Gender = trimmedSearch.charAt(0).toUpperCase() + trimmedSearch.slice(1);
+      } else if ((trimmedSearch === 'included' || trimmedSearch === 'excluded') && !advFilters.criteriaStatus) {
+        requestBody.CriteriaStatus = searchCap;
+      } else if ((trimmedSearch === 'study' || trimmedSearch === 'controlled') && !advFilters.groupType) {
+        requestBody.GroupType = searchCap;
+      } else if (/^pid-\d+$/i.test(trimmedSearch)) {
+        requestBody.SearchString = trimmedSearch.toUpperCase();
+      } else if (/^\d+$/i.test(trimmedSearch)) {
+        requestBody.SearchString = `PID-${trimmedSearch}`;
+      } else if (
+        !isNaN(Number(trimmedSearch)) &&
+        Number(trimmedSearch) >= 1 &&
+        Number(trimmedSearch) <= 120 &&
+        !advFilters.ageFrom &&
+        !advFilters.ageTo
+      ) {
+        requestBody.AgeFrom = Number(trimmedSearch);
+        requestBody.AgeTo = Number(trimmedSearch);
+      } else {
+        requestBody.SearchString = trimmedSearch;
       }
+    }
 
       Object.keys(requestBody).forEach(key => {
         const val = requestBody[key];
@@ -391,11 +403,16 @@ useEffect(() => {
       const genderStr = p.gender.toLowerCase();
       const cancerTypeStr = p.cancerType.toLowerCase();
       const nameStr = p.name?.toLowerCase() || '';
+      const criteriaStatusStr = (p.CriteriaStatus || '').toLowerCase();
+      const groupTypeStr = (p.groupType || '').toLowerCase();
+
       return (
-        pidStr.includes(q) ||
-        genderStr.includes(q) ||
-        cancerTypeStr.includes(q) ||
-        nameStr.includes(q)
+          pidStr.includes(q) ||
+          genderStr.includes(q) ||
+          cancerTypeStr.includes(q) ||
+          nameStr.includes(q) ||
+          criteriaStatusStr.includes(q) ||
+          groupTypeStr.includes(q)
       );
     });
   };
@@ -471,11 +488,24 @@ useEffect(() => {
     saveSelectedTab(tab);
   }, [tab]);
 
-  // Function to apply search filter when user clicks search or submits input
-  const handleApplySearch = () => {
-    setAppliedSearchText(searchText.trim());
+const handleApplySearch = () => {
+  if (searchText.trim() !== '') {
+    // Clear advanced filters when using simple search
+    setAdvFilters({
+      criteriaStatus: '',
+      gender: '',
+      ageFrom: '',
+      ageTo: '',
+      groupType: '',
+    });
     fetchParticipants(searchText.trim());
-  };
+  } else {
+    // If search is cleared, you may want to fetch with advanced filters or clear selections
+    fetchParticipants('');
+  }
+  setAppliedSearchText(searchText.trim());
+};
+
 
   // Effect to clear filters when search is cleared by user typing empty string
   useEffect(() => {
@@ -580,7 +610,13 @@ useEffect(() => {
                 </Pressable>
               </View>
               {/* Filter Icon */}
-              <TouchableOpacity onPress={() => setShowAdvancedSearch(true)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchText('');     
+                  setAppliedSearchText('');
+                  setShowAdvancedSearch(true);
+                }}
+              >
                 <MaterialCommunityIcons name="tune" size={24} color="black" />
               </TouchableOpacity>
             </View>

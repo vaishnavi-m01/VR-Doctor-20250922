@@ -313,8 +313,8 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
     let factGScore = 0;
     let distressValue = '0';
 
-    // Today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
 
     // Fetch FACT-G data for today only
     const factGRes = await apiService.post('/getParticipantFactGQuestionWeekly', {
@@ -333,17 +333,24 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
     // Fetch distress score for today only
     const distressRes = await apiService.post('/GetParticipantDistressWeeklyScore', {
       ParticipantId: participantId,
-      CreatedDate: today,
+      CreatedDate: todayStr,
     }) as { data: DistressWeeklyResponse };
 
-    if (distressRes.data?.ResponseData.length) {
-      const todayDistress = distressRes.data.ResponseData.find(item =>
-        item.CreatedDate?.split('T')[0] === today
+     const todayDistress = distressRes.data.ResponseData.find(item => {
+      if (!item.CreatedDate) return false;
+      const itemDateStr = item.CreatedDate.split(' ')[0]; // Adjust if needed
+      return itemDateStr === todayStr;
+    });
+     distressValue = todayDistress?.ScaleValue || '0';
+
+    if (!todayDistress && distressRes.data.ResponseData.length > 0) {
+      distressRes.data.ResponseData.sort((a, b) =>
+        b.CreatedDate.localeCompare(a.CreatedDate)
       );
-      distressValue = todayDistress?.ScaleValue || '0';
-    } else {
-      distressValue = '0';
+      distressValue = distressRes.data.ResponseData[0].ScaleValue || '0';
+      console.log('Fallback distress value:', distressValue);
     }
+
 
     // Update the form and state values
     setFactGScore(factGScore.toString());

@@ -57,19 +57,6 @@ interface FactGResponse {
   FinalScore?: number;
 }
 
-const calculateSubscaleScore = (
-  answers: Record<string, number | null>,
-  items: { code: string; TypeOfQuestion?: string }[]
-) => {
-  return items.reduce((sum, item) => {
-    const value = answers[item.code];
-    if (value !== null && value !== undefined) {
-      const score = item.TypeOfQuestion === "-" ? 4 - value : value;
-      return sum + score;
-    }
-    return sum;
-  }, 0);
-};
 
   const formatTodayDateForAPI = (): string => {
     const today = new Date();
@@ -104,6 +91,36 @@ const calculateSubscaleScore = (
   };
 
   
+const calculateItemScore = (response: number | null): number | null => {
+  if (response === null || response === undefined) return null; 
+
+  switch (response) {
+    case 4: return 0;
+    case 3: return 1;
+    case 2: return 2;
+    case 1: return 3;
+    case 0: return 4;
+    default: return null; 
+  }
+};
+
+
+const calculateSubscaleScore = (
+  answers: Record<string, number | null>,
+  items: { code: string; TypeOfQuestion?: string }[]
+): number => {
+  let sumScores = 0;
+
+  items.forEach((item) => {
+    const response = answers[item.code];
+    const itemScore = calculateItemScore(response);
+    if (itemScore !== null) {
+      sumScores += itemScore;
+    }
+  });
+
+  return sumScores;
+};
 
 
 const computeScores = (answers: Record<string, number | null>, subscales: Subscale[]): ScoreResults => {
@@ -118,8 +135,17 @@ const computeScores = (answers: Record<string, number | null>, subscales: Subsca
   const FWB = FWB_subscale ? calculateSubscaleScore(answers, FWB_subscale.items) : 0;
   const TOTAL = PWB + SWB + EWB + FWB;
 
-  return { PWB, SWB, EWB, FWB, TOTAL };
+  return {
+    PWB: Math.round(PWB),
+    SWB: Math.round(SWB),
+    EWB: Math.round(EWB),
+    FWB: Math.round(FWB),
+    TOTAL: Math.round(TOTAL),
+  };
 };
+
+
+
 
 export default function EdmontonFactGScreen() {
   const [answers, setAnswers] = useState<Record<string, number | null>>({});
@@ -400,18 +426,19 @@ export default function EdmontonFactGScreen() {
 
 
   const handleValidate = () => {
-    const totalQuestions = subscales.reduce((count, scale) => count + scale.items.length, 0);
+    // const totalQuestions = subscales.reduce((count, scale) => count + scale.items.length, 0);
     const answeredQuestions = Object.entries(answers).filter(([_, v]) => v !== null && v !== undefined).length;
 
     if (answeredQuestions === 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'No responses entered. Please fill the form.',
-        position: 'top',
-        topOffset: 50,
-      });
-      setFieldErrors(() => {
+    Toast.show({
+      type: 'error',
+      text1: 'Validation Error',
+      text2: 'No responses entered. Please fill at least one question.',
+      position: 'top',
+      topOffset: 50,
+    });
+
+    setFieldErrors(() => {
         // Mark all fields with error because none are answered
         const errors: Record<string, boolean> = {};
         subscales.forEach(scale => {
@@ -424,41 +451,19 @@ export default function EdmontonFactGScreen() {
       return;
     }
 
-    if (answeredQuestions < totalQuestions) {
       Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'All fields are required',
-        position: 'top',
-        topOffset: 50,
-      });
-      setFieldErrors(() => {
-        const errors: Record<string, boolean> = {};
-        subscales.forEach(scale => {
-          scale.items.forEach(item => {
-            const val = answers[item.code];
-            if (val === null || val === undefined) {
-              errors[item.code] = true;
-            }
-          });
-        });
-        return errors;
-      });
-    } else {
-      Toast.show({
-        type: 'success',
-        text1: 'Validation Passed',
-        text2: 'All required fields are filled',
-        position: 'top',
-        topOffset: 50,
-      });
-      setFieldErrors({});
-    }
+      type: 'success',
+      text1: 'Validation Passed',
+      text2: 'At least one question filled.',
+      position: 'top',
+      topOffset: 50,
+    });
+     
   };
 
 
   const handleSave = async () => {
-    const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
+    // const totalQuestions = subscales.reduce((acc, scale) => acc + scale.items.length, 0);
     const answeredQuestions = Object.entries(answers).filter(([_, v]) => v !== null && v !== undefined).length;
 
 
@@ -466,10 +471,11 @@ export default function EdmontonFactGScreen() {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: 'No responses entered. Please fill the form before saving.',
+        text2: 'No responses entered. Please fill at least one question before saving.',
         position: 'top',
         topOffset: 50,
       });
+
       setFieldErrors(() => {
         const errors: Record<string, boolean> = {};
         subscales.forEach(scale => {
@@ -482,35 +488,11 @@ export default function EdmontonFactGScreen() {
       return;
     }
 
-    // Missing at least one answer
-    if (answeredQuestions < totalQuestions) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'All fields are required',
-        position: 'top',
-        topOffset: 50,
-      });
-      setFieldErrors(() => {
-        const errors: Record<string, boolean> = {};
-        subscales.forEach(scale => {
-          scale.items.forEach(item => {
-            const val = answers[item.code];
-            if (val === null || val === undefined) {
-              errors[item.code] = true;
-            }
-          });
-        });
-        return errors;
-      });
-      setSaving(false);
-      return;
-    }
-
+   
     setFieldErrors({});
 
+    setSaving(true);
     try {
-      setSaving(true);
 
       const factGData = Object.entries(answers).map(([code, val]) => {
         const found = subscales.flatMap((s) => s.items).find((i) => i.code === code);
@@ -788,11 +770,11 @@ export default function EdmontonFactGScreen() {
                         style={{
                           width: 64,
                           fontWeight: "700",
-                          color: fieldErrors[item.code] ? "#dc2626" : "#1f2937",
+                          // color: fieldErrors[item.code] ? "#dc2626" : "#1f2937",
                           marginLeft: 13,
                         }}
                       >
-                        {item.code}
+                        {index + 1}
                       </Text>
                       <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
