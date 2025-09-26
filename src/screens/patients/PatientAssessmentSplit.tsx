@@ -402,6 +402,7 @@ useEffect(() => {
       const pidStr = p.ParticipantId.toString().toLowerCase();
       const genderStr = p.gender.toLowerCase();
       const cancerTypeStr = p.cancerType.toLowerCase();
+      const stageStr = p.stage.toLowerCase();
       const nameStr = p.name?.toLowerCase() || '';
       const criteriaStatusStr = (p.CriteriaStatus || '').toLowerCase();
       const groupTypeStr = (p.groupType || '').toLowerCase();
@@ -410,6 +411,7 @@ useEffect(() => {
           pidStr.includes(q) ||
           genderStr.includes(q) ||
           cancerTypeStr.includes(q) ||
+          stageStr.includes(q) || 
           nameStr.includes(q) ||
           criteriaStatusStr.includes(q) ||
           groupTypeStr.includes(q)

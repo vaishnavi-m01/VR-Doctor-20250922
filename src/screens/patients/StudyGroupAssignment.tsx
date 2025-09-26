@@ -21,6 +21,7 @@ export type Participant = {
   age?: number;
   Gender?: string;
   cancerType?: string;
+  GroupTypeNumber?: number;
   stage?: string;
   GroupType: 'Controlled' | 'Study' | null;
   PhoneNumber?: string;
@@ -125,6 +126,7 @@ export default function StudyGroupAssignment() {
                   : item.GroupType === 'Study'
                     ? 'Study'
                     : null,
+              GroupTypeNumber:item.GroupTypeNumber || 'N/A',
 
               CriteriaStatus: item.CriteriaStatus,
             })
@@ -306,6 +308,9 @@ export default function StudyGroupAssignment() {
             </Text>
             <Text className="text-xs text-gray-500">
               {p.cancerType ?? 'N/A'} • Stage: {p.stage ?? 'N/A'}
+            </Text>
+             <Text className="text-xs text-gray-500">
+              {p.GroupTypeNumber ?? 'N/A'} 
             </Text>
           </View>
         </View>
