@@ -61,7 +61,6 @@ export default function PatientScreening() {
 
   const [selectedCreatedDate, setSelectedCreatedDate] = useState<string | null>(routeCreatedDate ?? today ?? null);
   const [currentPatientId, setCurrentPatientId] = useState<string | null>(routePatientId ?? patientId ?? null);
-  const [apiCalled, setApiCalled] = useState(false)
 
 
 

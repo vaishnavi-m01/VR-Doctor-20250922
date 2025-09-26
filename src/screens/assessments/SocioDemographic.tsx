@@ -14,6 +14,8 @@ import Toast from 'react-native-toast-message';
 import { DropdownField } from '@components/DropdownField';
 import { formatForDB, formatForUI } from 'src/utils/date';
 import { KeyboardAvoidingView, Platform } from 'react-native';
+import { TouchableOpacity } from 'react-native';
+
 
 
 
@@ -151,6 +153,11 @@ export default function SocioDemographic() {
   const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
   const isEditMode = !!patientId;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [consentError, setConsentError] = useState(false);
+
+
+
 
 
 
@@ -438,6 +445,16 @@ export default function SocioDemographic() {
     }
 
 
+    if (!consentGiven) {
+      newErrors.consentGiven = "Consent is required";
+      setConsentError(true);
+    } else {
+      setConsentError(false);
+    }
+
+
+
+
     setErrors(newErrors);
     setHabitErrors(newHabitErrors);
 
@@ -627,7 +644,7 @@ export default function SocioDemographic() {
 
           <View className="mt-6">
             <Field
-              label="Emergency Contact"
+              label="2. Emergency Contact"
               placeholder="__ emergency contact number"
               value={phoneNumber}
               error={errors.phoneNumber}
@@ -650,7 +667,7 @@ export default function SocioDemographic() {
               className={`text-base font-medium mb-4 ${errors.gender ? "text-red-500" : "text-[#2c4a43]"
                 }`}
             >
-              2. Gender
+              3. Gender
             </Text>
 
             <View className="flex-row gap-3">
@@ -665,7 +682,7 @@ export default function SocioDemographic() {
               >
                 <Image source={require("../../../assets/Man.png")} />
                 <Text
-                  className={`font-medium text-base pl-2 ${gender === "Male" ? "text-white" : "text-[#2c4a43]"
+                  className={`font-medium text-base pl-2 ${gender === "Male" ? "text-white font-semibold" : "text-[#4b5f5a]"
                     }`}
                 >
                   Male
@@ -734,7 +751,7 @@ export default function SocioDemographic() {
               className={`text-base font-medium mb-4 ${errors.maritalStatus ? "text-red-500" : "text-[#2c4a43]"
                 }`}
             >
-              3. Marital Status
+              4. Marital Status
             </Text>
 
             {/* Button Group */}
@@ -743,7 +760,7 @@ export default function SocioDemographic() {
               <Pressable
                 onPress={() => {
                   setMaritalStatus("Single");
-                  setErrors((prev) => ({ ...prev, maritalStatus: "" })); // clear error
+                  setErrors((prev) => ({ ...prev, maritalStatus: "" }));
                 }}
                 className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${maritalStatus === "Single" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                   }`}
@@ -829,10 +846,10 @@ export default function SocioDemographic() {
               className={`text-base font-medium mb-4 ${errors.KnowledgeIn ? "text-red-500" : "text-[#2c4a43]"
                 }`}
             >
-              4. Knowledge in
+              5. Knowledge in
             </Text>
 
-            <View className="flex-row flex-wrap gap-3 mt-2">
+            <View className="flex-row flex-wrap gap-3 ">
               {languages.map((lang) => (
                 <Pressable
                   key={lang.LID}
@@ -852,15 +869,15 @@ export default function SocioDemographic() {
           </View>
 
 
-          <View className="flex-row gap-4 mt-6">
+          <View className="flex-col gap-4 mt-6">
             {/* Question 5 */}
             <View className="flex-1">
-              <View style={{ minHeight: 60 }}>
+              <View className={"mt-6"}>
                 <Text
                   className={`text-base font-medium mb-4 ${errors.faithWellbeing ? "text-red-500" : "text-[#2c4a43]"
                     }`}
                 >
-                  5. Does faith contribute to well-being?
+                  6. Does faith contribute to well-being?
                 </Text>
               </View>
               <View className="flex-row gap-3">
@@ -870,7 +887,7 @@ export default function SocioDemographic() {
                     setFaithWellbeing("Yes");
                     setErrors((prev) => ({ ...prev, faithWellbeing: "" }));
                   }}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${faithWellbeing === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4  ${faithWellbeing === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
                   <Text
@@ -902,12 +919,12 @@ export default function SocioDemographic() {
 
             {/* Question 6 */}
             <View className="flex-1">
-              <View style={{ minHeight: 60 }}>
+              <View className="mt-6">
                 <Text
                   className={`text-base font-medium mb-4 ${errors.practiceReligion ? "text-red-500" : "text-[#2c4a43]"
                     }`}
                 >
-                  6. Do you practice any religion?
+                  7. Do you practice any religion?
                 </Text>
               </View>
               <View className="flex-row gap-3">
@@ -916,7 +933,7 @@ export default function SocioDemographic() {
                     setPracticeReligion("Yes");
                     setErrors((prev) => ({ ...prev, practiceReligion: "" }));
                   }}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4 ${practiceReligion === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-4 px-4  ${practiceReligion === "Yes" ? "bg-[#4FC264]" : "bg-[#EBF6D6]"
                     }`}
                 >
                   <Text
@@ -965,7 +982,7 @@ export default function SocioDemographic() {
               className={`text-base font-medium mb-4 ${errors.educationLevel ? "text-red-500" : "text-[#2c4a43]"
                 }`}
             >
-              7. Education Level (Optional)
+              8. Education Level (Optional)
             </Text>
             <Segmented
               options={educationOptions.map((edu) => ({
@@ -986,7 +1003,7 @@ export default function SocioDemographic() {
               className={`text-base font-medium mb-4 ${errors.employmentStatus ? "text-red-500" : "text-[#2c4a43]"
                 }`}
             >
-              8. Employment Status (Optional)
+              9. Employment Status (Optional)
             </Text>
             <Segmented
               options={[
@@ -1019,18 +1036,21 @@ export default function SocioDemographic() {
               <Text className="text-red-500 text-sm mt-2">{errors.cancerDiagnosis}</Text>
             )}
           </View> */}
+          <View className="mt-6">
+            <DropdownField
+              label="1. Cancer Diagnosis"
+              value={cancerDiagnosis}
+              placeholder="Select cancer type"
+              onValueChange={(val) => {
+                setCancerDiagnosis(val);
+                setErrors((prev) => ({ ...prev, cancerDiagnosis: "" }));
+              }}
+              options={cancerTypeOptions}
+              error={errors.cancerDiagnosis}
+            />
+          </View>
 
-          <DropdownField
-            label="Cancer Diagnosis"
-            value={cancerDiagnosis}
-            placeholder="Select cancer type"
-            onValueChange={(val) => {
-              setCancerDiagnosis(val);
-              setErrors((prev) => ({ ...prev, cancerDiagnosis: "" }));
-            }}
-            options={cancerTypeOptions}
-            error={errors.cancerDiagnosis}
-          />
+
 
           <View className="mt-6">
             <Text className={`text-base font-medium mb-4 ${errors.cancerStage ? "text-red-500" : "text-[#2c4a43]"}`}>
@@ -1092,7 +1112,7 @@ export default function SocioDemographic() {
             </View>
             <View className="flex-1">
               <Field
-                label="6. Duration of Treatment"
+                label="6. Duration of Treatment (Weeks)"
                 placeholder="______________ months"
                 value={treatmentDuration}
                 error={errors?.treatmentDuration}
@@ -1138,7 +1158,7 @@ export default function SocioDemographic() {
               <View key={habit.HabitID} className="mt-6">
                 {/* Title */}
                 <Text
-                  className={`text-base font-medium mb-4 ${hasError ? "text-red-500" : "text-[#2c4a43]"}`}
+                  className={`text-base font-medium  mb-4 ${hasError ? "text-red-500" : "text-[#2c4a43]"}`}
                 >
                   {idx + 1}. {config.label}
                 </Text>
@@ -1179,16 +1199,33 @@ export default function SocioDemographic() {
         </FormCard>
 
 
-
         <FormCard icon="✍️" title="Section 4: Consent and Signature">
           <View className="mt-6">
-            <Text className="text-base text-gray-700 mb-6">
-              I confirm that the information provided is accurate to the best of my knowledge.
-            </Text>
+            {/* Consent Checkbox */}
+            <View className="flex-row items-center mb-2">
+              <TouchableOpacity
+                onPress={() => {
+                  setConsentGiven(!consentGiven);
+                  if (!consentGiven) setConsentError(false); // clear error on check
+                }}
+                className={`w-5 h-5 rounded-md border mr-3 flex items-center justify-center ${consentGiven ? "bg-[#0ea06c] border-[#0ea06c]" : "border-gray-300"
+                  }`}
+              >
+                {consentGiven && <Text className="text-white text-sm">✔</Text>}
+              </TouchableOpacity>
 
-            <View className="mt-4">
+              <Text
+                className={`text-base flex-1 ${consentError ? "text-red-500" : "text-[#2c4a43]"
+                  }`}
+              >
+                I confirm that the information provided is accurate to the best of my knowledge.
+              </Text>
+            </View>
+
+            {/* Participant Signature */}
+            <View className="mt-6">
               <Field
-                label="Participant Signature"
+                label="1. Participant Signature"
                 placeholder="Enter your name"
                 value={participantSignature}
                 error={errors.participantSignature}
@@ -1196,20 +1233,20 @@ export default function SocioDemographic() {
               />
             </View>
 
+            {/* Date Field */}
             <View className="mt-4">
               <DateField
-                label="Date"
+                label="2. Date"
                 value={formatForUI(consentDate)}
                 onChange={(val) => setConsentDate(formatForDB(val))}
               />
             </View>
 
-
-            {/* Extra space to ensure Date field is not hidden by BottomBar */}
+            {/* Extra space so Date field is not hidden by BottomBar */}
             <View style={{ height: 100 }} />
           </View>
+        </FormCard>
 
-        </FormCard  >
 
 
       </ScrollView>
