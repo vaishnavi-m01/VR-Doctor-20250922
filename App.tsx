@@ -330,7 +330,7 @@ export default function App() {
                     <Stack.Screen
                       name="StudyGroupAssignment"
                       component={StudyGroupAssignment}
-                      options={{ headerShown: true, title: "Study Group Assignment" }}
+                      options={{ headerShown: true, title: "Group Assignment" }}
                     />
 
                     <Stack.Screen

@@ -71,7 +71,7 @@ export default function StudyGroupAssignment() {
 
         const requestBody: any = {
           StudyId: studyId,
-          CriteriaStatus: null,
+          CriteriaStatus: 'Included',
           GroupType: null,
           SearchString: null,
           Gender: null,
@@ -189,36 +189,6 @@ export default function StudyGroupAssignment() {
       return { id, group: n % 2 === 0 ? 'Controlled' : 'Study' };
     });
   }
-
-  // const handleAssign = async () => {
-  //   if (selectedIds.length === 0) {
-  //     Alert.alert('No Selection', 'Please select participants to assign.');
-  //     return;
-  //   }
-  //   try {
-  //     setLoading(true);
-  //     const decisions = await decideGroups(selectedIds);
-  //     setParticipants((prev) =>
-  //       prev.map((p) =>
-  //         decisions.some((d) => d.id === p.ParticipantId)
-  //           ? {
-  //               ...p,
-  //               GroupType:
-  //                 decisions.find((d) => d.id === p.ParticipantId)?.group ?? null,
-  //             }
-  //           : p
-  //       )
-  //     );
-  //     setSelectedIds([]);
-  //     setQuery('');
-  //     Alert.alert('Assigned', `Assigned ${decisions.length} participant(s).`);
-  //   } catch (e) {
-  //     console.error('Assign error', e);
-  //     Alert.alert('Error', 'Failed to assign participants. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleAssign = async () => {
     if (selectedIds.length === 0) {
