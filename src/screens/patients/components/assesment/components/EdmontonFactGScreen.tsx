@@ -776,7 +776,7 @@ export default function EdmontonFactGScreen() {
                       >
                         {index + 1}
                       </Text>
-                      <Text style={{ flex: 1, fontSize: 14, color: "#374151" }}>{item.text}</Text>
+                      <Text style={{ flex: 1, fontSize: "1rem", color: "#374151" }}>{item.text}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>
                     {index < scale.items.length - 1 && <View style={{ borderBottomColor: "#e5e7eb", borderBottomWidth: 1, marginVertical: 8 }} />}
@@ -789,7 +789,7 @@ export default function EdmontonFactGScreen() {
         {!loading && !error && subscales.length > 0 && (
           <View style={{ backgroundColor: "#dbeafe", borderRadius: 12, padding: 16, marginBottom: 16 }}>
             <Text style={{ fontWeight: "600", fontSize: 14, color: "#1e40af", marginBottom: 8 }}>Rating Scale:</Text>
-            <Text style={{ fontSize: 12, color: "#1e40af" }}>
+            <Text style={{ fontSize: 13, color: "#1e40af" }}>
               0 = Not at all &nbsp;•&nbsp; 1 = A little bit &nbsp;•&nbsp; 2 = Somewhat &nbsp;•&nbsp; 3 = Quite a bit &nbsp;•&nbsp; 4 = Very much
             </Text>
           </View>

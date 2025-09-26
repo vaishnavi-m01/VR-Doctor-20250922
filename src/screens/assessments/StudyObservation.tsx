@@ -380,25 +380,24 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
     fetchBaselineScores(participantId, `${studyId}`);
   }, [routePatientId, studyId, routeObservationId]);
 
-const updateFormValue = (sofid: string, value: string) => {
-  setFormValues(prev => ({ ...prev, [sofid]: value }));
-  setFieldErrors(prev => {
-    const copy = { ...prev };
-    delete copy[sofid];
-    return copy;
-  });
-};
+  const updateFormValue = (sofid: string, value: string) => {
+    setFormValues(prev => ({ ...prev, [sofid]: value }));
+    setFieldErrors(prev => {
+      const copy = { ...prev };
+      delete copy[sofid];
+      return copy;
+    });
+  };
 
-const handleYesNoChange = (sofid: string, value: string) => {
-  setYesNoStates(prev => ({ ...prev, [sofid]: value }));
-  setFormValues(prev => ({ ...prev, [sofid]: value }));
-  setFieldErrors(prev => {
-    const copy = { ...prev };
-    delete copy[sofid];
-    return copy;
-  });
-};
-
+  const handleYesNoChange = (sofid: string, value: string) => {
+    setYesNoStates(prev => ({ ...prev, [sofid]: value }));
+    setFormValues(prev => ({ ...prev, [sofid]: value }));
+    setFieldErrors(prev => {
+      const copy = { ...prev };
+      delete copy[sofid];
+      return copy;
+    });
+  };
 
   // Updated: Accept string or string[] from Chip and normalize
   const handlePatientResponseChange = (next: string | string[]) => {
@@ -669,7 +668,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
       <View key={sofid} className="mt-3">
         <Text 
           className={`text-sm `}
-          style={{ color: hasError ? '#EF4444' : 'black', marginBottom: 2}}>
+          style={{ color: hasError ? '#EF4444' : '#rgb(44 74 67)',fontWeight: '500', marginBottom: 2}}>
           {label}
         </Text>
         <Field
@@ -686,7 +685,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
       const hasError = !!fieldErrors[sofid];
       return (
       <View key={sofid} className="mt-3">
-      <Text className="text-sm mb-2" style={{ color: hasError ? '#EF4444' : '#4b5f5a' }}>
+      <Text className="text-sm mb-2" style={{ color: hasError ? '#EF4444' : '#rgb(44 74 67)', fontWeight: '500' }}>
           {label}
         </Text>
         
@@ -706,7 +705,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
 
       <View className="mt-3" key="patient-response-chips">
         <Text className="text-sm text-[#4b5f5a] mb-2" 
-        style={{ color: hasError ? '#EF4444' : '#4b5f5a' }}
+        style={{ color: hasError ? '#EF4444' : '#rgb(44 74 67)',fontWeight: '500' }}
         >
           Patient Response During Session
           </Text>
@@ -754,7 +753,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
           <FormCard icon="B" title="Baseline Assessment & Scores">
             <View className="flex-row flex-wrap gap-3">
               <View className="flex-1 mt-3">
-                <Text className="text-sm text-[#4b5f5a] mb-1">FACT G Score</Text>
+                <Text className="text-sm text-[#rgb(44 74 67)] mb-1">FACT G Score</Text>
                 <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
                   {baselineLoading ? (
                     <ActivityIndicator size="small" color="#4FC264" />
@@ -764,7 +763,7 @@ const handleYesNoChange = (sofid: string, value: string) => {
                 </View>
               </View>
               <View className="flex-1 mt-3">
-                <Text className="text-sm text-[#4b5f5a] mb-1">Distress Thermometer Score</Text>
+                <Text className="text-sm text-[#rgb(44 74 67)] mb-1">Distress Thermometer Score</Text>
                 <View className="p-3 bg-gray-100 rounded-lg border border-gray-200">
                   {baselineLoading ? (
                     <ActivityIndicator size="small" color="#4FC264" />
