@@ -793,7 +793,7 @@ export function SignatureBlock({
                 {/* Name */}
                 <View className="flex-[0.8]">
                     <Text
-                        className={`text-md font-base mb-1 ${nameError ? "text-red-500" : "text-[#2c4a43]"
+                        className={`text-md font-base mb-2 ${nameError ? "text-red-500" : "text-[#2c4a43]"
                             }`}
                     >
                         {nameLabel}
@@ -811,16 +811,7 @@ export function SignatureBlock({
 
                 {/* Date */}
                 <View className="flex-[0.8]">
-                    {/* <Text className="text-[12px] text-[#6b7a77] mb-1">Date</Text> */}
-                    {/* <View className="flex-row items-center border border-[#dce9e4] rounded-xl px-3 py-2"> */}
-                        {/* <TextInput
-                            value={dateValue}
-                            onChangeText={onChangeDate}
-                            placeholder="dd/mm/yyyy"
-                            placeholderTextColor="#9ca3af"
-                            className="flex-1 text-sm text-[#0b1f1c]"
-                        />
-                        <EvilIcons name="calendar" size={22} color="#6b7a77" /> */}
+                  
                         <DateField
                             label="Date"
                             value={dateValue}

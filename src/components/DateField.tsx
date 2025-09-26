@@ -67,7 +67,7 @@ export default function DateField({
           style={{
             position: 'absolute',
             right: 12,
-            top: mode === "time" ? '42%' : '50%',
+            top: mode === "time" ? '42%' : '58%',
             transform: [{ translateY: -10 }], 
           }}
         />
