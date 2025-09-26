@@ -447,7 +447,7 @@ export default function PreAndPostVR() {
       <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }} keyboardShouldPersistTaps="handled">
         <FormCard icon="I" title="Pre & Post VR">
           <View style={{ paddingBottom: 40 }}>
-            <View className="flex-row gap-3">
+            <View className="flex-row gap-3 mt-2">
               <View className="flex-1">
                 <Field label="Participant ID" value={participantIdInput} editable={false} />
               </View>
@@ -458,7 +458,7 @@ export default function PreAndPostVR() {
 
             {/* Assessment Type Dropdown */}
             <View style={{ marginTop: 16 }}>
-              <Text style={{ fontSize: 12, color: '#4b5f5a', marginBottom: 8 }}>
+              <Text className="text-md font-medium text-[#2c4a43] mb-2">
                 Assessment Type
               </Text>
               <View style={{ width: 128, position: 'relative' }}>
@@ -553,9 +553,9 @@ export default function PreAndPostVR() {
             {preQuestions.map((q) => {
               const hasError = validationErrors[q.PPVRQMID];
               return (
-                <View key={q.PPVRQMID} className="mb-3">
+                <View key={q.PPVRQMID} className="mb-3 mt-4">
                   <Text
-                    className={`text-sm text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                    className={`text-md font-medium text-[#2c4a43] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#2c4a43]'
                       }`}
                   >
                     {q.QuestionName}
@@ -598,9 +598,9 @@ export default function PreAndPostVR() {
             {postQuestions.map((q) => {
               const hasError = validationErrors[q.PPVRQMID];
               return (
-                <View key={q.PPVRQMID} className="mb-3">
+                <View key={q.PPVRQMID} className="mb-3 mt-4">
                   <Text
-                    className={`text-sm text-[#4b5f5a] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+                    className={`text-md font-medium text-[#2c4a43] mb-2 ${hasError ? 'text-red-600 font-semibold' : 'text-[#2c4a43]'
                       }`}
                   >
                     {q.QuestionName}

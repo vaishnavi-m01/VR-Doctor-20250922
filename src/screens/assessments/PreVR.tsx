@@ -305,13 +305,13 @@ export default function PreVR() {
     return (
       <View key={questionId} className="mt-3">
         <Text
-          className={`text-sm text-[#4b5f5a] mb-2 ${
+          className={`text-md font-medium text-[#2c4a43] mb-2 ${
             hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
           }`}
         >
           {question.AssessmentTitle}
         </Text>
-        <Text className="text-base text-gray-600 mb-2">{question.AssignmentQuestion}</Text>
+        <Text className="text-base text-gray-600 mb-2 mt-2">{question.AssignmentQuestion}</Text>
 
         {questionType === 'scale_5' && renderScale(questionId, 5, index)}
         {questionType === 'scale_10' && (
@@ -537,8 +537,8 @@ export default function PreVR() {
       >
         {/* Main Assessment Card */}
         <FormCard icon="J" title="Pre-VR Assessment & Questionnaires">
-          <View className="flex-row gap-3">
-            <View className="flex-1">
+          <View className="flex-row gap-3 mt-4">
+            <View className="flex-1 ">
               {/* Participant ID input is read-only */}
               <Field label="Participant ID" placeholder="e.g., PID-0234" value={participantId} onChangeText={setParticipantId} editable={false} />
             </View>

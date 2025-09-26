@@ -327,7 +327,7 @@ export default function PatientScreening() {
 
       <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" keyboardShouldPersistTaps="handled">
         <FormCard icon="D" title="Patient Screening">
-          <View className="flex-row gap-3">
+          <View className="flex-row gap-3 mt-4">
             <View className="flex-1">
               <Field
                 label="Participant ID"
@@ -387,7 +387,7 @@ export default function PatientScreening() {
           <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-md font-medium text-[#2c4a43] mt-4">FACT-G Total Score</Text>
+                <Text className="text-md font-medium text-[#2c4a43] mt-6">FACT-G Total Score</Text>
                 <Pressable
                   onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId })}
                   className="px-4 py-3 bg-[#0ea06c] rounded-lg"

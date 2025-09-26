@@ -466,7 +466,7 @@ export default function ExitInterview() {
       <ScrollView style={{ flex: 1, backgroundColor: '#f5f7f6', paddingVertical: 2, paddingHorizontal: 20 }} keyboardShouldPersistTaps="handled">
         {/* Acknowledgment card */}
         <FormCard icon="E" title="Exit Interview">
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
             <View style={{ flex: 1 }}>
               <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => { }} />
             </View>
@@ -487,7 +487,7 @@ export default function ExitInterview() {
             const options = group.options.map((o) => o.OptionText || '');
             return (
               <FormCard key={qid} icon="R" title={group.QuestionText} desc="Select all that apply">
-                <Text className="text-sm" style={errorLabelStyle(qid)}>
+                <Text className="text-md font-medium text-[#2c4a43]" style={errorLabelStyle(qid)}>
                   {group.QuestionText}
                 </Text>
 
@@ -533,24 +533,27 @@ export default function ExitInterview() {
             const options = group.options.map((o) => o.OptionText || '');
             return (
               <FormCard key={qid} icon="V" title="VR Experience Ratings">
-                <Text className="text-sm" style={errorLabelStyle(qid)}>
-                  {group.QuestionText}
+                <View className="mt-4">
+                  <Text className="text-md font-medium  mb-2 text-[#2c4a43]" style={errorLabelStyle(qid)}>
+                    {group.QuestionText}
 
-                </Text>
-                <Segmented
-                  options={options.map((o) => ({ label: o, value: o }))}
-                  value={(answers[qid] as string) || ''}
-                  onChange={(val) => {
-                    setAnswers((prev) => ({ ...prev, [qid]: val }));
-                    setOverallRating(val);
-                    if (errors[qid] && val) {
-                      setErrors((prev) => ({ ...prev, [qid]: undefined }));
-                    }
-                  }}
-                />
+                  </Text>
+                  <Segmented
+                    options={options.map((o) => ({ label: o, value: o }))}
+                    value={(answers[qid] as string) || ''}
+                    onChange={(val) => {
+                      setAnswers((prev) => ({ ...prev, [qid]: val }));
+                      setOverallRating(val);
+                      if (errors[qid] && val) {
+                        setErrors((prev) => ({ ...prev, [qid]: undefined }));
+                      }
+                    }}
+                  />
+                </View>
+
 
                 {/* VR helpful and challenging aspects */}
-               
+
                 <View style={{ gap: 12, marginTop: 12 }}>
                   <View style={{ flex: 1 }} >
                     <Field
@@ -562,7 +565,7 @@ export default function ExitInterview() {
                       value={vrHelpful}
                       onChangeText={setFieldAndClearError('vrHelpful', setVrHelpful)}
                       error={errors.vrHelpful}
-                      
+
                     />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -586,8 +589,8 @@ export default function ExitInterview() {
         {/* Technical & Usability Issues */}
         <FormCard icon="TU" title="Technical & Usability Issues">
           {/* Training */}
-          <View style={{ marginBottom: 12 }}>
-            <Text className="text-sm" style={errorLabelStyle('training')}>
+          <View style={{ marginBottom: 12, marginTop: 6 }}>
+            <Text className="text-md font-medium  mb-2 text-[#2c4a43]" style={errorLabelStyle('training')}>
               {questions.find((q) => q.QuestionId === 'EIQID-6')?.QuestionText || ''}
 
             </Text>
@@ -608,9 +611,9 @@ export default function ExitInterview() {
                 }}
               >
                 <Text style={{ fontSize: 18, marginRight: 8, color: training === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                <Text 
-                className={`text-sm `}
-                style={{ fontWeight: '500',color: training === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                <Text
+                  className={`text-sm `}
+                  style={{ fontWeight: '500', color: training === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -628,9 +631,9 @@ export default function ExitInterview() {
                 }}
               >
                 <Text style={{ fontSize: 18, marginRight: 8, color: training === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                <Text 
-                className={`text-sm`}
-                style={{ fontWeight: '500', color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                <Text
+                  className={`text-sm`}
+                  style={{ fontWeight: '500', color: training === 'No' ? 'white' : '#2c4a43' }}>No</Text>
               </Pressable>
             </View>
 
@@ -668,9 +671,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-              <Text 
-              className={`text-sm `}
-              style={{ fontWeight: '500', color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+              <Text
+                className={`text-sm `}
+                style={{ fontWeight: '500', color: technicalIssues === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -688,7 +691,7 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-              <Text 
+              <Text
                 className={`text-sm `}
                 style={{ fontWeight: '500', color: technicalIssues === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
@@ -709,10 +712,13 @@ export default function ExitInterview() {
 
         {/* Study Adherence Card */}
         <FormCard icon="SP" title="Study Adherence & Protocol">
-          <Text className="text-sm" style={errorLabelStyle('requirements')}>
-            {questions.find((q) => q.QuestionId === 'EIQID-7')?.QuestionText || ''}
+          <View className="mt-4">
+            <Text className="text-md font-medium text-[#2c4a43] mb-2" style={errorLabelStyle('requirements')}>
+              {questions.find((q) => q.QuestionId === 'EIQID-7')?.QuestionText || ''}
 
-          </Text>
+            </Text>
+          </View>
+
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Pressable
               onPress={() => {
@@ -730,9 +736,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-              <Text 
-              className={`text-sm `}
-              style={{ fontWeight: '500', color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+              <Text
+                className={`text-sm `}
+                style={{ fontWeight: '500', color: requirements === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -750,9 +756,9 @@ export default function ExitInterview() {
               }}
             >
               <Text style={{ fontSize: 18, marginRight: 8, color: requirements === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-              <Text 
-              className={`text-sm `}
-              style={{ fontWeight: '500', color: requirements === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+              <Text
+                className={`text-sm `}
+                style={{ fontWeight: '500', color: requirements === 'No' ? 'white' : '#2c4a43' }}>No</Text>
             </Pressable>
           </View>
 
@@ -781,9 +787,9 @@ export default function ExitInterview() {
 
         {/* Future Recommendations */}
         <FormCard icon="FR" title="Future Recommendations">
-          <View style={{ flexDirection: 'column', gap: 12 }}>
+          <View style={{ flexDirection: 'column', gap: 12,marginTop:6 }}>
             <View style={{ flex: 1 }}>
-              <Text className="text-sm" style={errorLabelStyle('future')}>
+              <Text className="text-md font-medium text-[#2c4a43]" style={errorLabelStyle('future')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-9')?.QuestionText || ''}
 
               </Text>
@@ -804,9 +810,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: future === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                  <Text 
-                  className={`text-sm `}
-                  style={{ fontWeight: '500', color: future === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                  <Text
+                    className={`text-sm `}
+                    style={{ fontWeight: '500', color: future === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -824,9 +830,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: future === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                  <Text 
-                  className={`text-sm `}
-                  style={{ fontWeight: '500', color: future === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                  <Text
+                    className={`text-sm `}
+                    style={{ fontWeight: '500', color: future === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
 
@@ -854,9 +860,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: updates === 'Yes' ? 'white' : '#2c4a43' }}>✅</Text>
-                  <Text 
-                  className={`text-sm `}
-                  style={{ fontWeight: '500', color: updates === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
+                  <Text
+                    className={`text-sm `}
+                    style={{ fontWeight: '500', color: updates === 'Yes' ? 'white' : '#2c4a43' }}>Yes</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => {
@@ -874,9 +880,9 @@ export default function ExitInterview() {
                   }}
                 >
                   <Text style={{ fontSize: 18, marginRight: 8, color: updates === 'No' ? 'white' : '#2c4a43' }}>❌</Text>
-                  <Text 
-                  className={`text-sm `}
-                  style={{ fontWeight: '500', color: updates === 'No' ? 'white' : '#2c4a43' }}>No</Text>
+                  <Text
+                    className={`text-sm `}
+                    style={{ fontWeight: '500', color: updates === 'No' ? 'white' : '#2c4a43' }}>No</Text>
                 </Pressable>
               </View>
 
@@ -895,7 +901,7 @@ export default function ExitInterview() {
 
         {/* Acknowledgment & Consent */}
         <FormCard icon="AC" title="Acknowledgment & Consent">
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flexDirection: 'row', gap: 12,marginTop:6 }}>
             <View style={{ flex: 1 }}>
               <Field
                 label="Participant Signature"

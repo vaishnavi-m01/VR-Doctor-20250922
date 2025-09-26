@@ -613,7 +613,7 @@ export default function SocioDemographic() {
       >
 
         <FormCard icon="👤" title="Section 1: Personal Information">
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="Randomization ID"
               placeholder="Auto-generated"
@@ -623,7 +623,7 @@ export default function SocioDemographic() {
             />
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="1. Age"
               placeholder="__ years"
@@ -642,7 +642,7 @@ export default function SocioDemographic() {
           </View>
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="2. Emergency Contact"
               placeholder="__ emergency contact number"
@@ -661,7 +661,7 @@ export default function SocioDemographic() {
 
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             {/* Gender Label */}
             <Text
               className={`text-base font-medium mb-4 ${errors.gender ? "text-red-500" : "text-[#2c4a43]"
@@ -745,7 +745,7 @@ export default function SocioDemographic() {
             )}
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             {/* Label with error handling */}
             <Text
               className={`text-base font-medium mb-4 ${errors.maritalStatus ? "text-red-500" : "text-[#2c4a43]"
@@ -841,7 +841,7 @@ export default function SocioDemographic() {
           </View>
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Text
               className={`text-base font-medium mb-4 ${errors.KnowledgeIn ? "text-red-500" : "text-[#2c4a43]"
                 }`}
@@ -872,7 +872,7 @@ export default function SocioDemographic() {
           <View className="flex-col gap-4 mt-6">
             {/* Question 5 */}
             <View className="flex-1">
-              <View className={"mt-6"}>
+              <View className={"mt-4"}>
                 <Text
                   className={`text-base font-medium mb-4 ${errors.faithWellbeing ? "text-red-500" : "text-[#2c4a43]"
                     }`}
@@ -918,8 +918,7 @@ export default function SocioDemographic() {
             </View>
 
             {/* Question 6 */}
-            <View className="flex-1">
-              <View className="mt-6">
+              <View className="mt-4">
                 <Text
                   className={`text-base font-medium mb-4 ${errors.practiceReligion ? "text-red-500" : "text-[#2c4a43]"
                     }`}
@@ -973,11 +972,10 @@ export default function SocioDemographic() {
                 </View>
               )}
             </View>
-          </View>
 
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Text
               className={`text-base font-medium mb-4 ${errors.educationLevel ? "text-red-500" : "text-[#2c4a43]"
                 }`}
@@ -998,7 +996,7 @@ export default function SocioDemographic() {
           </View>
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Text
               className={`text-base font-medium mb-4 ${errors.employmentStatus ? "text-red-500" : "text-[#2c4a43]"
                 }`}
@@ -1036,7 +1034,7 @@ export default function SocioDemographic() {
               <Text className="text-red-500 text-sm mt-2">{errors.cancerDiagnosis}</Text>
             )}
           </View> */}
-          <View className="mt-6">
+          <View className="mt-4">
             <DropdownField
               label="1. Cancer Diagnosis"
               value={cancerDiagnosis}
@@ -1052,7 +1050,7 @@ export default function SocioDemographic() {
 
 
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Text className={`text-base font-medium mb-4 ${errors.cancerStage ? "text-red-500" : "text-[#2c4a43]"}`}>
               2. Stage of Cancer
             </Text>
@@ -1071,7 +1069,7 @@ export default function SocioDemographic() {
             />
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="3. Grade (ECOG score)"
               placeholder="________"
@@ -1085,7 +1083,7 @@ export default function SocioDemographic() {
             </Text>
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Text className={`text-base font-medium mb-4 ${errors.treatmentType ? "text-red-500" : "text-[#2c4a43]"}`}>
               4. Type of Treatment
             </Text>
@@ -1122,7 +1120,7 @@ export default function SocioDemographic() {
             </View>
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="7. Other Medical Conditions (if any)"
               placeholder="_________________________"
@@ -1133,7 +1131,7 @@ export default function SocioDemographic() {
             />
           </View>
 
-          <View className="mt-6">
+          <View className="mt-4">
             <Field
               label="8. Current Medications"
               placeholder="_____________________________________"
@@ -1155,7 +1153,7 @@ export default function SocioDemographic() {
             const hasError = habitErrors[habit.HabitID];
 
             return (
-              <View key={habit.HabitID} className="mt-6">
+              <View key={habit.HabitID} className="mt-4">
                 {/* Title */}
                 <Text
                   className={`text-base font-medium  mb-4 ${hasError ? "text-red-500" : "text-[#2c4a43]"}`}
@@ -1200,7 +1198,7 @@ export default function SocioDemographic() {
 
 
         <FormCard icon="✍️" title="Section 4: Consent and Signature">
-          <View className="mt-6">
+          <View className="mt-4">
             {/* Consent Checkbox */}
             <View className="flex-row items-center mb-2">
               <TouchableOpacity
@@ -1208,7 +1206,7 @@ export default function SocioDemographic() {
                   setConsentGiven(!consentGiven);
                   if (!consentGiven) setConsentError(false); // clear error on check
                 }}
-                className={`w-5 h-5 rounded-md border mr-3 flex items-center justify-center ${consentGiven ? "bg-[#0ea06c] border-[#0ea06c]" : "border-gray-300"
+                className={`w-6 h-6 rounded-md border mr-3 flex items-center justify-center ${consentGiven ? "bg-[#0ea06c] border-[#0ea06c]" : "border-gray-300"
                   }`}
               >
                 {consentGiven && <Text className="text-white text-sm">✔</Text>}

@@ -284,8 +284,8 @@ export default function PostVRAssessment() {
 
     return (
       <View key={questionId} className="mt-3">
-        <Text  className={`text-sm mb-2 ${
-          hasError ? 'text-red-600 font-semibold' : 'text-[#4b5f5a]'
+        <Text  className={`text-md font-medium  mb-2 ${
+          hasError ? 'text-red-600 font-semibold' : 'text-[#2c4a43]'
           }`}
         >
           {question.AssessmentTitle}
@@ -529,7 +529,7 @@ export default function PostVRAssessment() {
       <ScrollView className="flex-1 p-4 bg-bg pb-[400px]" style={{ paddingTop: '0.1rem' }}>
         {/* Main Assessment Card */}
         <FormCard icon="J" title="Post‑VR Assessment & Questionnaires">
-          <View className="flex-row gap-3">
+          <View className="flex-row gap-3 mt-4">
             <View className="flex-1">
               <Field label="Participant ID" placeholder="e.g., PID-0234" value={participantId} onChangeText={setParticipantId} editable={false} />
             </View>

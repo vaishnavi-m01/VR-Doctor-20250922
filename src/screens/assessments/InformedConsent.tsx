@@ -399,7 +399,7 @@ export default function InformedConsentForm({
             <ScrollView className="flex-1 px-4 bg-bg pb-[400px]">
                 {/* Study Details */}
                 <FormCard icon="A" title="Study Details">
-                    <View className="mb-4">
+                    <View className="mb-4 mt-4">
                         <Text className="text-md text-[#2c4a43] font-medium mb-2">
                             Study Title
                         </Text>
@@ -438,7 +438,7 @@ export default function InformedConsentForm({
                 {/* Participant Information */}
                 <FormCard icon="B" title="Participant Information">
                     {/* Row 1 */}
-                    <View className="flex-row space-x-4 mb-4">
+                    <View className="flex-row space-x-4 mb-4 mt-4">
                         {/* <LabeledInput
                             label="Participant’s Initials"
                             placeholder="e.g. ABC"
@@ -514,7 +514,7 @@ export default function InformedConsentForm({
                     error={!!errors.allInitialed}
                 >
                     {informedConsent.map((s, idx) => (
-                        <View key={s.ICMID} className="mb-3">
+                        <View key={s.ICMID} className="mb-3 mt-4">
                             <View className="bg-white border border-[#e6eeeb] rounded-2xl p-3">
                                 <View className="flex-row items-start">
                                     {/* Left roman bubble */}
@@ -585,7 +585,7 @@ export default function InformedConsentForm({
                 {/* Signatures */}
                 <FormCard icon='D' title="Signatures">
                     {/* Grid 2×2 */}
-                    <View className="space-y-4">
+                    <View className="space-y-4 mt-4">
                         <View className="flex-row space-x-4">
                             <SignatureBlock
                                 title="Signature (or Thumb impression) of the Subject"

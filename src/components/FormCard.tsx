@@ -31,7 +31,7 @@ export default function FormCard({ icon, title, desc, children, error }: Props) 
             {title}
           </Text>
 
-          {!!desc && <Text className="text-xs text-muted mt-1 ml-[14px]">{desc}</Text>}
+          {!!desc && <Text className="text-xs text-muted mt-4 ml-[14px]">{desc}</Text>}
         </View>
 
         {/* Form content */}
