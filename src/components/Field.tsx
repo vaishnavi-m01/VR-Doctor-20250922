@@ -11,6 +11,7 @@ type FieldProps = {
 export function Field({ label, error, value, isEditMode = true, ...props }: FieldProps) {
   const [showError, setShowError] = useState(!!error);
 
+  // hide error if user types something
   useEffect(() => {
     if (value && value.trim() !== "") {
       setShowError(false);
@@ -20,17 +21,16 @@ export function Field({ label, error, value, isEditMode = true, ...props }: Fiel
   }, [value, error]);
 
   return (
-    <View className="mb-3 w-full">
+    <View className="mb-3">
       <Text
-        className={`text-md font-medium mb-2 ${showError ? "text-red-500" : "text-[#2c4a43]"}`}
-        style={{ flexShrink: 1, flexWrap: 'wrap' }}
+        className={`text-md font-medium  mb-2 ${showError ? "text-red-500" : "text-[#2c4a43]"}`}
       >
         {label}
       </Text>
 
       <TextInput
         placeholderTextColor="#95a7a2"
-        className="border border-[#dce9e4] rounded-xl px-4 py-3 bg-white text-base text-gray-700 w-full"
+        className="border border-[#dce9e4] rounded-xl px-4 py-3 bg-white text-base text-gray-700"
         style={{
           backgroundColor: "#f8f9fa",
           borderColor: "#e5e7eb",
@@ -42,6 +42,5 @@ export function Field({ label, error, value, isEditMode = true, ...props }: Fiel
         {...props}
       />
     </View>
-
   );
 }

@@ -400,7 +400,7 @@ export default function InformedConsentForm({
                 {/* Study Details */}
                 <FormCard icon="A" title="Study Details">
                     <View className="mb-4">
-                        <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
+                        <Text className="text-md text-[#2c4a43] font-medium mb-2">
                             Study Title
                         </Text>
                         <View className="bg-white border border-[#e6eeeb] rounded-2xl p-4 min-h-[96px]">
@@ -418,7 +418,7 @@ export default function InformedConsentForm({
 
                     <View className="grid md:flex md:flex-row md:space-x-4">
                         <View className="flex-1 mb-4">
-                            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
+                            <Text className="text-md font-medium text-[#2c4a43]  mb-2">
                                 Study Number
                             </Text>
                             <View className="bg-white border border-[#e6eeeb] rounded-2xl p-3">
@@ -477,7 +477,7 @@ export default function InformedConsentForm({
 
                         {/* Age */}
                         <View className="flex-[0.6]">
-                            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
+                            <Text className="text-md font-medium text-[#2c4a43]  mb-2">
                                 Age
                             </Text>
                             <InputShell>
@@ -566,7 +566,7 @@ export default function InformedConsentForm({
                                         return newVal;
                                     });
                                 }}
-                                className={`w-5 h-5 mr-3 rounded-[6px] border-2 items-center justify-center ${agree ? "bg-[#0ea06c] border-[#0ea06c]" : "border-[#cfe0db]"
+                                className={`w-6 h-6 mr-3 rounded-[6px] border-2 items-center justify-center  ${agree ? "bg-[#0ea06c] border-[#0ea06c]" : "border-[#cfe0db]"
                                     }`}
                             >
                                 {agree && <Text className="text-white text-[10px]">✓</Text>}
@@ -684,7 +684,7 @@ function LabeledInput({
 }) {
     return (
         <View className="flex-1">
-            <Text className="text-[13px] text-[#4b5f5a] font-semibold mb-2">
+            <Text className="text-md font-medium text-[#2c4a43] mb-2">
                 {label}
             </Text>
             <InputShell>
@@ -762,7 +762,7 @@ export function SignatureBlock({
         <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
             {/* Title */}
             <Text
-                className={`text-[13px] font-semibold mb-3 ${sigError ? "text-red-500" : "text-[#4b5f5a]"
+                className={`text-md font-medium mb-3 ${sigError ? "text-red-500" : "text-[#2c4a43]"
                     }`}
             >
                 {title}
@@ -793,7 +793,7 @@ export function SignatureBlock({
                 {/* Name */}
                 <View className="flex-[0.8]">
                     <Text
-                        className={`text-[12px] mb-1 ${nameError ? "text-red-500" : "text-[#6b7a77]"
+                        className={`text-md font-base mb-1 ${nameError ? "text-red-500" : "text-[#2c4a43]"
                             }`}
                     >
                         {nameLabel}
@@ -863,7 +863,7 @@ export function InvestigatorNameBlock({
         <View className="flex-1 bg-white border border-[#e6eeeb] rounded-2xl p-4">
             {/* Label */}
             <Text
-                className={`text-[13px] font-semibold mb-3 ${showError ? "text-red-500" : "text-[#4b5f5a]"
+                className={`text-md font-medium mb-3 ${showError ? "text-red-500" : "text-[#2c4a43]"
                     }`}
             >
                 Study Investigator’s Name

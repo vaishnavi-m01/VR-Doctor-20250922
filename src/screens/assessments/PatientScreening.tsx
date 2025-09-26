@@ -348,7 +348,7 @@ export default function PatientScreening() {
         <FormCard icon="I" title="Medical Details">
           <View className="flex-row items-center justify-between mb-2">
             <Text
-              className={`text-xs ${errors.dt ? "text-red-500" : "text-muted"}`}
+              className={`text-md font-medium ${errors.dt ? "text-red-500" : "text-[#2c4a43]"}`}
             >
               Distress Thermometer (0–10)
             </Text>
@@ -387,7 +387,7 @@ export default function PatientScreening() {
           <View className="flex-row gap-3 mt-6">
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-xs text-[#4b5f5a]">FACT-G Total Score</Text>
+                <Text className="text-md font-medium text-[#2c4a43] mt-4">FACT-G Total Score</Text>
                 <Pressable
                   onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId })}
                   className="px-4 py-3 bg-[#0ea06c] rounded-lg"
@@ -462,7 +462,7 @@ export default function PatientScreening() {
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Text
-                className={`text-xs mb-2 ${errors.implants && !implants ? "text-red-500" : "text-[#4b5f5a]"
+                className={`text-md font-medium mb-2 ${errors.implants && !implants ? "text-red-500" : "text-[#2c4a43]"
                   }`}
               >
                 Any electronic implants?
@@ -494,7 +494,7 @@ export default function PatientScreening() {
             <View className="flex-1">
               <Text
                 // className={`text-xs mb-2 ${errors.prosthetics ? "text-red-500" : "text-[#4b5f5a]"
-                className={`text-xs mb-2 ${errors.prosthetics && !prosthetics ? "text-red-500" : "text-[#4b5f5a]"
+                className={`text-md font-medium mb-2 ${errors.prosthetics && !prosthetics ? "text-red-500" : "text-[#2c4a43]"
 
                   }`}
               >

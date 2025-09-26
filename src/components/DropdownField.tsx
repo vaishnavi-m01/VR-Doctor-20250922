@@ -35,7 +35,7 @@ export function DropdownField({
     <View className="mb-4 w-full">
       {/* Label */}
       <Text
-        className={`text-base font-medium mb-4 ${error ? "text-red-500" : "text-[#2c4a43]"}`}
+        className={`text-md font-medium mb-2 ${error ? "text-red-500" : "text-[#2c4a43]"}`}
       >
         {label}
       </Text>

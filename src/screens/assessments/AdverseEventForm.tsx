@@ -295,7 +295,7 @@ export default function AdverseEventForm() {
                     setConditionContribution(ae.PreExistingContribution || "");
                     setFollowUpParticipantStatus(ae.FollowUpPatientStatus || "");
                     setInvestigatorSignature(ae.InvestigatorSignature || "");
-                    setFollowUpDate(format(ae.FollowUpVisitDate ??"") );
+                    setFollowUpDate(format(ae.FollowUpVisitDate ?? ""));
                     setDate(format(ae.InvestigatorSignDate ?? ""));
 
 
@@ -650,9 +650,9 @@ export default function AdverseEventForm() {
                     />
                     <View
                         className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-32 max-h-48"
-                         style={{ elevation: 10, maxHeight: 80, overflow: 'hidden' }}
+                        style={{ elevation: 10, maxHeight: 80, overflow: 'hidden' }}
                     >
-                        <ScrollView style={{ maxHeight: 140}}>
+                        <ScrollView style={{ maxHeight: 140 }}>
                             {availableSessions.map((session, index) => (
                                 <Pressable
                                     key={session}
@@ -689,7 +689,7 @@ export default function AdverseEventForm() {
             <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }} keyboardShouldPersistTaps="handled"
             >
                 <FormCard icon="AE" title="Adverse Event">
-                    <View className="flex-row gap-3">
+                    <View className="flex-row gap-3 mt-4">
                         <DateField label="Date of Report (Optional)" value={reportDate} onChange={setReportDate} />
                         <View className="flex-1"><Field
                             label="Participant ID (Optional)"
@@ -699,14 +699,17 @@ export default function AdverseEventForm() {
                         />
                         </View>
                     </View>
-                    <Field
-                        label="Reported By (Name & Role) (Optional)"
-                        placeholder="e.g., Dr. John (Investigator)"
-                        multiline
-                        value={reportedBy}
-                        error={errors.reportedBy}
-                        onChangeText={setReportedBy}
-                    />
+                    <View className="mt-4">
+                        <Field
+                            label="Reported By (Name & Role) (Optional)"
+                            placeholder="e.g., Dr. John (Investigator)"
+                            multiline
+                            value={reportedBy}
+                            error={errors.reportedBy}
+                            onChangeText={setReportedBy}
+                        />
+
+                    </View>
 
                     <Text className="text-[12px] text-gray-500">
                         These fields mirror the form header (Date of Report, Participant ID, Reported By). All fields are optional.
@@ -715,7 +718,7 @@ export default function AdverseEventForm() {
                 </FormCard>
 
                 <FormCard icon="1" title="Adverse Event Details">
-                    <View className="flex-row gap-3">
+                    <View className="flex-row gap-3 mt-4">
                         <DateField label="Date of AE onset" value={dateOfAE} onChange={setdateOfAE} />
                         <Field
                             label="Time of AE onset"
@@ -724,19 +727,22 @@ export default function AdverseEventForm() {
                             onChangeText={settimeOfAE}
                         />
                     </View>
-                    <Field
-                        label={`Description (symptoms, severity)`}
-                        placeholder="symptoms, context, severity..."
-                        multiline
-                        value={Description ?? ""}
-                        error={errors?.Description}
-                        onChangeText={setdescription}
-                    />
-                    <View className="mb-3">
-                        <View className="flex-row justify-between items-center mb-2">
+                    <View className="mt-4">
+                        <Field
+                            label={`Description (symptoms, severity)`}
+                            placeholder="symptoms, context, severity..."
+                            multiline
+                            value={Description ?? ""}
+                            error={errors?.Description}
+                            onChangeText={setdescription}
+                        />
+                    </View>
+
+                    <View className="mt-4">
+                        <View className="flex-row justify-between items-center mb-2 ">
                             {/* <Text className="text-xs text-[#4b5f5a]">VR session in progress?</Text> */}
                             <Text
-                                className={`text-xs mb-2 ${errors.completed && !completed ? "text-red-500" : "text-[#4b5f5a]"
+                                className={`text-md font-medium mb-2 ${errors.completed && !completed ? "text-red-500" : "text-[#2c4a43]"
                                     }`}
                             >
                                 VR session in progress?
@@ -780,24 +786,27 @@ export default function AdverseEventForm() {
 
 
                     </View>
-                    <DropdownField
-                        label="VR Content Type at AE"
-                        value={vrContentType}
-                        error={errors?.vrContentType}
-                        onValueChange={(val) => {
-                            setVrContentType(val);
-                            setErrors((prev) => ({ ...prev, vrContentType: "" }));
-                        }}
-                        options={[
-                            { label: "Chemotherapy", value: "chemotherapy" },
-                            { label: "Anxiety", value: "anxiety" },
-                            { label: "Relaxation", value: "relaxation" },
-                            { label: "Pain Management", value: "pain" },
-                        ]}
-                    />
+                    <View className="mt-6">
+                        <DropdownField
+                            label="VR Content Type at AE"
+                            value={vrContentType}
+                            error={errors?.vrContentType}
+                            onValueChange={(val) => {
+                                setVrContentType(val);
+                                setErrors((prev) => ({ ...prev, vrContentType: "" }));
+                            }}
+                            options={[
+                                { label: "Chemotherapy", value: "chemotherapy" },
+                                { label: "Anxiety", value: "anxiety" },
+                                { label: "Relaxation", value: "relaxation" },
+                                { label: "Pain Management", value: "pain" },
+                            ]}
+                        />
+                    </View>
 
-                    <View className="flex-1 mb-3">
-                        <Text className={`text-xs mb-2 ${errors.guidance && !guidance ? "text-red-500" : "text-[#4b5f5a]"
+
+                    <View className="flex-1  mt-4">
+                        <Text className={`text-md font-medium mb-2 ${errors.guidance && !guidance ? "text-red-500" : "text-[#2c4a43]"
                             }`}>Was the Session Interrupted?</Text>
 
                         <View className="flex-row gap-2">
@@ -838,7 +847,7 @@ export default function AdverseEventForm() {
                 <FormCard icon="2" title=" Severity & Impact Assessment">
 
                     <Text
-                        className={`text-xs mb-2 ${errors.severity && !severity ? "text-red-500" : "text-[#4b5f5a]"
+                        className={`text-md font-medium mb-3 mt-4 ${errors.severity && !severity ? "text-red-500" : "text-[#2c4a43]"
                             }`}
                     >
                         AE Severity Level (Check One):
@@ -872,11 +881,11 @@ export default function AdverseEventForm() {
 
 
                     {/* Divider */}
-                    <View className="h-px bg-gray-200 my-4" />
+                    <View className="h-px bg-gray-200 my-4 mb-4"/>
 
                     {/* Outcome of AE */}
                     <Text
-                        className={`text-sm font-medium mb-2 ${errors.outcome && outcome.length === 0 ? "text-red-500" : "text-gray-700"
+                        className={`text-md font-medium mb-3 mt-2 ${errors.outcome && outcome.length === 0 ? "text-red-500" : "text-[#2c4a43]"
                             }`}
                     >
                         Outcome of AE:
@@ -910,7 +919,7 @@ export default function AdverseEventForm() {
                 </FormCard>
                 <FormCard icon="3" title="Action Taken">
                     <Text
-                        className={`text-sm font-medium mb-2 ${errors.actions && actions.length === 0 ? "text-red-500" : "text-gray-700"
+                        className={`text-md font-medium mb-2 mt-4 ${errors.actions && actions.length === 0 ? "text-red-500" : "text-[#2c4a43]"
                             }`}
                     >
                         Immediate Action Taken (Check all that apply):
@@ -935,7 +944,7 @@ export default function AdverseEventForm() {
 
 
 
-                    <View className="flex-row gap-3 mt-2">
+                    <View className="flex-row gap-3 mt-4">
                         <DateField label="Date physician notified" value={physicianDateTime} onChange={setPhysicianDateTime} />
                         <View className="flex-1"><Field label="Physician name" placeholder="Dr. _____" value={physicianName} onChangeText={setPhysicianName} error={errors?.physicianName} /></View>
                     </View>
@@ -943,9 +952,9 @@ export default function AdverseEventForm() {
 
 
                 <FormCard icon="4" title="Causality Assessment">
-                    <View className="mb-4">
+                    <View className="mb-4 mt-4">
                         <Text
-                            className={`text-xs mb-1 ${errors.aeRelated && !aeRelated ? "text-red-500" : "text-[#4b5f5a]"
+                            className={`text-md font-medium mb-2 ${errors.aeRelated && !aeRelated ? "text-red-500" : "text-[#2c4a43]"
                                 }`}
                         >
                             AE related to VR use?
@@ -969,9 +978,9 @@ export default function AdverseEventForm() {
 
                     <View>
                         <Text
-                            className={`text-xs mb-1 ${errors.conditionContribution && !conditionContribution
+                            className={`text-md font-medium mb-2 ${errors.conditionContribution && !conditionContribution
                                 ? "text-red-500"
-                                : "text-[#4b5f5a]"
+                                : "text-[#2c4a43]"
                                 }`}
                         >
                             Pre-existing condition contribution?
@@ -994,7 +1003,7 @@ export default function AdverseEventForm() {
 
 
                 <FormCard icon="5" title="Follow-Up & Resolution">
-                    <View className="flex-row gap-3">
+                    <View className="flex-row gap-3 mt-4">
                         <View className="flex-1">
                             <DateField label="Follow-up visit date" value={followUpDate} onChange={setFollowUpDate} />
                         </View>
