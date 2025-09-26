@@ -1110,8 +1110,8 @@ export default function SocioDemographic() {
             </View>
             <View className="flex-1">
               <Field
-                label="6. Duration of Treatment (Weeks)"
-                placeholder="______________ months"
+                label="6. Duration of Treatment"
+                placeholder="______________ weeks"
                 value={treatmentDuration}
                 error={errors?.treatmentDuration}
                 onChangeText={setTreatmentDuration}
