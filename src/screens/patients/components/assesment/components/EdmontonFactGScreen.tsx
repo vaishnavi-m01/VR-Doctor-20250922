@@ -10,6 +10,8 @@ import Toast from "react-native-toast-message";
 import { UserContext } from 'src/store/context/UserContext';
 import { KeyboardAvoidingView } from "react-native";
 import { Platform } from "react-native";
+import { Field } from "@components/Field";
+import DateField from "@components/DateField";
 
 interface FactGQuestion {
   FactGCategoryId: string;
@@ -104,47 +106,53 @@ const calculateItemScore = (response: number | null): number | null => {
   }
 };
 
-
 const calculateSubscaleScore = (
   answers: Record<string, number | null>,
   items: { code: string; TypeOfQuestion?: string }[]
 ): number => {
-  let sumScores = 0;
+  const totalQuestions = items.length;
+  const answeredScores: number[] = [];
 
   items.forEach((item) => {
     const response = answers[item.code];
     const itemScore = calculateItemScore(response);
     if (itemScore !== null) {
-      sumScores += itemScore;
+      answeredScores.push(itemScore);
     }
   });
 
-  return sumScores;
+  // If no answers, return 0
+  if (answeredScores.length === 0 || totalQuestions === 0) return 0;
+
+  // Custom formula:
+  // (sum of answered scores) * (total questions) / (questions answered)
+  const sumScores = answeredScores.reduce((acc, val) => acc + val, 0);
+  const finalScore = (sumScores * totalQuestions) / answeredScores.length;
+
+  // Final rounded value
+  return Math.round(finalScore);
 };
 
-
 const computeScores = (answers: Record<string, number | null>, subscales: Subscale[]): ScoreResults => {
-  const PWB_subscale = subscales.find((s) => s.key === "Physical well-being");
-  const SWB_subscale = subscales.find((s) => s.key === "Social/Family well-being");
-  const EWB_subscale = subscales.find((s) => s.key === "Emotional well-being");
-  const FWB_subscale = subscales.find((s) => s.key === "Functional well-being");
+  const getSubscaleScore = (key: string) => {
+    const subscale = subscales.find((s) => s.key === key);
+    return subscale ? calculateSubscaleScore(answers, subscale.items) : 0;
+  };
 
-  const PWB = PWB_subscale ? calculateSubscaleScore(answers, PWB_subscale.items) : 0;
-  const SWB = SWB_subscale ? calculateSubscaleScore(answers, SWB_subscale.items) : 0;
-  const EWB = EWB_subscale ? calculateSubscaleScore(answers, EWB_subscale.items) : 0;
-  const FWB = FWB_subscale ? calculateSubscaleScore(answers, FWB_subscale.items) : 0;
+  const PWB = getSubscaleScore("Physical well-being");
+  const SWB = getSubscaleScore("Social/Family well-being");
+  const EWB = getSubscaleScore("Emotional well-being");
+  const FWB = getSubscaleScore("Functional well-being");
   const TOTAL = PWB + SWB + EWB + FWB;
 
   return {
-    PWB: Math.round(PWB),
-    SWB: Math.round(SWB),
-    EWB: Math.round(EWB),
-    FWB: Math.round(FWB),
-    TOTAL: Math.round(TOTAL),
+    PWB,
+    SWB,
+    EWB,
+    FWB,
+    TOTAL
   };
 };
-
-
 
 
 export default function EdmontonFactGScreen() {
@@ -499,7 +507,7 @@ export default function EdmontonFactGScreen() {
         return {
           FactGCategoryId: found?.FactGCategoryId || "FGC_0001",
           FactGQuestionId: code,
-          ScaleValue: val !== null ? String(val) : "0",
+          ScaleValue: val !== null ? String(val) : "x",
           FlagStatus: "Yes",
           WeekNo: 1,
         };
@@ -708,8 +716,10 @@ export default function EdmontonFactGScreen() {
                 <Text className="text-sm text-gray-700 font-semibold">New Form</Text>
               </Pressable>
              )}
+             
 
             <ScrollView style={{ maxHeight: 140}}>
+
               {availableDates.length > 0 ? (
                 availableDates.map((date, index) => (
                   <Pressable
@@ -738,6 +748,17 @@ export default function EdmontonFactGScreen() {
       {/* <ScrollView style={{ flex: 1, paddingVertical: 5, paddingHorizontal: 16 }}> */}
       <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}    keyboardShouldPersistTaps="handled">
 
+        <FormCard icon="F" title="Fact G">
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+            <View style={{ flex: 1 }}>
+              <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} value={`${patientId}`} onChangeText={() => { }} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <DateField label="Date" value={formatTodayDate()} onChange={() => {}}  />
+            </View>
+          </View>
+        </FormCard>
+
         <FormCard
           icon="FG"
           title={`FACT-G (Version 4) ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}
@@ -762,7 +783,7 @@ export default function EdmontonFactGScreen() {
           {!loading &&
             !error &&
             subscales.map((scale) => (
-              <FormCard key={scale.key} icon={scale.shortCode} title={scale.label}>
+              <FormCard key={scale.key} icon={scale.shortCode} title={scale.label} >
                 {scale.items.map((item, index) => (
                   <View key={item.code}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
@@ -776,7 +797,7 @@ export default function EdmontonFactGScreen() {
                       >
                         {index + 1}
                       </Text>
-                      <Text style={{ flex: 1, fontSize: "1rem", color: "#374151" }}>{item.text}</Text>
+                      <Text style={{ flex: 1, fontSize: "1rem", color: "#374151" }}>{item.text} {item.TypeOfQuestion === "-" ? " (-)" : ""}</Text>
                       <RatingButtons questionCode={item.code} currentValue={answers[item.code] ?? null} />
                     </View>
                     {index < scale.items.length - 1 && <View style={{ borderBottomColor: "#e5e7eb", borderBottomWidth: 1, marginVertical: 8 }} />}

@@ -15,6 +15,8 @@ import { PARTICIPANT_RESPONSES } from '../../constants/appConstants';
 import DateField from '@components/DateField';
 import { KeyboardAvoidingView } from 'react-native';
 import { Platform } from 'react-native';
+import { formatDateDDMMYYYY } from 'src/utils/date';
+import { DropdownField } from '@components/DropdownField';
 
 
 const STATIC_DEVICE_ID = 'DEV-001';
@@ -152,12 +154,21 @@ const StudyObservation = () => {
   const [baselineLoading, setBaselineLoading] = useState<boolean>(false);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+ const rawDate = formValues['SOFID-1']?.split('T')[0] || '';
+ const formattedDate = formatDateDDMMYYYY(rawDate);
+
+ const weekOptions = Array.from({ length: 12 }, (_, i) => ({
+  label: `Week ${i + 1}`,
+  value: (i + 1).toString(),
+}));
+
   
 
   // Group fields into categories for form cards
   const groupFields = (fields: FormField[]) => {
     const baseline = fields.filter((f) => ['SOFID-7', 'SOFID-8'].includes(f.SOFID));
-    const basic = fields.filter((f) => ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5', 'SOFID-6'].includes(f.SOFID));
+    const basic = fields.filter((f) => ['SOFID-1', 'SOFID-2', 'SOFID-3', 'SOFID-4', 'SOFID-5'].includes(f.SOFID));
     const session = fields.filter((f) =>
       ['SOFID-9', 'SOFID-10', 'SOFID-11', 'SOFID-12', 'SOFID-13', 'SOFID-14', 'SOFID-15'].includes(f.SOFID)
     );
@@ -452,7 +463,7 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
       'SOFID-3',
       'SOFID-4',
       'SOFID-5',
-      'SOFID-6',
+      // 'SOFID-6',
       // 'SOFID-11',//Start time
       // 'SOFID-12',//End time
     ];
@@ -621,8 +632,8 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
     setYesNoStates({});  
     setResp('');         
     setObservationId(null);
-    setFactGScore(null);
-    setDistressScore(null);
+    // setFactGScore(null);
+    // setDistressScore(null);
     setFieldErrors({});
 
     setFormValues(prev => ({
@@ -729,7 +740,7 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
      <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 130 : 0}
     >
         <View className="px-4" style={{ paddingTop: 8 }}>
           <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
@@ -740,15 +751,56 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
         </View>
 
         <ScrollView className="flex-1 p-4 bg-bg pb-[400px]"  style={{ paddingTop: 5 }}    keyboardShouldPersistTaps="handled">
-          <FormCard icon="S" title="Study Observation - Basic Information">
-            <View className="flex-row flex-wrap gap-x-4 gap-y-3">
-              {groupedFields.basic.map((f) => (
-                <View key={f.SOFID} className="flex-1" style={{ minWidth: '45%' }}>
-                  {renderTextField(f.SOFID, f.FieldLabel)}
-                </View>
-              ))}
+         <FormCard icon="S" title="Study Observation - Basic Information">
+        
+           <View className="flex-row flex-wrap gap-x-4 gap-y-3 mt-3">
+            <View style={{ minWidth: '48%' }}>
+              <Field
+                label="Participant ID"
+                placeholder={`Participant ID: ${formValues['SOFID-2'] || ''}`}
+                value={formValues['SOFID-2'] || ''}
+                editable={false}
+              />
             </View>
-          </FormCard>
+            <View style={{ minWidth: '45%' }}>
+              <DateField
+                label="Date"
+                value={formValues['SOFID-1']?.split('T')[0] || ''}
+                onChange={(val) => updateFormValue('SOFID-1', val)}
+                mode="date"
+                placeholder="DD-MM-YYYY"
+              />
+            </View>
+
+            {groupedFields.basic
+              .filter((f) => f.SOFID !== 'SOFID-1' && f.SOFID !== 'SOFID-2')
+              .map((f) => {
+                 if (f.SOFID === 'SOFID-5') {
+                  return (
+                    <View key={f.SOFID} className="flex-1" style={{ minWidth: '45%' }}>
+                      <DropdownField
+                        label="Session Week"
+                        options={weekOptions}  
+                        value={formValues['SOFID-5'] || ''}
+                        onValueChange={(val: string) => updateFormValue('SOFID-5', val)} 
+                        placeholder="Select week"
+                      />
+                    </View>
+                  );
+                } else {
+                  return (
+                    <View key={f.SOFID} className="flex-1" style={{ minWidth: '45%' }}>
+                      {renderTextField(f.SOFID, f.FieldLabel)}
+                    </View>
+                  );
+                }
+              })}
+
+              
+          </View>
+
+        </FormCard>
+
 
           <FormCard icon="B" title="Baseline Assessment & Scores">
             <View className="flex-row flex-wrap gap-3">
@@ -782,30 +834,29 @@ const fetchBaselineScores = async (participantId: string, studyId: string) => {
               {['SOFID-11', 'SOFID-12'].map((sofid) => {
                 const field = formFields.find((f) => f.SOFID === sofid);
                 if (!field) return null;
-                return (
-                <View key={sofid} className="flex-1">
-                  <Text 
-                   className={`text-sm `}
-                   style={{ color: fieldErrors[sofid] ? '#EF4444' : '#4b5f5a', marginBottom: 2, }}>
-                    {field.FieldLabel}
-                  </Text>
-                  <DateField
-                    // label={field.FieldLabel}
-                    value={formValues[sofid] || ''}
-                    onChange={(val) => updateFormValue(sofid, val)}
-                    mode="time"
-                    placeholder="HH:mm:ss"
-                  />
-                  {/* {fieldErrors[sofid] && (
-                    <Text style={{ color: '#EF4444', fontSize: 10, marginTop: 2 }}>
-                      {fieldErrors[sofid]}
-                    </Text>
-                  )} */}
-                </View>
 
+                return (
+                  <View key={sofid} className="flex-1">
+                    <Text
+                      className="text-sm"
+                      style={{
+                        color: fieldErrors[sofid] ? '#EF4444' : '#4b5f5a',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {field.FieldLabel}
+                    </Text>
+                    <DateField
+                      value={formValues[sofid] || ''}
+                      onChange={(val) => updateFormValue(sofid, val)}
+                      mode="time"
+                      placeholder="HH:mm:ss"
+                    />
+                  </View>
                 );
               })}
             </View>
+
 
             {renderPatientResponse()}
             {renderYesNoField('SOFID-14', 'Any Technical Issues?')}

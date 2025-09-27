@@ -88,6 +88,11 @@ export default function ExitInterview() {
     age: number;
     studyId: number;
   };
+
+  const [groupType, setGroupType] = useState('');
+  const [groupTypeNumber, setGroupTypeNumber] = useState('');
+
+
   const todayStr = new Date().toISOString().split('T')[0];
   const { userId } = useContext(UserContext);
 
@@ -148,6 +153,8 @@ export default function ExitInterview() {
         const data = res.data?.ResponseData;
         if (data) {
           setParticipantName(data.Signature ?? '');
+          setGroupType(data.GroupType ?? '');
+          setGroupTypeNumber(data.GroupTypeNumber ?? '');
         }
       } catch (err) {
         console.error('Error fetching participant details', err);
@@ -251,37 +258,40 @@ export default function ExitInterview() {
     clearError(field, val);
   };
 
-  // Validate all fields and dynamic questions
   const handleValidate = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
     Object.entries(groupedQuestions).forEach(([qid, group]) => {
-      const ans = answers[qid];
-      if (Array.isArray(ans)) {
-        if (ans.length === 0) newErrors[qid] = 'This field is required';
-      } else {
-        if (isEmptyString(ans)) newErrors[qid] = 'This field is required';
-      }
-      if (
-        group.QuestionText.toLowerCase().includes('reason for discontinuation') &&
-        Array.isArray(ans) &&
-        ans.includes('Other') &&
-        isEmptyString(otherReasonText)
-      ) {
-        newErrors.otherReasonText = 'Please specify other reason';
-      }
-    });
+    if (qid === 'EIQID-2') return; // Skip required validation for VRExperienceRating
+
+    const ans = answers[qid];
+    if (Array.isArray(ans)) {
+      if (ans.length === 0) newErrors[qid] = 'This field is required';
+    } else {
+      if (isEmptyString(ans)) newErrors[qid] = 'This field is required';
+    }
+
+    // if (
+    //   group.QuestionText.toLowerCase().includes('reason for discontinuation') &&
+    //   Array.isArray(ans) &&
+    //   ans.includes('Other') &&
+    //   isEmptyString(otherReasonText)
+    // ) 
+    // {
+    //   newErrors.otherReasonText = 'Please specify other reason';
+    // }
+  });
 
     // Controlled fields validation
     if (isEmptyString(training)) newErrors.training = 'Training is required';
     if (isEmptyString(technicalIssues)) newErrors.technicalIssues = 'Technical issues field is required';
-    if (isEmptyString(requirements)) newErrors.requirements = 'Requirements field is required';
-    if (isEmptyString(engagementSuggestions)) newErrors.engagementSuggestions = 'This field is required';
+    // if (isEmptyString(requirements)) newErrors.requirements = 'Requirements field is required';
+    // if (isEmptyString(engagementSuggestions)) newErrors.engagementSuggestions = 'This field is required';
     if (isEmptyString(future)) newErrors.future = 'This field is required';
     if (isEmptyString(updates)) newErrors.updates = 'This field is required';
-    if (isEmptyString(studySuggestions)) newErrors.studySuggestions = 'This field is required';
-    if (isEmptyString(vrHelpful)) newErrors.vrHelpful = 'This field is required';
-    if (isEmptyString(vrChallenging)) newErrors.vrChallenging = 'This field is required';
+    // if (isEmptyString(studySuggestions)) newErrors.studySuggestions = 'This field is required';
+    // if (isEmptyString(vrHelpful)) newErrors.vrHelpful = 'This field is required';
+    // if (isEmptyString(vrChallenging)) newErrors.vrChallenging = 'This field is required';
     if (isEmptyString(interviewerSignature)) newErrors.interviewerSignature = 'Interviewer signature is required';
     if (isEmptyString(participantDate)) newErrors.participantDate = 'Participant date is required';
     if (isEmptyString(interviewerDate)) newErrors.interviewerDate = 'Interviewer date is required';
@@ -309,30 +319,6 @@ export default function ExitInterview() {
 
     return true;
   };
-
-  const handleClear = () => {
-    setAnswers({});
-    setTraining('');
-    setTrainingExplain('');
-    setTechnicalIssues('');
-    setTechnicalDetails('');
-    setRequirements('');
-    setRequirementsExplain('');
-    setEngagementSuggestions('');
-    setFuture('');
-    setUpdates('');
-    setStudySuggestions('');
-    setOverallRating('');
-    setVrHelpful('');
-    setVrChallenging('');
-    setOtherReasonText('');
-    setParticipantSignature('');
-    setInterviewerSignature('');
-    setParticipantDate(todayStr);
-    setInterviewerDate(todayStr);
-    setErrors({});
-  };
-
 
   // Save handler
   const handleSave = async () => {
@@ -423,6 +409,29 @@ export default function ExitInterview() {
     }
   };
 
+    const handleClear = () => {
+    setAnswers({});
+    setTraining('');
+    setTrainingExplain('');
+    setTechnicalIssues('');
+    setTechnicalDetails('');
+    setRequirements('');
+    setRequirementsExplain('');
+    setEngagementSuggestions('');
+    setFuture('');
+    setUpdates('');
+    setStudySuggestions('');
+    setOverallRating('');
+    setVrHelpful('');
+    setVrChallenging('');
+    setOtherReasonText('');
+    setParticipantSignature('');
+    setInterviewerSignature('');
+    setParticipantDate(todayStr);
+    setInterviewerDate(todayStr);
+    setErrors({});
+  };
+
   // Label style with error
   const errorLabelStyle = (field: string) => ({
     color: errors[field] ? '#dc2626' : '#4b5f5a',
@@ -457,7 +466,18 @@ export default function ExitInterview() {
               lineHeight: 24,
             }}
           >
-            Study ID: {studyId ? `${studyId}` : 'CS-0001'}
+            {
+              groupType === 'Study' ? (
+                <Text style={{ color: "rgba(22, 163, 74, 1)", fontWeight: "600", fontSize: 16, lineHeight: 24 }}>
+                  Randomisation No: {groupTypeNumber || 'N/A'}
+                </Text>
+              ) : (
+                <Text style={{ color: '#4a5568', fontSize: 16, fontWeight: '600' }}>
+                  Study ID: {studyId ? `${studyId}` : 'CS-0001'}
+                </Text>
+              )
+            }
+
           </Text>
           <Text style={{ color: '#4a5568', fontSize: 16, fontWeight: '600' }}>Age: {age || 'Not specified'}</Text>
         </View>
@@ -535,6 +555,7 @@ export default function ExitInterview() {
               <FormCard key={qid} icon="V" title="VR Experience Ratings">
                 <View className="mt-4">
                   <Text className="text-md font-medium  mb-2 text-[#2c4a43]" style={errorLabelStyle(qid)}>
+                
                     {group.QuestionText}
 
                   </Text>

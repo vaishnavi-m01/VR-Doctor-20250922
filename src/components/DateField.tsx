@@ -67,7 +67,7 @@ export default function DateField({
           style={{
             position: 'absolute',
             right: 12,
-            top: mode === "time" ? '42%' : '58%',
+            top: mode === "time" ? '45%' : '58%',
             transform: [{ translateY: -10 }], 
           }}
         />
@@ -82,6 +82,7 @@ export default function DateField({
         }}
         onCancel={() => setOpen(false)}
         modalStyleIOS={{ justifyContent: 'center', alignItems: 'center' }}
+        // headerTextIOS={mode === "time" ? "Select Time" : "Select Date"}
       />
     </View>
   );
