@@ -55,6 +55,7 @@ export default function PatientScreening() {
   const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
   const { userId } = useContext(UserContext);
+  const [checked, setChecked] = useState(false);
 
   const routes = useRoute();
   const { CreatedDate: routeCreatedDate, PatientId: routePatientId } = (routes.params as any) ?? {};
@@ -96,7 +97,7 @@ export default function PatientScreening() {
 
 
   const fetchPatientFinalScore = async (pid: string, createdDate?: string | null) => {
-    const today = new Date().toISOString().split("T")[0];
+    // const today = new Date().toISOString().split("T")[0];
 
     try {
       const response = await apiService.post<any>("/getParticipantFactGQuestionWeekly", {
@@ -105,8 +106,13 @@ export default function PatientScreening() {
         CreatedDate: createdDate ?? undefined,
       });
 
-      const score = response.data?.FinalScore ?? today;
-      setFactGScore(score);
+      const rawScore = response.data?.FinalScore;
+      const numScore = Number(rawScore);
+
+      setFactGScore(numScore === 0 ? "" : String(rawScore ?? ""));
+
+
+
     } catch (err) {
       console.error("Failed to fetch finalScore:", err);
       setFactGScore("");
@@ -157,24 +163,37 @@ export default function PatientScreening() {
   }, []);
 
 
+  const handleBloodPressureChange = (text: string) => {
+    let clean = text.replace(/[^0-9]/g, ""); // digits only
+    if (clean.length > 5) clean = clean.slice(0, 5); // max 5 numbers (### + ##)
+
+    let formatted = clean;
+    if (clean.length > 3) {
+      formatted = clean.slice(0, 3) + "/" + clean.slice(3);
+    }
+    setBloodPressure(formatted);
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!pulseRate || pulseRate.trim() === "") {
-      newErrors.pulseRate = "Pulse Rate is required";
-    }
-    if (!bloodPressure || bloodPressure.trim() === "") {
+    if (!pulseRate.trim()) newErrors.pulseRate = "Pulse Rate is required";
+    else if (pulseRate.length > 3) newErrors.pulseRate = "Max 3 digits";
+
+    if (!bloodPressure.trim()) {
       newErrors.bloodPressure = "Blood Pressure is required";
+    } else if (!/^\d{2,3}\/\d{2,3}$/.test(bloodPressure)) {
+      newErrors.bloodPressure = "Format must be 120/80";
     }
-    if (!temperature || temperature.trim() === "") {
-      newErrors.temperature = "Temperature is required";
-    }
-    if (!bmi || bmi.trim() === "") {
-      newErrors.bmi = "BMI";
-    }
-    if (!dt || dt === 0) {
-      newErrors.dt = "Distress Thermometer score is required";
-    }
+
+    if (!temperature.trim()) newErrors.temperature = "Temperature is required";
+    else if (temperature.length > 5) newErrors.temperature = "Max 5 chars";
+
+    if (!bmi.trim()) newErrors.bmi = "BMI is required";
+    else if (bmi.length > 5) newErrors.bmi = "Max 5 chars";
+
+    if (!dt || dt === 0) newErrors.dt = "Distress Thermometer score is required";
+
     if (!implants) {
       newErrors.implants = "Select Yes/No for implants";
     }
@@ -184,6 +203,14 @@ export default function PatientScreening() {
     if (conds.length === 0) {
       newErrors.conds = "This field required"
     }
+
+    if (!factGScore || factGScore.trim() === "") {
+      newErrors.factGScore = "This field required";
+    } else {
+      newErrors.factGScore = "";
+    }
+
+
 
     setErrors(newErrors);
 
@@ -384,27 +411,61 @@ export default function PatientScreening() {
 
 
 
-          <View className="flex-row gap-3 mt-6">
-            <View className="flex-1">
-              <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-md font-medium text-[#2c4a43] mt-6">FACT-G Total Score</Text>
-                <Pressable
+          {/* <View className="flex-row gap-3 mt-6"> */}
+          {/* <View className="flex-1"> */}
+          {/* <View className="flex-row items-center justify-between mb-1"> */}
+          {/* <Text
+                  className={`text-md font-medium ${errors.factGScore ? "text-red-500" : "text-[#2c4a43]"
+                    }`}
+                >
+                  FACT-G Total Score
+                </Text> */}
+          {/* <Pressable
                   onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId })}
                   className="px-4 py-3 bg-[#0ea06c] rounded-lg"
                 >
                   <Text className="text-xs text-white font-medium">Assessment: Fact-G scoring 0-108</Text>
-                </Pressable>
-              </View>
-              <Field
-                label=""
+                </Pressable> */}
+          {/* </View> */}
+          {/* <Field
+                label="FACT-G Total Score"
                 keyboardType="number-pad"
                 placeholder="0–108"
                 value={factGScore}
+                error={errors.factGScore}
+                editable={false}
+                onChangeText={setFactGScore}
+              /> */}
+          {/* </View> */}
+          {/* </View> */}
+
+
+          <View className="flex-row items-center justify-between mt-4">
+            <View className="flex-1 mr-2">
+              <Field
+                label="FACT-G Total Score"
+                keyboardType="number-pad"
+                placeholder="0–108"
+                value={factGScore}
+                error={errors.factGScore}
                 editable={false}
                 onChangeText={setFactGScore}
               />
             </View>
+
+            <Pressable
+              onPress={() =>
+                navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId })
+              }
+              className="px-4 py-3 bg-[#0ea06c] rounded-lg"
+              style={{ top: -38 }}
+            >
+              <Text className="text-xs text-white font-medium">
+                Assessment: Fact-G scoring 0-108
+              </Text>
+            </Pressable>
           </View>
+
 
           <Text className="text-lg mt-3 font-semibold">Vitals</Text>
           <View className="flex-row gap-3 mt-3">
@@ -417,17 +478,19 @@ export default function PatientScreening() {
                 value={pulseRate}
                 onChangeText={setPulseRate}
                 keyboardType="numeric"
+                maxLength={3}
               />
             </View>
 
             <View className="flex-1">
 
               <Field
-                label='Blood Pressure (mmHg)'
+                label="Blood Pressure (mmHg)"
                 placeholder="120/80"
                 error={errors.bloodPressure}
                 value={bloodPressure}
-                onChangeText={setBloodPressure}
+                onChangeText={handleBloodPressureChange}
+                keyboardType="numeric"
               />
             </View>
 
@@ -439,6 +502,7 @@ export default function PatientScreening() {
                 value={temperature}
                 onChangeText={setTemperature}
                 keyboardType="decimal-pad"
+                maxLength={5}
               />
             </View>
 
@@ -450,6 +514,7 @@ export default function PatientScreening() {
                 value={bmi}
                 onChangeText={setBmi}
                 keyboardType="decimal-pad"
+                maxLength={5}
               />
 
             </View>
@@ -526,11 +591,40 @@ export default function PatientScreening() {
           </View>
         </FormCard>
 
-        <FormCard
-          icon="✔︎"
+        {/* <FormCard
+          // icon="✔︎"
           title="Clinical Checklist"
           error={errors.conds ? true : false}
+        > */}
+
+        <View
+          className="bg-[#fff] border border-[#fff] rounded-2xl shadow-card mb-2 mt-2"
+          style={{ padding: 16 }}
         >
+          {/* Title row with checkbox */}
+          <View className="flex-row items-center mb-2">
+            <Pressable
+              onPress={() => setChecked(!checked)}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                borderWidth: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: checked ? '#22c55e' : '#fff',
+                borderColor: checked ? '#16a34a' : '#bec1c7ff',
+                marginRight: 8,
+              }}
+            >
+              {checked && <Text style={{ color: '#fff', fontWeight: 'bold' }}>✔︎</Text>}
+            </Pressable>
+
+            <Text className={`text-base font-semibold mt-1 ${errors.conds ? "text-red-500" : "text-[#0b1f1c]"}`}
+            >Clinical Checklist</Text>
+          </View>
+
+          {/* Chip row below */}
           <View className="mt-2">
             <Chip
               items={clinicalChecklist.map((item) => item.ExeperiencType)}
@@ -545,7 +639,12 @@ export default function PatientScreening() {
           </View>
 
           <View style={{ height: 150 }} />
-        </FormCard>
+        </View>
+
+
+
+
+        {/* </FormCard> */}
 
 
       </ScrollView>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useContext, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -143,11 +143,11 @@ useFocusEffect(
         ModifiedBy: userId
       };
 
-      console.log('🔍 Creating new session with payload:', requestPayload);
+      console.log(' Creating new session with payload:', requestPayload);
 
       const response = await apiService.post('/AddUpdateParticipantVRSessions', requestPayload);
       
-      console.log('📊 Create session API response:', response.data);
+      console.log(' Create session API response:', response.data);
 
       // Close modal and reset form
       setShowNewSessionModal(false);
@@ -162,7 +162,7 @@ useFocusEffect(
       }
 
     } catch (err) {
-      console.error('💥 Error creating session:', err);
+      console.error(' Error creating session:', err);
       alert('Failed to create session. Please try again.');
     } finally {
       setIsCreatingSession(false);
@@ -171,7 +171,7 @@ useFocusEffect(
 
   const handleSessionPress = async (session: VRSession) => {
     try {
-      console.log('🔍 Fetching session details for:', session.SessionNo);
+      console.log(' Fetching session details for:', session.SessionNo);
       
       const response = await apiService.post<{ ResponseData: any[] }>('/GetParticipantVRSessionsMainData', {
         SessionNo: session.SessionNo,
@@ -179,11 +179,11 @@ useFocusEffect(
         StudyId: "CS-0001"
       });
 
-      console.log('📊 Session details API response:', response.data);
+      console.log(' Session details API response:', response.data);
 
       if (response.data?.ResponseData && response.data.ResponseData.length > 0) {
         const sessionDetails = response.data.ResponseData[0];
-        console.log('✅ Session details loaded:', sessionDetails);
+        console.log(' Session details loaded:', sessionDetails);
         
         // Navigate to session details screen with the fetched data
         (navigation as any).navigate('SessionDetailsScreen', { 
@@ -194,12 +194,11 @@ useFocusEffect(
           SessionNo: session.SessionNo, 
         });
       } else {
-        console.log('⚠️ No session details found');
-        // Fallback to session setup if no details found
+        console.log(' No session details found');
         navigation.navigate('SessionSetupScreen', { patientId, age, studyId });
       }
     } catch (err) {
-      console.error('💥 Error fetching session details:', err);
+      console.error(' Error fetching session details:', err);
       // Fallback to session setup on error
       navigation.navigate('SessionSetupScreen', { patientId, age, studyId });
     }
