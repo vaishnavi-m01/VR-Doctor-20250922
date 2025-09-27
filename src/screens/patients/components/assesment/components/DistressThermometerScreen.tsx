@@ -19,6 +19,7 @@ import { UserContext } from "src/store/context/UserContext";
 import { Field } from "@components/Field";
 import { KeyboardAvoidingView } from "react-native";
 import { Platform } from "react-native";
+import DateField from "@components/DateField";
 
 type Question = {
   id: string;
@@ -69,6 +70,8 @@ export default function DistressThermometerScreen() {
   const [otherProblems, setOtherProblems] = useState<string>("");
   const [isDefaultForm, setIsDefaultForm] = useState(true);
   const [PDWSID, setPDWSID] = useState<string | null>(null);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
 
   const [errors, setErrors] = useState<{ distressScore?: string; selectedProblems?: string }>({});
 
@@ -76,7 +79,7 @@ export default function DistressThermometerScreen() {
   const navigation = useNavigation<any>();
   const { userId } = useContext(UserContext);
 
-  
+
   const formatDate = (dateString: string): string => {
     if (!dateString) return "";
     let d = dateString;
@@ -283,7 +286,7 @@ export default function DistressThermometerScreen() {
 
       responseData.forEach((item) => {
         if (item.CategoryName && item.DistressQuestionId) {
-        
+
           const questionKey = `${item.CategoryName}-${item.DistressQuestionId}`;
 
           // If we haven't seen this question, or if this item has PDTWQID and the previous one doesn't
@@ -372,7 +375,7 @@ export default function DistressThermometerScreen() {
   }, [selectedDate, enteredPatientId]);
 
 
-  const handleValidate =  (showSuccessToast = true) => {
+  const handleValidate = (showSuccessToast = true) => {
     const newErrors: typeof errors = {};
 
     const hasDistressScore = v > 0;
@@ -392,35 +395,35 @@ export default function DistressThermometerScreen() {
 
     setErrors(newErrors);
 
-      if (Object.keys(newErrors).length > 0) {
-         Toast.show({
-           type: "error",
-           text1: "Validation Error",
-           text2: "Please correct the highlighted fields",
-           position: "top",
-           topOffset: 50,
-         });
-         return false;
-       }
-   
-       if (showSuccessToast) {
-          Toast.show({
-            type: "success",
-            text1: "Validation Passed",
-            text2: "All required fields are valid",
-            position: "top",
-            topOffset: 50,
-          });
-        }
+    if (Object.keys(newErrors).length > 0) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please correct the highlighted fields",
+        position: "top",
+        topOffset: 50,
+      });
+      return false;
+    }
 
-  
-       return true;
+    if (showSuccessToast) {
+      Toast.show({
+        type: "success",
+        text1: "Validation Passed",
+        text2: "All required fields are valid",
+        position: "top",
+        topOffset: 50,
+      });
+    }
+
+
+    return true;
   };
 
   const handleSave = async () => {
 
-   if (!handleValidate(false)) return
-   
+    if (!handleValidate(false)) return
+
     try {
       setLoading(true);
 
@@ -690,7 +693,7 @@ export default function DistressThermometerScreen() {
             )}
 
 
-            <ScrollView style={{ maxHeight: 140}}>
+            <ScrollView style={{ maxHeight: 140 }}>
               {availableDates.length > 0 ? (
                 availableDates.map((date, index) => (
                   <Pressable
@@ -721,12 +724,27 @@ export default function DistressThermometerScreen() {
       )}
 
       {/* Main content ScrollView */}
-      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }}  keyboardShouldPersistTaps="handled">
+      <ScrollView className="flex-1 px-4 bg-bg pb-[400px]" style={{ paddingTop: 5 }} keyboardShouldPersistTaps="handled">
         {/* Distress Thermometer Card */}
         <FormCard icon="DT" title={`Distress Thermometer ${isDefaultForm ? "- New Assessment" : selectedDate ? `- ${selectedDate}` : ""}`}>
-          <Text className="text-[12px] text-gray-500 mb-3">
-            Considering the past week, including today.
-          </Text>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-[12px] text-gray-500">
+              Considering the past week, including today.
+            </Text>
+
+            <Pressable
+              onPress={handleRefresh}
+              disabled={loading}
+              className="bg-blue-500 rounded-xl px-4 py-3 flex items-center justify-center"
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text className="text-white text-sm font-semibold">Refresh</Text>
+              )}
+            </Pressable>
+          </View>
+
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
               <Field
@@ -737,23 +755,14 @@ export default function DistressThermometerScreen() {
               />
             </View>
 
-            <Pressable
-              onPress={handleRefresh}
-              disabled={loading}
-              className="bg-blue-500 rounded-xl px-2 flex items-center justify-center self-end"
-              style={{
-                height: 48,
-                minWidth: 100,
-                top: -16
-              }}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text className="text-white text-sm font-semibold">Refresh</Text>
-              )}
-            </Pressable>
+
+            <View className="flex-1">
+              <DateField label="Date" value={date} onChange={setDate} />
+            </View>
+
+
           </View>
+
 
         </FormCard>
 
