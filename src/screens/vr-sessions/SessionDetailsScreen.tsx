@@ -169,7 +169,7 @@ export default function SessionDetailsScreen() {
           </View>
 
           {/* Right Column - Therapy Sessions */}
-          <View className="flex-1">
+          <View className="flex-1 ">
             <Card className="p-4">
               <Text className="font-bold text-base mb-4 text-gray-700">Session</Text>
               <View className="gap-2">
@@ -194,7 +194,7 @@ export default function SessionDetailsScreen() {
         </View>
 
         {/* Background Instrument Section */}
-        <Card className="p-4">
+        <Card className="p-4 mt-4">
           <Text className="font-bold text-base mb-4 text-gray-700">Background music</Text>
           <View className="flex-row gap-4">
             <Pressable

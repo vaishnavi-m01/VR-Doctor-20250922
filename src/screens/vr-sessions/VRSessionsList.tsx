@@ -8,6 +8,7 @@ import { Btn } from '../../components/Button';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { apiService } from 'src/services';
 import { UserContext } from 'src/store/context/UserContext';
+import { DropdownField } from '@components/DropdownField';
 
 interface VRSession {
   SessionNo: string;
@@ -34,7 +35,7 @@ export default function VRSessionsList() {
   const [sessionDescription, setSessionDescription] = useState('');
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const { userId } = useContext(UserContext);
-  
+
 
   // Format date from API response to DD-MM-YYYY
   const formatDate = (dateString: string) => {
@@ -54,14 +55,14 @@ export default function VRSessionsList() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const requestPayload = {
         ParticipantId: patientId,
         StudyId: "CS-0001"
       };
-      
+
       console.log('🔍 Fetching VR sessions with payload:', requestPayload);
-      
+
       const response = await apiService.post<{ ResponseData: VRSession[] }>('/GetParticipantVRSessions', requestPayload);
 
       console.log('📊 VR Sessions API response:', response.data);
@@ -83,11 +84,11 @@ export default function VRSessionsList() {
   };
 
   // Load sessions on component mount
-useFocusEffect(
-  useCallback(() => {
-    fetchVRSessions();
-  }, [patientId, studyId])
-);
+  useFocusEffect(
+    useCallback(() => {
+      fetchVRSessions();
+    }, [patientId, studyId])
+  );
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -132,7 +133,7 @@ useFocusEffect(
 
     try {
       setIsCreatingSession(true);
-      
+
       const requestPayload = {
         SessionNo: "",
         ParticipantId: patientId,
@@ -146,7 +147,7 @@ useFocusEffect(
       console.log(' Creating new session with payload:', requestPayload);
 
       const response = await apiService.post('/AddUpdateParticipantVRSessions', requestPayload);
-      
+
       console.log(' Create session API response:', response.data);
 
       // Close modal and reset form
@@ -172,7 +173,7 @@ useFocusEffect(
   const handleSessionPress = async (session: VRSession) => {
     try {
       console.log(' Fetching session details for:', session.SessionNo);
-      
+
       const response = await apiService.post<{ ResponseData: any[] }>('/GetParticipantVRSessionsMainData', {
         SessionNo: session.SessionNo,
         ParticipantId: patientId,
@@ -184,14 +185,14 @@ useFocusEffect(
       if (response.data?.ResponseData && response.data.ResponseData.length > 0) {
         const sessionDetails = response.data.ResponseData[0];
         console.log(' Session details loaded:', sessionDetails);
-        
+
         // Navigate to session details screen with the fetched data
-        (navigation as any).navigate('SessionDetailsScreen', { 
-          patientId, 
-          age, 
+        (navigation as any).navigate('SessionDetailsScreen', {
+          patientId,
+          age,
           studyId,
-          sessionDetails, 
-          SessionNo: session.SessionNo, 
+          sessionDetails,
+          SessionNo: session.SessionNo,
         });
       } else {
         console.log(' No session details found');
@@ -207,22 +208,22 @@ useFocusEffect(
   return (
     <View className="flex-1 bg-white">
       {/* Participant Info Header */}
-       <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
+      <View className="px-4 pb-1" style={{ paddingTop: 8 }}>
 
-          <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
-            <Text className="text-lg font-bold text-green-600">
-              Participant ID: {patientId}
-            </Text>
+        <View className="bg-white border-b-2 border-gray-300 rounded-xl p-6 flex-row justify-between items-center shadow-sm">
+          <Text className="text-lg font-bold text-green-600">
+            Participant ID: {patientId}
+          </Text>
 
-            <Text className="text-base font-semibold text-green-600">
-              Study ID: {studyId || "N/A"}
-            </Text>
+          <Text className="text-base font-semibold text-green-600">
+            Study ID: {studyId || "N/A"}
+          </Text>
 
-            <Text className="text-base font-semibold text-gray-700">
-              Age: {age || "Not specified"}
-            </Text>
-          </View>
+          <Text className="text-base font-semibold text-gray-700">
+            Age: {age || "Not specified"}
+          </Text>
         </View>
+      </View>
 
       {/* New Session Button */}
       <View className="px-4 pt-4 pb-2">
@@ -248,7 +249,7 @@ useFocusEffect(
             <Text className="text-gray-400 text-sm text-center mt-2">
               {error}
             </Text>
-            <Pressable 
+            <Pressable
               onPress={fetchVRSessions}
               className="mt-4 px-4 py-2 bg-green-600 rounded-lg"
             >
@@ -281,10 +282,10 @@ useFocusEffect(
                       </Text>
                       <View className={`px-3 py-1 rounded-full border ${getStatusColor(session.SessionStatus)}`}>
                         <View className="flex-row items-center">
-                          <MaterialIcons 
-                            name={getStatusIcon(session.SessionStatus)} 
-                            size={14} 
-                            color="currentColor" 
+                          <MaterialIcons
+                            name={getStatusIcon(session.SessionStatus)}
+                            size={14}
+                            color="currentColor"
                           />
                           <Text className="text-xs font-medium ml-1">
                             {session.SessionStatus}
@@ -333,7 +334,7 @@ useFocusEffect(
             {/* Description Input */}
             <View className="mb-6">
               <Text className="text-base font-medium text-green-700 mb-2">Session Description</Text>
-              <TextInput
+              {/* <TextInput
                 value={sessionDescription}
                 onChangeText={setSessionDescription}
                 placeholder="Enter session description..."
@@ -341,7 +342,19 @@ useFocusEffect(
                 numberOfLines={3}
                 className="border border-green-300 rounded-lg p-3 text-gray-800 text-base bg-white"
                 style={{ textAlignVertical: 'top' }}
+              /> */}
+
+              <DropdownField
+                // label="VR Content Type at AE"
+                value={sessionDescription}           // Current selected value
+                onValueChange={(val) => setSessionDescription(val)}  // Update state when an option is selected
+                options={[
+                  { label: "Guided imager", value: "Guided imager" },
+                  { label: "Sound healing", value: "Sound healing" },
+                ]}
               />
+
+
             </View>
 
             {/* Action Buttons */}
@@ -349,9 +362,8 @@ useFocusEffect(
               <Pressable
                 onPress={() => handleCreateSession('list')}
                 disabled={isCreatingSession}
-                className={`w-full py-3 rounded-xl items-center mb-4 ${
-                  isCreatingSession ? 'bg-gray-300' : 'bg-[#0e4336]'
-                }`}
+                className={`w-full py-3 rounded-xl items-center mb-4 ${isCreatingSession ? 'bg-gray-300' : 'bg-[#0e4336]'
+                  }`}
               >
                 <Text className="text-white font-semibold">
                   {isCreatingSession ? 'Creating...' : 'Create Session'}

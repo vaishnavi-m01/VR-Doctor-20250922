@@ -440,7 +440,7 @@ export default function PatientScreening() {
           {/* </View> */}
 
 
-          <View className="flex-row items-center justify-between mt-4">
+          <View className="flex-row items-center justify-between mt-10">
             <View className="flex-1 mr-2">
               <Field
                 label="FACT-G Total Score"
