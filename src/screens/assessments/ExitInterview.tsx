@@ -15,6 +15,7 @@ import Toast from 'react-native-toast-message';
 import { UserContext } from 'src/store/context/UserContext';
 import { KeyboardAvoidingView } from 'react-native';
 import { Platform } from 'react-native';
+import SignaturePad, { SignatureField } from '@components/SignaturePad';
 
 interface ExitInterviewOptions {
   OptionId?: string;
@@ -262,25 +263,25 @@ export default function ExitInterview() {
     const newErrors: { [key: string]: string } = {};
 
     Object.entries(groupedQuestions).forEach(([qid, group]) => {
-    if (qid === 'EIQID-2') return; // Skip required validation for VRExperienceRating
+      if (qid === 'EIQID-2') return; // Skip required validation for VRExperienceRating
 
-    const ans = answers[qid];
-    if (Array.isArray(ans)) {
-      if (ans.length === 0) newErrors[qid] = 'This field is required';
-    } else {
-      if (isEmptyString(ans)) newErrors[qid] = 'This field is required';
-    }
+      const ans = answers[qid];
+      if (Array.isArray(ans)) {
+        if (ans.length === 0) newErrors[qid] = 'This field is required';
+      } else {
+        if (isEmptyString(ans)) newErrors[qid] = 'This field is required';
+      }
 
-    // if (
-    //   group.QuestionText.toLowerCase().includes('reason for discontinuation') &&
-    //   Array.isArray(ans) &&
-    //   ans.includes('Other') &&
-    //   isEmptyString(otherReasonText)
-    // ) 
-    // {
-    //   newErrors.otherReasonText = 'Please specify other reason';
-    // }
-  });
+      // if (
+      //   group.QuestionText.toLowerCase().includes('reason for discontinuation') &&
+      //   Array.isArray(ans) &&
+      //   ans.includes('Other') &&
+      //   isEmptyString(otherReasonText)
+      // ) 
+      // {
+      //   newErrors.otherReasonText = 'Please specify other reason';
+      // }
+    });
 
     // Controlled fields validation
     if (isEmptyString(training)) newErrors.training = 'Training is required';
@@ -409,7 +410,7 @@ export default function ExitInterview() {
     }
   };
 
-    const handleClear = () => {
+  const handleClear = () => {
     setAnswers({});
     setTraining('');
     setTrainingExplain('');
@@ -555,7 +556,7 @@ export default function ExitInterview() {
               <FormCard key={qid} icon="V" title="VR Experience Ratings">
                 <View className="mt-4">
                   <Text className="text-md font-medium  mb-2 text-[#2c4a43]" style={errorLabelStyle(qid)}>
-                
+
                     {group.QuestionText}
 
                   </Text>
@@ -808,7 +809,7 @@ export default function ExitInterview() {
 
         {/* Future Recommendations */}
         <FormCard icon="FR" title="Future Recommendations">
-          <View style={{ flexDirection: 'column', gap: 12,marginTop:6 }}>
+          <View style={{ flexDirection: 'column', gap: 12, marginTop: 6 }}>
             <View style={{ flex: 1 }}>
               <Text className="text-md font-medium text-[#2c4a43]" style={errorLabelStyle('future')}>
                 {questions.find((q) => q.QuestionId === 'EIQID-9')?.QuestionText || ''}
@@ -922,7 +923,7 @@ export default function ExitInterview() {
 
         {/* Acknowledgment & Consent */}
         <FormCard icon="AC" title="Acknowledgment & Consent">
-          <View style={{ flexDirection: 'row', gap: 12,marginTop:6 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
             <View style={{ flex: 1 }}>
               <Field
                 label="Participant Signature"
@@ -939,13 +940,21 @@ export default function ExitInterview() {
           </View>
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
             <View style={{ flex: 1 }}>
-              <Field
+              {/* <Field
                 label="Interviewer Signature (full name)"
                 placeholder="Interviewer full name"
                 value={interviewerSignature}
                 error={errors.interviewerSignature}
                 onChangeText={setFieldAndClearError('interviewerSignature', setInterviewerSignature)}
+              /> */}
+
+              <SignatureField
+                label="Interviewer Signature (full name)"
+                error={errors.interviewerSignature}
+                value={interviewerSignature}
+                onChangeText={setFieldAndClearError('interviewerSignature', setInterviewerSignature)}
               />
+
             </View>
             <View style={{ flex: 1 }}>
               <DateField label="Modified Date" value={interviewerDate} onChange={setInterviewerDate} error={errors.interviewerDate} />
